@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 /* =================================================================
    DESIGN SYSTEM
@@ -272,6 +273,29 @@ select option{background:var(--bg-card);color:var(--ink)}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* ---- QR Codes ---- */
+.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.qr-card{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:20px 12px;text-align:center;
+}
+.qr-card.win{border-color:var(--accent)}
+.qr-card .qr-label{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;font-weight:600;
+  margin-bottom:14px;
+}
+.qr-card.win .qr-label{color:var(--accent)}
+.qr-card.lose .qr-label{color:var(--ink-soft)}
+.qr-card .qr-box{display:flex;justify-content:center;align-items:center}
+.qr-card .qr-box canvas,.qr-card .qr-box img{border-radius:8px;max-width:100%}
+.qr-pts{
+  font-family:'Instrument Serif',serif;font-size:28px;
+  margin-top:10px;
+}
+.qr-card.win .qr-pts{color:var(--accent)}
+.qr-sub{font-size:11px;color:var(--ink-mute);margin-top:4px}
+
 /* ---- Empty state ---- */
 .empty{
   text-align:center;padding:40px 20px;
@@ -337,8 +361,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-view="ranks">อันดับ</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึก</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="history">ประวัติ</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="qr">QR บันทึกผล</button>
     </nav>
 
     <!-- ---- VIEW: RANKINGS ---- -->
@@ -347,39 +370,24 @@ select option{background:var(--bg-card);color:var(--ink)}
       <div class="rank-list" id="rank-list"></div>
     </section>
 
-    <!-- ---- VIEW: RECORD MATCH ---- -->
-    <section class="view" id="view-record">
-      <h2 class="section-title">บันทึก<em>ผลแมตช์</em></h2>
-      <div class="card">
-
-        <!-- ทีมชนะ -->
-        <label class="field">🏆 ทีมชนะ</label>
-        <select id="w1"><option value="">— เลือกผู้เล่น 1 —</option></select>
-        <div class="mt"></div>
-        <select id="w2"><option value="">— เลือกผู้เล่น 2 —</option></select>
-
-        <div style="height:18px"></div>
-
-        <!-- ทีมแพ้ -->
-        <label class="field">ทีมแพ้</label>
-        <select id="l1"><option value="">— เลือกผู้เล่น 1 —</option></select>
-        <div class="mt"></div>
-        <select id="l2"><option value="">— เลือกผู้เล่น 2 —</option></select>
-
-        <div class="mt"></div>
-        <button class="btn primary" id="btn-submit" disabled>บันทึกผล</button>
+    <!-- ---- VIEW: QR CODE ---- -->
+    <section class="view" id="view-qr">
+      <h2 class="section-title">สแกน<em>บันทึกผล</em></h2>
+      <p class="text-mute text-sm" style="margin-bottom:4px">scan QR แล้วระบบจะบันทึกผลให้คุณทันที</p>
+      <div class="qr-grid">
+        <div class="qr-card win">
+          <div class="qr-label">ชนะ</div>
+          <div class="qr-box" id="qr-win"></div>
+          <div class="qr-pts">+3</div>
+          <div class="qr-sub">pts</div>
+        </div>
+        <div class="qr-card lose">
+          <div class="qr-label">แพ้</div>
+          <div class="qr-box" id="qr-lose"></div>
+          <div class="qr-pts">+1</div>
+          <div class="qr-sub">pts</div>
+        </div>
       </div>
-
-      <p class="text-center text-mute text-sm mt">
-        ชนะ = +3 คะแนน &nbsp;·&nbsp; แพ้ = +1 คะแนน<br>
-        ใครก็บันทึกได้ · trust-based
-      </p>
-    </section>
-
-    <!-- ---- VIEW: HISTORY ---- -->
-    <section class="view" id="view-history">
-      <h2 class="section-title">ประวัติ<em>แมตช์</em></h2>
-      <div id="history-list"></div>
     </section>
 
   </div><!-- /app-main -->
@@ -398,7 +406,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 // ⚙️ CONFIG — แก้ 2 ค่านี้
 // =================================================================
 const LINE_CHANNEL_ID = '2009832825';
-const API_BASE        = 'https://script.google.com/macros/s/AKfycbxlqv08gAPd0SoQ48UDow3hfhX6q8psr_PmRSLDN5prHPh9LYyxthnXYXPudsWgohTb0A/exec';
+const API_BASE        = 'https://script.google.com/macros/s/AKfycbyIAWFXN46khjvyP5-kVKnbNEaXcFD5Xzim99JBUMfTQhaG6kAJwxqdwPtK3h6FwnC3SQ/exec';
 
 // LINE Login redirect URI = หน้าเว็บนี้เอง
 const REDIRECT_URI = window.location.origin + window.location.pathname;
@@ -589,19 +597,15 @@ function hideSplash(){
 // =================================================================
 async function loadAllData(){
   try{
-    const [playersRes, matchesRes, rankingsRes] = await Promise.all([
+    const [playersRes, rankingsRes] = await Promise.all([
       api('getPlayers'),
-      api('getMatches'),
       api('getRankings'),
     ]);
 
-    allPlayers  = playersRes.players  || [];
-    allMatches  = matchesRes.matches  || [];
+    allPlayers  = playersRes.players   || [];
     allRankings = rankingsRes.rankings || [];
 
     renderRanks();
-    renderSelectors();
-    renderHistory();
   }catch(err){
     console.error('Data load error', err);
     toast('โหลดข้อมูลไม่สำเร็จ');
@@ -614,7 +618,7 @@ async function loadAllData(){
 function renderRanks(){
   const container = $('#rank-list');
   if(allRankings.length === 0){
-    container.innerHTML = '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>เริ่มเล่นแล้วบันทึกผลกันเลย!</div>';
+    container.innerHTML = '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>scan QR แล้วเริ่มเล่นกันเลย!</div>';
     return;
   }
 
@@ -638,116 +642,50 @@ function renderRanks(){
 }
 
 // =================================================================
-// RENDER: Match selectors (prevent duplicates)
+// RENDER: QR Codes
 // =================================================================
-function renderSelectors(){
-  const selects = ['#w1','#w2','#l1','#l2'].map(s => $(s));
-  const current = selects.map(s => s.value);
-
-  selects.forEach((sel, idx) => {
-    const taken = new Set(current.filter((v,i) => v && i !== idx));
-    const keep = current[idx];
-
-    sel.innerHTML =
-      `<option value="">— เลือกผู้เล่น —</option>` +
-      allPlayers
-        .filter(p => !taken.has(p.id) || p.id === keep)
-        .map(p => `<option value="${p.id}" ${p.id===keep?'selected':''}>${escHtml(p.name)}</option>`)
-        .join('');
+let qrGenerated = false;
+function renderQRCodes(){
+  if(qrGenerated) return;
+  qrGenerated = true;
+  const base = window.location.origin + window.location.pathname;
+  new QRCode(document.getElementById('qr-win'), {
+    text: base + '?result=win',
+    width: 148, height: 148,
+    colorDark: '#0e0f11', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M,
   });
-
-  updateSubmitState();
-}
-
-function updateSubmitState(){
-  const vals = ['#w1','#w2','#l1','#l2'].map(s => $(s).value);
-  const allPicked = vals.every(Boolean);
-  const unique = new Set(vals).size === 4;
-  $('#btn-submit').disabled = !(allPicked && unique);
+  new QRCode(document.getElementById('qr-lose'), {
+    text: base + '?result=lose',
+    width: 148, height: 148,
+    colorDark: '#0e0f11', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
 }
 
 // =================================================================
-// RENDER: History
+// RECORD RESULT (from QR scan)
 // =================================================================
-function renderHistory(){
-  const container = $('#history-list');
-  if(allMatches.length === 0){
-    container.innerHTML = '<div class="empty">ยังไม่มีประวัติแมตช์</div>';
-    return;
-  }
-
-  const nameOf = id => {
-    const p = allPlayers.find(p => p.id === id);
-    return p ? p.name : '—';
-  };
-
-  container.innerHTML = allMatches.map((m, idx) => {
-    const num = allMatches.length - idx;
-    const date = new Date(m.createdAt);
-    const dateStr = date.toLocaleDateString('th-TH',{day:'numeric',month:'short'})
-      + ' · ' + date.toLocaleTimeString('th-TH',{hour:'numeric',minute:'2-digit'});
-
-    return `
-      <div class="match-card">
-        <div class="when">
-          <span>#${num}</span>
-          <span>${dateStr}</span>
-        </div>
-        <div class="sides">
-          <div class="side win">
-            <div class="lbl">🏆 ชนะ</div>
-            <div class="names">${escHtml(nameOf(m.winners[0]))}<br>${escHtml(nameOf(m.winners[1]))}</div>
-          </div>
-          <div class="mid">vs</div>
-          <div class="side">
-            <div class="lbl">แพ้</div>
-            <div class="names">${escHtml(nameOf(m.losers[0]))}<br>${escHtml(nameOf(m.losers[1]))}</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// =================================================================
-// SUBMIT MATCH
-// =================================================================
-async function submitMatch(){
-  const w1 = $('#w1').value, w2 = $('#w2').value;
-  const l1 = $('#l1').value, l2 = $('#l2').value;
-
-  if(!w1||!w2||!l1||!l2){ toast('เลือกผู้เล่นให้ครบ'); return; }
-  if(new Set([w1,w2,l1,l2]).size !== 4){ toast('ห้ามเลือกซ้ำ'); return; }
-
-  $('#btn-submit').disabled = true;
-  $('#btn-submit').textContent = 'กำลังบันทึก...';
-
+async function processResult(result){
+  if(!currentUser) return;
   try{
-    const result = await apiPost({
-      action: 'submitMatch',
-      winners: [w1, w2],
-      losers: [l1, l2],
-      reportedBy: currentUser.lineUserId,
+    const res = await apiPost({
+      action: 'recordResult',
+      playerId: currentUser.id,
+      result: result,
+      points: result === 'win' ? 3 : 1,
     });
-
-    if(result.success){
-      toast('บันทึกแล้ว! 🏸');
-      // Reset form
-      ['#w1','#w2','#l1','#l2'].forEach(s => $(s).value = '');
-      // Reload data
+    if(res.success){
+      toast(result === 'win' ? 'บันทึกชนะแล้ว! +3 pts' : 'บันทึกแพ้แล้ว +1 pt');
       await loadAllData();
-      // Switch to rankings tab
       switchTab('ranks');
     } else {
-      toast(result.error || 'เกิดข้อผิดพลาด');
+      toast(res.error || 'เกิดข้อผิดพลาด');
     }
   }catch(err){
     console.error(err);
     toast('บันทึกไม่สำเร็จ');
   }
-
-  $('#btn-submit').disabled = false;
-  $('#btn-submit').textContent = 'บันทึกผล';
 }
 
 // =================================================================
@@ -758,6 +696,7 @@ function switchTab(viewName){
   $$('.view').forEach(s => s.classList.remove('active'));
   const target = $(`#view-${viewName}`);
   if(target) target.classList.add('active');
+  if(viewName === 'qr') renderQRCodes();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -765,24 +704,11 @@ function switchTab(viewName){
 // EVENT WIRING
 // =================================================================
 function wireEvents(){
-  // LINE Login button
   $('#btn-line-login').addEventListener('click', startLineLogin);
-
-  // Logout
   $('#btn-logout').addEventListener('click', logout);
-
-  // Tabs
   $$('.tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.view));
   });
-
-  // Selectors — re-render on change to prevent duplicates
-  ['#w1','#w2','#l1','#l2'].forEach(sel => {
-    $(sel).addEventListener('change', renderSelectors);
-  });
-
-  // Submit
-  $('#btn-submit').addEventListener('click', submitMatch);
 }
 
 // =================================================================
@@ -791,25 +717,37 @@ function wireEvents(){
 async function boot(){
   wireEvents();
 
-  // 1) Check if this is a LINE callback (has ?code= in URL)
   const params = new URLSearchParams(window.location.search);
+  const resultParam = params.get('result'); // 'win' or 'lose'
+
+  // 1) LINE callback
   if(params.has('code')){
     const ok = await handleLineCallback();
     if(ok){
       showApp();
       hideSplash();
+      const pending = sessionStorage.getItem('pendingResult');
+      if(pending){ sessionStorage.removeItem('pendingResult'); await processResult(pending); }
       return;
     }
   }
 
-  // 2) Check existing login
+  // 2) Already logged in
   if(checkExistingLogin()){
     showApp();
     hideSplash();
+    if(resultParam === 'win' || resultParam === 'lose'){
+      window.history.replaceState({}, '', window.location.pathname);
+      await processResult(resultParam);
+    }
     return;
   }
 
-  // 3) Not logged in — show login screen
+  // 3) Not logged in — save pending result then show login
+  if(resultParam === 'win' || resultParam === 'lose'){
+    sessionStorage.setItem('pendingResult', resultParam);
+    window.history.replaceState({}, '', window.location.pathname);
+  }
   showLogin();
   hideSplash();
 }
