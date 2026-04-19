@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 /* =================================================================
    DESIGN SYSTEM
@@ -273,13 +272,6 @@ select option{background:var(--bg-card);color:var(--ink)}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ---- Scanner ---- */
-#scanner-box{
-  width:100%;border-radius:var(--radius);overflow:hidden;
-  background:#000;margin:16px 0;display:none;
-}
-#scanner-box video{width:100%!important;border-radius:var(--radius)}
-.scan-hint{text-align:center;color:var(--ink-mute);font-size:13px;margin-top:8px}
 
 /* ---- Empty state ---- */
 .empty{
@@ -357,14 +349,12 @@ select option{background:var(--bg-card);color:var(--ink)}
 
     <!-- ---- VIEW: SCAN ---- -->
     <section class="view" id="view-qr">
-      <h2 class="section-title">สแกน<em>บันทึกผล</em></h2>
-      <div class="card" style="text-align:center">
-        <p class="text-mute text-sm" style="margin-bottom:16px">กดปุ่มแล้วสแกน QR ที่สนาม<br>ชนะ = +3 pts · แพ้ = +1 pt</p>
-        <button class="btn primary" id="btn-scan">เปิดกล้องสแกน QR</button>
-        <button class="btn" id="btn-scan-stop" style="display:none;margin-top:10px">ยกเลิก</button>
+      <h2 class="section-title">บันทึก<em>ผล</em></h2>
+      <div class="card" style="text-align:center;padding:32px 20px">
+        <div style="font-size:48px;margin-bottom:16px">📷</div>
+        <p style="font-size:17px;font-weight:600;margin:0 0 10px">เปิดกล้องโทรศัพท์</p>
+        <p class="text-mute text-sm" style="margin:0">แล้ว scan QR Code ที่ติดไว้ที่สนาม<br><br>ชนะ = <strong style="color:var(--accent)">+3 pts</strong> &nbsp;·&nbsp; แพ้ = +1 pt</p>
       </div>
-      <div id="scanner-box"></div>
-      <p class="scan-hint" id="scan-hint"></p>
     </section>
 
   </div><!-- /app-main -->
@@ -385,8 +375,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 const LINE_CHANNEL_ID = '2009832825';
 const API_BASE        = 'https://script.google.com/macros/s/AKfycbxew-76SnAI_Fj4h0bbaypxS18RHbCvHvEwd-Eh0lnc1zGmJTnp79fUNSTStuc1c7_ueA/exec';
 
-// LINE Login redirect URI = หน้าเว็บนี้เอง
-const REDIRECT_URI = window.location.origin + window.location.pathname;
+const REDIRECT_URI = 'https://satirap.github.io/badminton/';
 
 // =================================================================
 // STATE
@@ -618,47 +607,6 @@ function renderRanks(){
   }).join('');
 }
 
-// =================================================================
-// QR SCANNER
-// =================================================================
-let scanner = null;
-
-async function startScanner(){
-  $('#scanner-box').style.display = 'block';
-  $('#btn-scan').style.display = 'none';
-  $('#btn-scan-stop').style.display = 'block';
-  $('#scan-hint').textContent = 'กำลังเปิดกล้อง...';
-
-  scanner = new Html5Qrcode('scanner-box');
-  try{
-    await scanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 220, height: 220 } },
-      (decodedText) => {
-        const url = new URL(decodedText);
-        const result = url.searchParams.get('result');
-        if(result === 'win' || result === 'lose'){
-          stopScanner();
-          processResult(result);
-        } else {
-          $('#scan-hint').textContent = 'QR นี้ไม่ใช่ของก๊วน ลองใหม่';
-        }
-      }
-    );
-    $('#scan-hint').textContent = 'จ่อกล้องไปที่ QR ชนะ หรือ แพ้';
-  }catch(err){
-    stopScanner();
-    toast('เปิดกล้องไม่ได้ — กรุณาอนุญาตการใช้กล้อง');
-  }
-}
-
-function stopScanner(){
-  if(scanner){ scanner.stop().catch(()=>{}); scanner = null; }
-  $('#scanner-box').style.display = 'none';
-  $('#btn-scan').style.display = 'block';
-  $('#btn-scan-stop').style.display = 'none';
-  $('#scan-hint').textContent = '';
-}
 
 // =================================================================
 // RECORD RESULT (from QR scan)
@@ -693,7 +641,6 @@ function switchTab(viewName){
   $$('.view').forEach(s => s.classList.remove('active'));
   const target = $(`#view-${viewName}`);
   if(target) target.classList.add('active');
-  if(viewName !== 'qr') stopScanner();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -706,8 +653,6 @@ function wireEvents(){
   $$('.tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.view));
   });
-  $('#btn-scan').addEventListener('click', startScanner);
-  $('#btn-scan-stop').addEventListener('click', stopScanner);
 }
 
 // =================================================================
