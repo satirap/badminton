@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Shuttle · แบดมินตัน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* =================================================================
+   DESIGN SYSTEM
+   Sporty-editorial: dark ground, neon accent, confident type
+   ================================================================= */
+:root {
+  --bg:       #0e0f11;
+  --bg-card:  #181a1e;
+  --bg-input: #1f2228;
+  --ink:      #e8e6e1;
+  --ink-soft: #9b9a95;
+  --ink-mute: #5c5b57;
+  --line:     #2a2c31;
+  --accent:   #c6f135;
+  --accent-dim:#c6f13530;
+  --danger:   #f14e4e;
+  --gold:     #ffd644;
+  --silver:   #b8c0cc;
+  --bronze:   #d4915e;
+  --radius:   16px;
+  --radius-sm:12px;
+  --shadow:   0 2px 20px -8px #000a;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background: var(--bg);
+  color: var(--ink);
+  font-family:'DM Sans', system-ui, sans-serif;
+  font-size:16px;
+  line-height:1.45;
+  min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---- App shell ---- */
+.app{max-width:480px;margin:0 auto;padding:0 16px 120px;position:relative}
+
+/* ---- Loading / splash ---- */
+#splash{
+  position:fixed;inset:0;z-index:200;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;
+  transition:opacity .4s ease;
+}
+#splash.hide{opacity:0;pointer-events:none}
+#splash .logo{font-family:'Instrument Serif',serif;font-size:48px;letter-spacing:-.03em}
+#splash .dot{display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:50%;margin:0 1px 6px 2px}
+#splash .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+#splash .loading{animation:pulse 1.2s ease infinite}
+
+/* ---- Header ---- */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 0 14px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:6px;
+}
+.header .brand{
+  font-family:'Instrument Serif',serif;
+  font-size:28px;letter-spacing:-.02em;
+  display:flex;align-items:center;gap:1px;
+}
+.header .brand .dot{display:inline-block;width:7px;height:7px;background:var(--accent);border-radius:50%;margin:0 1px 4px 1px}
+.header .user-info{display:flex;align-items:center;gap:10px}
+.header .user-info img{width:34px;height:34px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+.header .user-info .uname{font-size:13px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header .logout{
+  background:none;border:1px solid var(--line);color:var(--ink-mute);
+  font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
+}
+
+/* ---- Tab bar ---- */
+.tabs{
+  position:sticky;top:0;z-index:20;
+  background:var(--bg);
+  border-bottom:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin:0 -16px;padding:0 8px;
+}
+.tab{
+  appearance:none;border:0;background:transparent;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-mute);padding:14px 6px 12px;cursor:pointer;
+  position:relative;transition:color .2s;
+}
+.tab[aria-selected="true"]{color:var(--accent)}
+.tab[aria-selected="true"]::after{
+  content:'';position:absolute;left:16%;right:16%;bottom:-1px;
+  height:3px;background:var(--accent);border-radius:2px 2px 0 0;
+}
+
+/* ---- Views ---- */
+section.view{display:none;animation:fadeUp .25s ease}
+section.view.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.section-title{
+  font-family:'Instrument Serif',serif;font-size:32px;
+  letter-spacing:-.02em;margin:20px 0 16px;line-height:1.1;
+}
+.section-title em{font-style:italic;color:var(--ink-soft)}
+
+/* ---- Cards ---- */
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+.card+.card{margin-top:12px}
+
+/* ---- Form elements ---- */
+label.field{
+  display:block;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:8px;
+}
+select{
+  width:100%;background:var(--bg-input);
+  border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  padding:14px;font:inherit;font-size:16px;color:var(--ink);
+  outline:none;-webkit-appearance:none;appearance:none;
+  background-image:
+    linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),
+    linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
+  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  padding-right:36px;transition:border-color .15s,box-shadow .15s;
+}
+select:focus{box-shadow:0 0 0 3px var(--accent-dim);border-color:var(--accent)}
+select option{background:var(--bg-card);color:var(--ink)}
+
+/* ---- Buttons ---- */
+.btn{
+  appearance:none;border:1.5px solid var(--line);
+  background:var(--bg-input);color:var(--ink);
+  font-family:inherit;font-weight:600;font-size:16px;
+  padding:16px 18px;width:100%;border-radius:var(--radius-sm);
+  cursor:pointer;transition:transform .06s,background .15s;
+  min-height:54px;
+}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--accent);color:#111;border-color:var(--accent)}
+.btn.primary:disabled{opacity:.35;cursor:not-allowed}
+.btn.line-btn{
+  background:#06c755;color:#fff;border-color:#06c755;
+  font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;
+  min-height:58px;border-radius:var(--radius);
+}
+.btn.line-btn svg{flex-shrink:0}
+
+/* ---- Winner toggle ---- */
+.winner-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.winner-row button{
+  appearance:none;border:1.5px solid var(--line);
+  background:var(--bg-input);color:var(--ink);
+  padding:16px 10px;border-radius:var(--radius-sm);
+  font:inherit;font-weight:600;cursor:pointer;font-size:15px;min-height:54px;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.winner-row button[aria-pressed="true"]{
+  background:var(--accent);color:#111;border-color:var(--accent);
+}
+
+/* ---- Ranking rows ---- */
+.rank-list{display:flex;flex-direction:column;gap:8px}
+.rank-row{
+  display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:12px;
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:14px 16px;
+  position:relative;overflow:hidden;
+}
+.rank-row .pos{
+  font-family:'Instrument Serif',serif;font-weight:400;
+  font-size:24px;text-align:center;color:var(--ink-soft);
+}
+.rank-row .info{min-width:0;display:flex;flex-direction:column;gap:2px}
+.rank-row .info .n{
+  font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.rank-row .info .n img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.rank-row .info .stats{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+  letter-spacing:.08em;color:var(--ink-mute);text-transform:uppercase;
+}
+.rank-row .pts{
+  font-family:'Instrument Serif',serif;font-size:28px;text-align:right;
+}
+.rank-row .pts small{
+  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:-4px;
+}
+
+/* Podium highlights */
+.rank-row.p1{background:linear-gradient(105deg,var(--bg-card) 50%,#c6f13520 100%);border-color:var(--accent)}
+.rank-row.p1 .pos{color:var(--accent)}
+.rank-row.p2{border-color:var(--silver)}
+.rank-row.p2 .pos{color:var(--silver)}
+.rank-row.p3{border-color:var(--bronze)}
+.rank-row.p3 .pos{color:var(--bronze)}
+
+/* ---- Match history cards ---- */
+.match-card{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:14px;
+}
+.match-card+.match-card{margin-top:10px}
+.match-card .when{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);
+  margin-bottom:10px;display:flex;justify-content:space-between;
+}
+.match-card .sides{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
+.match-card .side{
+  padding:10px;border-radius:10px;
+  background:var(--bg-input);border:1px dashed transparent;
+}
+.match-card .side.win{background:var(--accent-dim);border-color:var(--accent)}
+.match-card .side .lbl{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute);
+  margin-bottom:4px;
+}
+.match-card .side.win .lbl{color:var(--accent)}
+.match-card .side .names{font-weight:600;font-size:14px;line-height:1.35}
+.match-card .mid{
+  font-family:'Instrument Serif',serif;font-style:italic;
+  color:var(--ink-mute);font-size:14px;text-align:center;
+}
+
+/* ---- Login screen ---- */
+#view-login{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:70dvh;gap:24px;text-align:center;
+}
+#view-login .hero{
+  font-family:'Instrument Serif',serif;font-size:56px;
+  letter-spacing:-.03em;line-height:.95;
+}
+#view-login .hero .dot{display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:50%;margin:0 1px 8px 2px}
+#view-login .tagline{color:var(--ink-soft);font-size:15px;max-width:260px;margin:0 auto}
+#view-login .login-wrap{width:100%;max-width:320px}
+
+/* ---- Toast ---- */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(40px);
+  background:var(--accent);color:#111;
+  padding:12px 20px;border-radius:100px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+  opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
+  z-index:50;pointer-events:none;box-shadow:0 10px 30px -10px #000a;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---- Empty state ---- */
+.empty{
+  text-align:center;padding:40px 20px;
+  color:var(--ink-mute);font-style:italic;
+  font-family:'Instrument Serif',serif;font-size:16px;
+}
+
+/* ---- Utility ---- */
+.mt{margin-top:14px}
+.mb{margin-bottom:14px}
+.gap-sm{gap:8px}
+.text-mute{color:var(--ink-mute)}
+.text-sm{font-size:13px}
+.text-center{text-align:center}
+
+/* Small screens */
+@media(max-width:360px){
+  .match-card .sides{grid-template-columns:1fr}
+  .match-card .mid{padding:4px 0}
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     SPLASH SCREEN
+     ================================================================ -->
+<div id="splash">
+  <div class="logo">shuttle<span class="dot"></span></div>
+  <div class="sub loading">กำลังโหลด...</div>
+</div>
+
+<main class="app">
+
+  <!-- ================================================================
+       LOGIN SCREEN (shown when not authenticated)
+       ================================================================ -->
+  <section id="view-login" class="view">
+    <div class="hero">shuttle<span class="dot"></span></div>
+    <p class="tagline">สแกน QR ที่สนาม → เข้าสู่ระบบด้วย LINE → เก็บคะแนนแบดมินตัน</p>
+    <div class="login-wrap">
+      <button class="btn line-btn" id="btn-line-login">
+        <!-- LINE icon -->
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 5.83 2 10.43c0 4.18 3.7 7.68 8.7 8.34.34.07.8.22.91.51.1.26.07.67.03.93l-.15.88c-.04.26-.2 1.02.9.56 1.09-.47 5.89-3.47 8.04-5.94C22.19 13.74 22 12.14 22 10.43 22 5.83 17.52 2 12 2z" fill="#fff"/></svg>
+        เข้าสู่ระบบด้วย LINE
+      </button>
+    </div>
+  </section>
+
+  <!-- ================================================================
+       MAIN APP (shown after login)
+       ================================================================ -->
+  <div id="app-main" style="display:none">
+
+    <header class="header">
+      <div class="brand">shuttle<span class="dot"></span></div>
+      <div class="user-info">
+        <span class="uname" id="display-name">—</span>
+        <img id="display-pic" src="" alt="profile" />
+        <button class="logout" id="btn-logout">ออก</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-view="ranks">อันดับ</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึก</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="history">ประวัติ</button>
+    </nav>
+
+    <!-- ---- VIEW: RANKINGS ---- -->
+    <section class="view active" id="view-ranks">
+      <h2 class="section-title">อันดับ<em>คะแนน</em></h2>
+      <div class="rank-list" id="rank-list"></div>
+    </section>
+
+    <!-- ---- VIEW: RECORD MATCH ---- -->
+    <section class="view" id="view-record">
+      <h2 class="section-title">บันทึก<em>ผลแมตช์</em></h2>
+      <div class="card">
+
+        <!-- ทีมชนะ -->
+        <label class="field">🏆 ทีมชนะ</label>
+        <select id="w1"><option value="">— เลือกผู้เล่น 1 —</option></select>
+        <div class="mt"></div>
+        <select id="w2"><option value="">— เลือกผู้เล่น 2 —</option></select>
+
+        <div style="height:18px"></div>
+
+        <!-- ทีมแพ้ -->
+        <label class="field">ทีมแพ้</label>
+        <select id="l1"><option value="">— เลือกผู้เล่น 1 —</option></select>
+        <div class="mt"></div>
+        <select id="l2"><option value="">— เลือกผู้เล่น 2 —</option></select>
+
+        <div class="mt"></div>
+        <button class="btn primary" id="btn-submit" disabled>บันทึกผล</button>
+      </div>
+
+      <p class="text-center text-mute text-sm mt">
+        ชนะ = +3 คะแนน &nbsp;·&nbsp; แพ้ = +1 คะแนน<br>
+        ใครก็บันทึกได้ · trust-based
+      </p>
+    </section>
+
+    <!-- ---- VIEW: HISTORY ---- -->
+    <section class="view" id="view-history">
+      <h2 class="section-title">ประวัติ<em>แมตช์</em></h2>
+      <div id="history-list"></div>
+    </section>
+
+  </div><!-- /app-main -->
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =================================================================
+   SHUTTLE — BADMINTON TRACKER
+   Frontend with LINE Login + Google Sheets API backend
+   ================================================================= */
+
+// =================================================================
+// ⚙️ CONFIG — แก้ 2 ค่านี้
+// =================================================================
+const LINE_CHANNEL_ID = '2009832825';
+const API_BASE        = 'https://script.google.com/macros/s/AKfycbxlqv08gAPd0SoQ48UDow3hfhX6q8psr_PmRSLDN5prHPh9LYyxthnXYXPudsWgohTb0A/exec';
+
+// LINE Login redirect URI = หน้าเว็บนี้เอง
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+// =================================================================
+// STATE
+// =================================================================
+let currentUser  = null;   // { id, name, lineUserId, pictureUrl }
+let allPlayers   = [];
+let allMatches   = [];
+let allRankings  = [];
+
+// =================================================================
+// DOM helpers
+// =================================================================
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
+function escHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toast(msg){
+  const el=$('#toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+// =================================================================
+// API calls (Google Apps Script)
+// =================================================================
+async function api(action, params={}){
+  const url = new URL(API_BASE);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k,v])=> url.searchParams.set(k,v));
+  const res = await fetch(url.toString());
+  return res.json();
+}
+
+async function apiPost(body){
+  // Google Apps Script Web App requires redirect-following for POST
+  const res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: {'Content-Type':'text/plain'},  // GAS quirk: use text/plain to avoid preflight
+    body: JSON.stringify(body),
+    redirect: 'follow',
+  });
+  return res.json();
+}
+
+// =================================================================
+// LINE LOGIN (OAuth2 PKCE — no server needed)
+// =================================================================
+
+// Generate random state & code_verifier for PKCE
+function randomString(len){
+  const arr = new Uint8Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b=> b.toString(36).padStart(2,'0')).join('').slice(0,len);
+}
+
+async function sha256(plain){
+  const data = new TextEncoder().encode(plain);
+  return await crypto.subtle.digest('SHA-256', data);
+}
+
+function base64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+
+async function startLineLogin(){
+  const state = randomString(32);
+  const codeVerifier = randomString(64);
+
+  // Save for callback
+  sessionStorage.setItem('line_state', state);
+  sessionStorage.setItem('line_code_verifier', codeVerifier);
+
+  const codeChallenge = base64url(await sha256(codeVerifier));
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: LINE_CHANNEL_ID,
+    redirect_uri: REDIRECT_URI,
+    state: state,
+    scope: 'profile openid',
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
+  });
+
+  window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
+}
+
+async function handleLineCallback(){
+  const params = new URLSearchParams(window.location.search);
+  const code  = params.get('code');
+  const state = params.get('state');
+
+  if(!code) return false;
+
+  const savedState = sessionStorage.getItem('line_state');
+  if(state !== savedState){ console.error('State mismatch'); return false; }
+
+  const codeVerifier = sessionStorage.getItem('line_code_verifier');
+  sessionStorage.removeItem('line_state');
+  sessionStorage.removeItem('line_code_verifier');
+
+  try{
+    // ส่ง code ไป Apps Script — backend จะแลก token กับ LINE แทน (หลีกเลี่ยง CORS)
+    const result = await apiPost({
+      action: 'lineLogin',
+      code: code,
+      codeVerifier: codeVerifier,
+      redirectUri: REDIRECT_URI,
+    });
+
+    if(!result.success){
+      console.error('LINE login failed', result);
+      return false;
+    }
+
+    currentUser = result.player;
+    localStorage.setItem('shuttle_user',   JSON.stringify({ lineUserId: currentUser.lineUserId, name: currentUser.name, pictureUrl: currentUser.pictureUrl }));
+    localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
+
+    // ล้าง ?code= ออกจาก URL
+    window.history.replaceState({}, '', window.location.pathname);
+
+    if(result.isNew) toast('ยินดีต้อนรับ! 🏸');
+    return true;
+
+  }catch(err){
+    console.error('LINE login error', err);
+    return false;
+  }
+}
+
+// Check if already logged in
+function checkExistingLogin(){
+  const saved = localStorage.getItem('shuttle_user');
+  const player = localStorage.getItem('shuttle_player');
+  if(saved && player){
+    const userData = JSON.parse(saved);
+    currentUser = JSON.parse(player);
+    return true;
+  }
+  return false;
+}
+
+function logout(){
+  localStorage.removeItem('shuttle_user');
+  localStorage.removeItem('shuttle_player');
+  currentUser = null;
+  showLogin();
+}
+
+// =================================================================
+// UI — Show/hide screens
+// =================================================================
+function showLogin(){
+  $('#view-login').style.display = 'flex';
+  $('#app-main').style.display = 'none';
+}
+
+function showApp(){
+  $('#view-login').style.display = 'none';
+  $('#app-main').style.display = 'block';
+
+  // Display user info
+  $('#display-name').textContent = currentUser.name;
+  const pic = $('#display-pic');
+  if(currentUser.pictureUrl){
+    pic.src = currentUser.pictureUrl;
+    pic.style.display = 'block';
+  } else {
+    pic.style.display = 'none';
+  }
+
+  // Load data
+  loadAllData();
+}
+
+function hideSplash(){
+  const s = $('#splash');
+  s.classList.add('hide');
+  setTimeout(()=> s.remove(), 500);
+}
+
+// =================================================================
+// DATA LOADING
+// =================================================================
+async function loadAllData(){
+  try{
+    const [playersRes, matchesRes, rankingsRes] = await Promise.all([
+      api('getPlayers'),
+      api('getMatches'),
+      api('getRankings'),
+    ]);
+
+    allPlayers  = playersRes.players  || [];
+    allMatches  = matchesRes.matches  || [];
+    allRankings = rankingsRes.rankings || [];
+
+    renderRanks();
+    renderSelectors();
+    renderHistory();
+  }catch(err){
+    console.error('Data load error', err);
+    toast('โหลดข้อมูลไม่สำเร็จ');
+  }
+}
+
+// =================================================================
+// RENDER: Rankings
+// =================================================================
+function renderRanks(){
+  const container = $('#rank-list');
+  if(allRankings.length === 0){
+    container.innerHTML = '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>เริ่มเล่นแล้วบันทึกผลกันเลย!</div>';
+    return;
+  }
+
+  container.innerHTML = allRankings.map((r, i) => {
+    const podium = i < 3 ? `p${i+1}` : '';
+    const medal = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
+    const picHtml = r.pictureUrl
+      ? `<img src="${escHtml(r.pictureUrl)}" alt="" />`
+      : '';
+    return `
+      <div class="rank-row ${podium}">
+        <div class="pos">${medal || (i+1)}</div>
+        <div class="info">
+          <span class="n">${picHtml}${escHtml(r.name)}</span>
+          <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
+        </div>
+        <div class="pts">${r.points}<small>pts</small></div>
+      </div>
+    `;
+  }).join('');
+}
+
+// =================================================================
+// RENDER: Match selectors (prevent duplicates)
+// =================================================================
+function renderSelectors(){
+  const selects = ['#w1','#w2','#l1','#l2'].map(s => $(s));
+  const current = selects.map(s => s.value);
+
+  selects.forEach((sel, idx) => {
+    const taken = new Set(current.filter((v,i) => v && i !== idx));
+    const keep = current[idx];
+
+    sel.innerHTML =
+      `<option value="">— เลือกผู้เล่น —</option>` +
+      allPlayers
+        .filter(p => !taken.has(p.id) || p.id === keep)
+        .map(p => `<option value="${p.id}" ${p.id===keep?'selected':''}>${escHtml(p.name)}</option>`)
+        .join('');
+  });
+
+  updateSubmitState();
+}
+
+function updateSubmitState(){
+  const vals = ['#w1','#w2','#l1','#l2'].map(s => $(s).value);
+  const allPicked = vals.every(Boolean);
+  const unique = new Set(vals).size === 4;
+  $('#btn-submit').disabled = !(allPicked && unique);
+}
+
+// =================================================================
+// RENDER: History
+// =================================================================
+function renderHistory(){
+  const container = $('#history-list');
+  if(allMatches.length === 0){
+    container.innerHTML = '<div class="empty">ยังไม่มีประวัติแมตช์</div>';
+    return;
+  }
+
+  const nameOf = id => {
+    const p = allPlayers.find(p => p.id === id);
+    return p ? p.name : '—';
+  };
+
+  container.innerHTML = allMatches.map((m, idx) => {
+    const num = allMatches.length - idx;
+    const date = new Date(m.createdAt);
+    const dateStr = date.toLocaleDateString('th-TH',{day:'numeric',month:'short'})
+      + ' · ' + date.toLocaleTimeString('th-TH',{hour:'numeric',minute:'2-digit'});
+
+    return `
+      <div class="match-card">
+        <div class="when">
+          <span>#${num}</span>
+          <span>${dateStr}</span>
+        </div>
+        <div class="sides">
+          <div class="side win">
+            <div class="lbl">🏆 ชนะ</div>
+            <div class="names">${escHtml(nameOf(m.winners[0]))}<br>${escHtml(nameOf(m.winners[1]))}</div>
+          </div>
+          <div class="mid">vs</div>
+          <div class="side">
+            <div class="lbl">แพ้</div>
+            <div class="names">${escHtml(nameOf(m.losers[0]))}<br>${escHtml(nameOf(m.losers[1]))}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// =================================================================
+// SUBMIT MATCH
+// =================================================================
+async function submitMatch(){
+  const w1 = $('#w1').value, w2 = $('#w2').value;
+  const l1 = $('#l1').value, l2 = $('#l2').value;
+
+  if(!w1||!w2||!l1||!l2){ toast('เลือกผู้เล่นให้ครบ'); return; }
+  if(new Set([w1,w2,l1,l2]).size !== 4){ toast('ห้ามเลือกซ้ำ'); return; }
+
+  $('#btn-submit').disabled = true;
+  $('#btn-submit').textContent = 'กำลังบันทึก...';
+
+  try{
+    const result = await apiPost({
+      action: 'submitMatch',
+      winners: [w1, w2],
+      losers: [l1, l2],
+      reportedBy: currentUser.lineUserId,
+    });
+
+    if(result.success){
+      toast('บันทึกแล้ว! 🏸');
+      // Reset form
+      ['#w1','#w2','#l1','#l2'].forEach(s => $(s).value = '');
+      // Reload data
+      await loadAllData();
+      // Switch to rankings tab
+      switchTab('ranks');
+    } else {
+      toast(result.error || 'เกิดข้อผิดพลาด');
+    }
+  }catch(err){
+    console.error(err);
+    toast('บันทึกไม่สำเร็จ');
+  }
+
+  $('#btn-submit').disabled = false;
+  $('#btn-submit').textContent = 'บันทึกผล';
+}
+
+// =================================================================
+// TAB NAVIGATION
+// =================================================================
+function switchTab(viewName){
+  $$('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.view === viewName ? 'true':'false'));
+  $$('.view').forEach(s => s.classList.remove('active'));
+  const target = $(`#view-${viewName}`);
+  if(target) target.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// =================================================================
+// EVENT WIRING
+// =================================================================
+function wireEvents(){
+  // LINE Login button
+  $('#btn-line-login').addEventListener('click', startLineLogin);
+
+  // Logout
+  $('#btn-logout').addEventListener('click', logout);
+
+  // Tabs
+  $$('.tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.view));
+  });
+
+  // Selectors — re-render on change to prevent duplicates
+  ['#w1','#w2','#l1','#l2'].forEach(sel => {
+    $(sel).addEventListener('change', renderSelectors);
+  });
+
+  // Submit
+  $('#btn-submit').addEventListener('click', submitMatch);
+}
+
+// =================================================================
+// BOOT
+// =================================================================
+async function boot(){
+  wireEvents();
+
+  // 1) Check if this is a LINE callback (has ?code= in URL)
+  const params = new URLSearchParams(window.location.search);
+  if(params.has('code')){
+    const ok = await handleLineCallback();
+    if(ok){
+      showApp();
+      hideSplash();
+      return;
+    }
+  }
+
+  // 2) Check existing login
+  if(checkExistingLogin()){
+    showApp();
+    hideSplash();
+    return;
+  }
+
+  // 3) Not logged in — show login screen
+  showLogin();
+  hideSplash();
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
