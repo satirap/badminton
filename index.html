@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 /* =================================================================
    DESIGN SYSTEM
@@ -273,28 +273,13 @@ select option{background:var(--bg-card);color:var(--ink)}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ---- QR Codes ---- */
-.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-.qr-card{
-  background:var(--bg-card);border:1px solid var(--line);
-  border-radius:var(--radius);padding:20px 12px;text-align:center;
+/* ---- Scanner ---- */
+#scanner-box{
+  width:100%;border-radius:var(--radius);overflow:hidden;
+  background:#000;margin:16px 0;display:none;
 }
-.qr-card.win{border-color:var(--accent)}
-.qr-card .qr-label{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;
-  letter-spacing:.16em;text-transform:uppercase;font-weight:600;
-  margin-bottom:14px;
-}
-.qr-card.win .qr-label{color:var(--accent)}
-.qr-card.lose .qr-label{color:var(--ink-soft)}
-.qr-card .qr-box{display:flex;justify-content:center;align-items:center}
-.qr-card .qr-box canvas,.qr-card .qr-box img{border-radius:8px;max-width:100%}
-.qr-pts{
-  font-family:'Instrument Serif',serif;font-size:28px;
-  margin-top:10px;
-}
-.qr-card.win .qr-pts{color:var(--accent)}
-.qr-sub{font-size:11px;color:var(--ink-mute);margin-top:4px}
+#scanner-box video{width:100%!important;border-radius:var(--radius)}
+.scan-hint{text-align:center;color:var(--ink-mute);font-size:13px;margin-top:8px}
 
 /* ---- Empty state ---- */
 .empty{
@@ -361,7 +346,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-view="ranks">อันดับ</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="qr">QR บันทึกผล</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="qr">บันทึกผล</button>
     </nav>
 
     <!-- ---- VIEW: RANKINGS ---- -->
@@ -370,24 +355,16 @@ select option{background:var(--bg-card);color:var(--ink)}
       <div class="rank-list" id="rank-list"></div>
     </section>
 
-    <!-- ---- VIEW: QR CODE ---- -->
+    <!-- ---- VIEW: SCAN ---- -->
     <section class="view" id="view-qr">
       <h2 class="section-title">สแกน<em>บันทึกผล</em></h2>
-      <p class="text-mute text-sm" style="margin-bottom:4px">scan QR แล้วระบบจะบันทึกผลให้คุณทันที</p>
-      <div class="qr-grid">
-        <div class="qr-card win">
-          <div class="qr-label">ชนะ</div>
-          <div class="qr-box" id="qr-win"></div>
-          <div class="qr-pts">+3</div>
-          <div class="qr-sub">pts</div>
-        </div>
-        <div class="qr-card lose">
-          <div class="qr-label">แพ้</div>
-          <div class="qr-box" id="qr-lose"></div>
-          <div class="qr-pts">+1</div>
-          <div class="qr-sub">pts</div>
-        </div>
+      <div class="card" style="text-align:center">
+        <p class="text-mute text-sm" style="margin-bottom:16px">กดปุ่มแล้วสแกน QR ที่สนาม<br>ชนะ = +3 pts · แพ้ = +1 pt</p>
+        <button class="btn primary" id="btn-scan">เปิดกล้องสแกน QR</button>
+        <button class="btn" id="btn-scan-stop" style="display:none;margin-top:10px">ยกเลิก</button>
       </div>
+      <div id="scanner-box"></div>
+      <p class="scan-hint" id="scan-hint"></p>
     </section>
 
   </div><!-- /app-main -->
@@ -642,25 +619,45 @@ function renderRanks(){
 }
 
 // =================================================================
-// RENDER: QR Codes
+// QR SCANNER
 // =================================================================
-let qrGenerated = false;
-function renderQRCodes(){
-  if(qrGenerated) return;
-  qrGenerated = true;
-  const base = window.location.origin + window.location.pathname;
-  new QRCode(document.getElementById('qr-win'), {
-    text: base + '?result=win',
-    width: 148, height: 148,
-    colorDark: '#0e0f11', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
-  new QRCode(document.getElementById('qr-lose'), {
-    text: base + '?result=lose',
-    width: 148, height: 148,
-    colorDark: '#0e0f11', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
+let scanner = null;
+
+async function startScanner(){
+  $('#scanner-box').style.display = 'block';
+  $('#btn-scan').style.display = 'none';
+  $('#btn-scan-stop').style.display = 'block';
+  $('#scan-hint').textContent = 'กำลังเปิดกล้อง...';
+
+  scanner = new Html5Qrcode('scanner-box');
+  try{
+    await scanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      (decodedText) => {
+        const url = new URL(decodedText);
+        const result = url.searchParams.get('result');
+        if(result === 'win' || result === 'lose'){
+          stopScanner();
+          processResult(result);
+        } else {
+          $('#scan-hint').textContent = 'QR นี้ไม่ใช่ของก๊วน ลองใหม่';
+        }
+      }
+    );
+    $('#scan-hint').textContent = 'จ่อกล้องไปที่ QR ชนะ หรือ แพ้';
+  }catch(err){
+    stopScanner();
+    toast('เปิดกล้องไม่ได้ — กรุณาอนุญาตการใช้กล้อง');
+  }
+}
+
+function stopScanner(){
+  if(scanner){ scanner.stop().catch(()=>{}); scanner = null; }
+  $('#scanner-box').style.display = 'none';
+  $('#btn-scan').style.display = 'block';
+  $('#btn-scan-stop').style.display = 'none';
+  $('#scan-hint').textContent = '';
 }
 
 // =================================================================
@@ -696,7 +693,7 @@ function switchTab(viewName){
   $$('.view').forEach(s => s.classList.remove('active'));
   const target = $(`#view-${viewName}`);
   if(target) target.classList.add('active');
-  if(viewName === 'qr') renderQRCodes();
+  if(viewName !== 'qr') stopScanner();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -709,6 +706,8 @@ function wireEvents(){
   $$('.tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.view));
   });
+  $('#btn-scan').addEventListener('click', startScanner);
+  $('#btn-scan-stop').addEventListener('click', stopScanner);
 }
 
 // =================================================================
