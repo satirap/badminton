@@ -390,11 +390,11 @@ select option{background:var(--bg-card);color:var(--ink)}
     <!-- ---- VIEW: RECORD ---- -->
     <section class="view" id="view-record">
       <h2 class="section-title">บันทึก<em>ผล</em></h2>
-      <button class="btn primary" id="btn-scan-qr" style="margin-bottom:16px;display:none">
-        สแกน QR บันทึกผล
+      <p class="text-mute text-sm" style="margin-bottom:24px">สแกน QR Code ที่สนาม แล้วกดปุ่มด้านล่าง</p>
+      <button class="btn primary" id="btn-scan-qr" style="width:100%;padding:18px;font-size:1.1rem">
+        📷 สแกน QR บันทึกผล
       </button>
-      <p class="text-mute text-sm" style="margin-bottom:16px" id="record-hint">กดปุ่มที่ตรงกับผลของคุณในเกมนี้</p>
-      <div class="result-grid">
+      <div style="display:none">
         <button class="btn-result win" id="btn-win">
           <span class="r-pts">+3</span>
           <span class="r-label">ชนะ</span>
@@ -747,13 +747,7 @@ function wireEvents(){
   $('#btn-scan-qr').addEventListener('click', openLineScanner);
 }
 
-function setupRecordTab(){
-  // แสดงปุ่ม scan เฉพาะใน LINE app
-  if(liff.isInClient()){
-    $('#btn-scan-qr').style.display = 'block';
-    $('#record-hint').textContent = 'สแกน QR หรือกดปุ่มด้านล่างได้เลย';
-  }
-}
+function setupRecordTab(){}
 
 // =================================================================
 // BOOT
