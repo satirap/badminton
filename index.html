@@ -390,7 +390,10 @@ select option{background:var(--bg-card);color:var(--ink)}
     <!-- ---- VIEW: RECORD ---- -->
     <section class="view" id="view-record">
       <h2 class="section-title">บันทึก<em>ผล</em></h2>
-      <p class="text-mute text-sm" style="margin-bottom:16px">กดปุ่มที่ตรงกับผลของคุณในเกมนี้</p>
+      <button class="btn primary" id="btn-scan-qr" style="margin-bottom:16px;display:none">
+        สแกน QR บันทึกผล
+      </button>
+      <p class="text-mute text-sm" style="margin-bottom:16px" id="record-hint">กดปุ่มที่ตรงกับผลของคุณในเกมนี้</p>
       <div class="result-grid">
         <button class="btn-result win" id="btn-win">
           <span class="r-pts">+3</span>
@@ -541,6 +544,7 @@ function showLogin(){
 function showApp(){
   $('#view-login').style.display = 'none';
   $('#app-main').style.display = 'block';
+  setupRecordTab();
 
   // Display user info
   $('#display-name').textContent = currentUser.name;
@@ -717,6 +721,21 @@ async function recordResult(result){
   btn.classList.remove('loading');
 }
 
+async function openLineScanner(){
+  try{
+    const res = await liff.scanCodeV2();
+    const url  = new URL(res.value);
+    const gameResult = url.searchParams.get('result');
+    if(gameResult === 'win' || gameResult === 'lose'){
+      await processResult(gameResult);
+    } else {
+      toast('QR นี้ไม่ใช่ของก๊วน ลองใหม่');
+    }
+  }catch(err){
+    if(err?.code !== 'CANCEL') toast('ปิดกล้องแล้ว');
+  }
+}
+
 function wireEvents(){
   $('#btn-line-login').addEventListener('click', () => liff.login({ redirectUri: window.location.href }));
   $('#btn-logout').addEventListener('click', logout);
@@ -725,6 +744,15 @@ function wireEvents(){
   });
   $('#btn-win').addEventListener('click',  () => recordResult('win'));
   $('#btn-lose').addEventListener('click', () => recordResult('lose'));
+  $('#btn-scan-qr').addEventListener('click', openLineScanner);
+}
+
+function setupRecordTab(){
+  // แสดงปุ่ม scan เฉพาะใน LINE app
+  if(liff.isInClient()){
+    $('#btn-scan-qr').style.display = 'block';
+    $('#record-hint').textContent = 'สแกน QR หรือกดปุ่มด้านล่างได้เลย';
+  }
 }
 
 // =================================================================
