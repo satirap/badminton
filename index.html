@@ -373,7 +373,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 // ⚙️ CONFIG — แก้ 2 ค่านี้
 // =================================================================
 const LINE_CHANNEL_ID = '2009832825';
-const API_BASE        = 'https://script.google.com/macros/s/AKfycbxew-76SnAI_Fj4h0bbaypxS18RHbCvHvEwd-Eh0lnc1zGmJTnp79fUNSTStuc1c7_ueA/exec';
+const API_BASE        = 'https://script.google.com/macros/s/AKfycbwGqnz1oxW3Ao0uSYEiq_t5OJs6M-yf5IrENd2WsDI-ngl_0lYkcerjP5rCUPtL0o81ow/exec';
 
 const REDIRECT_URI = 'https://satirap.github.io/badminton/';
 
@@ -442,13 +442,7 @@ function base64url(buf){
 
 async function startLineLogin(){
   const state = randomString(32);
-  const codeVerifier = randomString(64);
-
-  // Save for callback
   localStorage.setItem('line_state', state);
-  localStorage.setItem('line_code_verifier', codeVerifier);
-
-  const codeChallenge = base64url(await sha256(codeVerifier));
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -456,8 +450,6 @@ async function startLineLogin(){
     redirect_uri: REDIRECT_URI,
     state: state,
     scope: 'profile openid',
-    code_challenge: codeChallenge,
-    code_challenge_method: 'S256',
   });
 
   window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
@@ -470,19 +462,12 @@ async function handleLineCallback(){
 
   if(!code) return false;
 
-  const savedState = localStorage.getItem('line_state');
-  if(state !== savedState){ console.error('State mismatch'); return false; }
-
-  const codeVerifier = localStorage.getItem('line_code_verifier');
   localStorage.removeItem('line_state');
-  localStorage.removeItem('line_code_verifier');
 
   try{
-    // ส่ง code ไป Apps Script — backend จะแลก token กับ LINE แทน (หลีกเลี่ยง CORS)
     const result = await apiPost({
       action: 'lineLogin',
       code: code,
-      codeVerifier: codeVerifier,
       redirectUri: REDIRECT_URI,
     });
 
