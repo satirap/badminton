@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
 /* =================================================================
    DESIGN SYSTEM
@@ -370,12 +371,10 @@ select option{background:var(--bg-card);color:var(--ink)}
    ================================================================= */
 
 // =================================================================
-// ⚙️ CONFIG — แก้ 2 ค่านี้
+// ⚙️ CONFIG
 // =================================================================
-const LINE_CHANNEL_ID = '2009832825';
-const API_BASE        = 'https://script.google.com/macros/s/AKfycbwGqnz1oxW3Ao0uSYEiq_t5OJs6M-yf5IrENd2WsDI-ngl_0lYkcerjP5rCUPtL0o81ow/exec';
-
-const REDIRECT_URI = 'https://satirap.github.io/badminton/';
+const LIFF_ID  = '2009832825-of9TI64X';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbwGqnz1oxW3Ao0uSYEiq_t5OJs6M-yf5IrENd2WsDI-ngl_0lYkcerjP5rCUPtL0o81ow/exec';
 
 // =================================================================
 // STATE
@@ -420,103 +419,44 @@ async function apiPost(body){
 }
 
 // =================================================================
-// LINE LOGIN (OAuth2 PKCE — no server needed)
+// LIFF LOGIN
 // =================================================================
 
-// Generate random state & code_verifier for PKCE
-function randomString(len){
-  const arr = new Uint8Array(len);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, b=> b.toString(36).padStart(2,'0')).join('').slice(0,len);
-}
-
-async function sha256(plain){
-  const data = new TextEncoder().encode(plain);
-  return await crypto.subtle.digest('SHA-256', data);
-}
-
-function base64url(buf){
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-
-function startLineLogin(pendingResult = ''){
-  // encode pendingResult ใน state — ผ่าน redirect ได้แน่นอน ไม่พึ่ง localStorage
-  const rand  = randomString(16);
-  const state = pendingResult ? rand + ':' + pendingResult : rand;
-
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id:     LINE_CHANNEL_ID,
-    redirect_uri:  REDIRECT_URI,
-    state:         state,
-    scope:         'profile openid',
-  });
-
-  window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
-}
-
-async function handleLineCallback(){
-  const params = new URLSearchParams(window.location.search);
-  const code  = params.get('code');
-  const state = params.get('state');
-
-  if(!code) return false;
-
-  // parse pendingResult จาก state (format: "rand:win" หรือ "rand:lose")
-  const stateParts   = (state || '').split(':');
-  const pendingResult = stateParts[1] || null; // 'win', 'lose', หรือ null
-
+async function loginWithLIFF(resultParam){
   try{
-    const result = await apiPost({
-      action: 'lineLogin',
-      code: code,
-      redirectUri: REDIRECT_URI,
+    const profile   = await liff.getProfile();
+    const regResult = await apiPost({
+      action:      'registerPlayer',
+      name:        profile.displayName,
+      lineUserId:  profile.userId,
+      pictureUrl:  profile.pictureUrl || '',
     });
 
-    if(!result.success){
-      console.error('LINE login failed', result);
-      return false;
-    }
+    if(!regResult.success){ toast(regResult.error || 'เกิดข้อผิดพลาด'); hideSplash(); return; }
 
-    currentUser = result.player;
-    localStorage.setItem('shuttle_user',   JSON.stringify({ lineUserId: currentUser.lineUserId, name: currentUser.name, pictureUrl: currentUser.pictureUrl }));
+    currentUser = regResult.player;
     localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
 
-    window.history.replaceState({}, '', window.location.pathname);
+    showApp();
+    hideSplash();
 
-    if(result.isNew) toast('ยินดีต้อนรับ! 🏸');
+    if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
 
-    // บันทึกผลที่ค้างไว้ก่อน login
-    if(pendingResult === 'win' || pendingResult === 'lose'){
-      await processResult(pendingResult);
+    if(resultParam === 'win' || resultParam === 'lose'){
+      window.history.replaceState({}, '', window.location.pathname);
+      await processResult(resultParam);
     }
-
-    return true;
-
   }catch(err){
-    console.error('LINE login error', err);
-    return false;
+    console.error('LIFF login error', err);
+    hideSplash();
   }
-}
-
-// Check if already logged in
-function checkExistingLogin(){
-  const saved = localStorage.getItem('shuttle_user');
-  const player = localStorage.getItem('shuttle_player');
-  if(saved && player){
-    const userData = JSON.parse(saved);
-    currentUser = JSON.parse(player);
-    return true;
-  }
-  return false;
 }
 
 function logout(){
-  localStorage.removeItem('shuttle_user');
   localStorage.removeItem('shuttle_player');
   currentUser = null;
-  showLogin();
+  liff.logout();
+  window.location.reload();
 }
 
 // =================================================================
@@ -641,7 +581,7 @@ function switchTab(viewName){
 // EVENT WIRING
 // =================================================================
 function wireEvents(){
-  $('#btn-line-login').addEventListener('click', startLineLogin);
+  $('#btn-line-login').addEventListener('click', () => liff.login({ redirectUri: window.location.href }));
   $('#btn-logout').addEventListener('click', logout);
   $$('.tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.view));
@@ -654,31 +594,29 @@ function wireEvents(){
 async function boot(){
   wireEvents();
 
-  const params = new URLSearchParams(window.location.search);
-  const resultParam = params.get('result'); // 'win' or 'lose'
+  const resultParam = new URLSearchParams(window.location.search).get('result');
 
-  // 1) LINE callback
-  if(params.has('code')){
-    const ok = await handleLineCallback(); // pendingResult handled inside
-    if(ok){ showApp(); hideSplash(); return; }
-  }
-
-  // 2) Already logged in
-  if(checkExistingLogin()){
-    showApp();
+  try{
+    await liff.init({ liffId: LIFF_ID });
+  }catch(err){
+    console.error('LIFF init failed', err);
+    showLogin();
     hideSplash();
-    if(resultParam === 'win' || resultParam === 'lose'){
-      window.history.replaceState({}, '', window.location.pathname);
-      await processResult(resultParam);
-    }
     return;
   }
 
-  // 3) Not logged in — ส่ง pendingResult ผ่าน LINE state โดยตรง
-  window.history.replaceState({}, '', window.location.pathname);
-  $('#btn-line-login').onclick = () => startLineLogin(resultParam || '');
-  showLogin();
-  hideSplash();
+  if(!liff.isLoggedIn()){
+    // scan จาก QR → auto-redirect ไป login แล้วกลับมาพร้อม result ใน URL
+    if(resultParam === 'win' || resultParam === 'lose'){
+      liff.login({ redirectUri: window.location.href });
+      return;
+    }
+    showLogin();
+    hideSplash();
+    return;
+  }
+
+  await loginWithLIFF(resultParam);
 }
 
 document.addEventListener('DOMContentLoaded', boot);
