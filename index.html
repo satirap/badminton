@@ -362,21 +362,21 @@ select option{background:var(--bg-card);color:var(--ink)}
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true"  data-view="ranks">อันดับ</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="weekly">อาทิตย์นี้</button>
+      <button class="tab" role="tab" aria-selected="true"  data-view="weekly">อาทิตย์นี้</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="ranks">อันดับ</button>
       <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึกผล</button>
     </nav>
 
-    <!-- ---- VIEW: ALL-TIME RANKINGS ---- -->
-    <section class="view active" id="view-ranks">
-      <h2 class="section-title">อันดับ<em>ตลอดกาล</em></h2>
-      <div class="rank-list" id="rank-list"></div>
-    </section>
-
     <!-- ---- VIEW: WEEKLY ---- -->
-    <section class="view" id="view-weekly">
+    <section class="view active" id="view-weekly">
       <h2 class="section-title">อาทิตย์<em>นี้</em></h2>
       <div class="rank-list" id="weekly-list"></div>
+    </section>
+
+    <!-- ---- VIEW: ALL-TIME RANKINGS ---- -->
+    <section class="view" id="view-ranks">
+      <h2 class="section-title">อันดับ<em>ตลอดกาล</em></h2>
+      <div class="rank-list" id="rank-list"></div>
     </section>
 
     <!-- ---- VIEW: RECORD ---- -->
