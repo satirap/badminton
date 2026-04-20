@@ -89,14 +89,14 @@ body{
   position:sticky;top:0;z-index:20;
   background:var(--bg);
   border-bottom:1px solid var(--line);
-  display:grid;grid-template-columns:repeat(3,1fr);
-  margin:0 -16px;padding:0 8px;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  margin:0 -16px;padding:0 4px;
 }
 .tab{
   appearance:none;border:0;background:transparent;
-  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
-  letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ink-mute);padding:14px 6px 12px;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-mute);padding:14px 2px 12px;cursor:pointer;
   position:relative;transition:color .2s;
 }
 .tab[aria-selected="true"]{color:var(--accent)}
@@ -363,13 +363,15 @@ select option{background:var(--bg-card);color:var(--ink)}
 
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true"  data-view="weekly">อาทิตย์นี้</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="ranks">อันดับ</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึกผล</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="ranks">ตลอดกาล</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="winrate">% ชนะ</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึก</button>
     </nav>
 
     <!-- ---- VIEW: WEEKLY ---- -->
     <section class="view active" id="view-weekly">
       <h2 class="section-title">อาทิตย์<em>นี้</em></h2>
+      <p class="text-mute text-sm" style="margin:-8px 0 16px">จันทร์ – อาทิตย์ · reset ทุกวันจันทร์</p>
       <div class="rank-list" id="weekly-list"></div>
     </section>
 
@@ -377,6 +379,12 @@ select option{background:var(--bg-card);color:var(--ink)}
     <section class="view" id="view-ranks">
       <h2 class="section-title">อันดับ<em>ตลอดกาล</em></h2>
       <div class="rank-list" id="rank-list"></div>
+    </section>
+
+    <!-- ---- VIEW: WIN RATE ---- -->
+    <section class="view" id="view-winrate">
+      <h2 class="section-title">% ชนะ<em>ตลอดกาล</em></h2>
+      <div class="rank-list" id="winrate-list"></div>
     </section>
 
     <!-- ---- VIEW: RECORD ---- -->
@@ -563,6 +571,7 @@ async function loadAllData(){
 
     renderRanks();
     renderWeekly();
+    renderWinRate();
   }catch(err){
     console.error('Data load error', err);
     toast('โหลดข้อมูลไม่สำเร็จ');
@@ -625,6 +634,36 @@ function renderWeekly(){
 }
 
 // =================================================================
+// RENDER: Win Rate
+// =================================================================
+function renderWinRate(){
+  const container = $('#winrate-list');
+  const ranked = [...allRankings]
+    .filter(r => r.played > 0)
+    .map(r => ({ ...r, pct: Math.round(r.wins / r.played * 100) }))
+    .sort((a,b) => b.pct - a.pct || b.played - a.played || a.name.localeCompare(b.name));
+
+  if(ranked.length === 0){
+    container.innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  container.innerHTML = ranked.map((r, i) => {
+    const podium  = i < 3 ? `p${i+1}` : '';
+    const medal   = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
+    const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
+    return `
+      <div class="rank-row ${podium}">
+        <div class="pos">${medal || (i+1)}</div>
+        <div class="info">
+          <span class="n">${picHtml}${escHtml(r.name)}</span>
+          <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
+        </div>
+        <div class="pts">${r.pct}<small>%</small></div>
+      </div>`;
+  }).join('');
+}
+
+// =================================================================
 // RECORD RESULT (from QR scan)
 // =================================================================
 async function processResult(result){
@@ -639,7 +678,7 @@ async function processResult(result){
     if(res.success){
       toast(result === 'win' ? 'บันทึกชนะแล้ว! +3 pts' : 'บันทึกแพ้แล้ว +1 pt');
       await loadAllData();
-      switchTab('ranks');
+      switchTab('weekly');
     } else {
       toast(res.error || 'เกิดข้อผิดพลาด');
     }
