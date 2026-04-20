@@ -468,6 +468,13 @@ async function apiPost(body){
 // =================================================================
 
 async function loginWithLIFF(resultParam){
+  // ถ้าเพิ่ง logout → ไม่ auto-login กลับ
+  if(localStorage.getItem('shuttle_logout') && !resultParam){
+    localStorage.removeItem('shuttle_logout');
+    showLogin(); hideSplash(); return;
+  }
+  localStorage.removeItem('shuttle_logout');
+
   // ถ้ามี cache → แสดงแอปทันที ไม่รอ network
   const cached = localStorage.getItem('shuttle_player');
   if(cached){
@@ -517,8 +524,9 @@ async function loginWithLIFF(resultParam){
 
 function logout(){
   localStorage.removeItem('shuttle_player');
+  localStorage.setItem('shuttle_logout', '1');
   currentUser = null;
-  liff.logout();
+  try{ liff.logout(); }catch(e){}
   window.location.reload();
 }
 
