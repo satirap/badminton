@@ -440,16 +440,17 @@ function base64url(buf){
     .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 }
 
-async function startLineLogin(){
-  const state = randomString(32);
-  localStorage.setItem('line_state', state);
+function startLineLogin(pendingResult = ''){
+  // encode pendingResult ใน state — ผ่าน redirect ได้แน่นอน ไม่พึ่ง localStorage
+  const rand  = randomString(16);
+  const state = pendingResult ? rand + ':' + pendingResult : rand;
 
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: LINE_CHANNEL_ID,
-    redirect_uri: REDIRECT_URI,
-    state: state,
-    scope: 'profile openid',
+    client_id:     LINE_CHANNEL_ID,
+    redirect_uri:  REDIRECT_URI,
+    state:         state,
+    scope:         'profile openid',
   });
 
   window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
@@ -462,7 +463,9 @@ async function handleLineCallback(){
 
   if(!code) return false;
 
-  localStorage.removeItem('line_state');
+  // parse pendingResult จาก state (format: "rand:win" หรือ "rand:lose")
+  const stateParts   = (state || '').split(':');
+  const pendingResult = stateParts[1] || null; // 'win', 'lose', หรือ null
 
   try{
     const result = await apiPost({
@@ -480,10 +483,15 @@ async function handleLineCallback(){
     localStorage.setItem('shuttle_user',   JSON.stringify({ lineUserId: currentUser.lineUserId, name: currentUser.name, pictureUrl: currentUser.pictureUrl }));
     localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
 
-    // ล้าง ?code= ออกจาก URL
     window.history.replaceState({}, '', window.location.pathname);
 
     if(result.isNew) toast('ยินดีต้อนรับ! 🏸');
+
+    // บันทึกผลที่ค้างไว้ก่อน login
+    if(pendingResult === 'win' || pendingResult === 'lose'){
+      await processResult(pendingResult);
+    }
+
     return true;
 
   }catch(err){
@@ -651,14 +659,8 @@ async function boot(){
 
   // 1) LINE callback
   if(params.has('code')){
-    const ok = await handleLineCallback();
-    if(ok){
-      showApp();
-      hideSplash();
-      const pending = localStorage.getItem('pendingResult');
-      if(pending){ localStorage.removeItem('pendingResult'); await processResult(pending); }
-      return;
-    }
+    const ok = await handleLineCallback(); // pendingResult handled inside
+    if(ok){ showApp(); hideSplash(); return; }
   }
 
   // 2) Already logged in
@@ -672,11 +674,9 @@ async function boot(){
     return;
   }
 
-  // 3) Not logged in — save pending result then show login
-  if(resultParam === 'win' || resultParam === 'lose'){
-    localStorage.setItem('pendingResult', resultParam);
-    window.history.replaceState({}, '', window.location.pathname);
-  }
+  // 3) Not logged in — ส่ง pendingResult ผ่าน LINE state โดยตรง
+  window.history.replaceState({}, '', window.location.pathname);
+  $('#btn-line-login').onclick = () => startLineLogin(resultParam || '');
   showLogin();
   hideSplash();
 }
