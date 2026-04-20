@@ -445,8 +445,8 @@ async function startLineLogin(){
   const codeVerifier = randomString(64);
 
   // Save for callback
-  sessionStorage.setItem('line_state', state);
-  sessionStorage.setItem('line_code_verifier', codeVerifier);
+  localStorage.setItem('line_state', state);
+  localStorage.setItem('line_code_verifier', codeVerifier);
 
   const codeChallenge = base64url(await sha256(codeVerifier));
 
@@ -470,12 +470,12 @@ async function handleLineCallback(){
 
   if(!code) return false;
 
-  const savedState = sessionStorage.getItem('line_state');
+  const savedState = localStorage.getItem('line_state');
   if(state !== savedState){ console.error('State mismatch'); return false; }
 
-  const codeVerifier = sessionStorage.getItem('line_code_verifier');
-  sessionStorage.removeItem('line_state');
-  sessionStorage.removeItem('line_code_verifier');
+  const codeVerifier = localStorage.getItem('line_code_verifier');
+  localStorage.removeItem('line_state');
+  localStorage.removeItem('line_code_verifier');
 
   try{
     // ส่ง code ไป Apps Script — backend จะแลก token กับ LINE แทน (หลีกเลี่ยง CORS)
@@ -670,8 +670,8 @@ async function boot(){
     if(ok){
       showApp();
       hideSplash();
-      const pending = sessionStorage.getItem('pendingResult');
-      if(pending){ sessionStorage.removeItem('pendingResult'); await processResult(pending); }
+      const pending = localStorage.getItem('pendingResult');
+      if(pending){ localStorage.removeItem('pendingResult'); await processResult(pending); }
       return;
     }
   }
@@ -689,7 +689,7 @@ async function boot(){
 
   // 3) Not logged in — save pending result then show login
   if(resultParam === 'win' || resultParam === 'lose'){
-    sessionStorage.setItem('pendingResult', resultParam);
+    localStorage.setItem('pendingResult', resultParam);
     window.history.replaceState({}, '', window.location.pathname);
   }
   showLogin();
