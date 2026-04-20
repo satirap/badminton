@@ -289,6 +289,30 @@ select option{background:var(--bg-card);color:var(--ink)}
 .text-sm{font-size:13px}
 .text-center{text-align:center}
 
+/* ---- Result buttons ---- */
+.result-grid{display:grid;gap:14px;margin-top:8px}
+.btn-result{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px 20px;border-radius:var(--radius);border:2px solid;
+  cursor:pointer;background:none;width:100%;min-height:130px;
+  transition:transform .08s,opacity .15s;
+}
+.btn-result:active{transform:scale(.97)}
+.btn-result.win{border-color:var(--accent);background:var(--accent-dim)}
+.btn-result.lose{border-color:var(--line);background:var(--bg-card)}
+.btn-result .r-pts{
+  font-family:'Instrument Serif',serif;font-size:52px;line-height:1;
+  color:var(--accent);
+}
+.btn-result.lose .r-pts{color:var(--ink-soft)}
+.btn-result .r-label{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+  letter-spacing:.2em;text-transform:uppercase;margin-top:8px;
+  color:var(--accent);
+}
+.btn-result.lose .r-label{color:var(--ink-mute)}
+.btn-result.loading{opacity:.5;pointer-events:none}
+
 /* Small screens */
 @media(max-width:360px){
   .match-card .sides{grid-template-columns:1fr}
@@ -338,23 +362,36 @@ select option{background:var(--bg-card);color:var(--ink)}
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true" data-view="ranks">อันดับ</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="qr">บันทึกผล</button>
+      <button class="tab" role="tab" aria-selected="true"  data-view="ranks">อันดับ</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="weekly">อาทิตย์นี้</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึกผล</button>
     </nav>
 
-    <!-- ---- VIEW: RANKINGS ---- -->
+    <!-- ---- VIEW: ALL-TIME RANKINGS ---- -->
     <section class="view active" id="view-ranks">
-      <h2 class="section-title">อันดับ<em>คะแนน</em></h2>
+      <h2 class="section-title">อันดับ<em>ตลอดกาล</em></h2>
       <div class="rank-list" id="rank-list"></div>
     </section>
 
-    <!-- ---- VIEW: SCAN ---- -->
-    <section class="view" id="view-qr">
+    <!-- ---- VIEW: WEEKLY ---- -->
+    <section class="view" id="view-weekly">
+      <h2 class="section-title">อาทิตย์<em>นี้</em></h2>
+      <div class="rank-list" id="weekly-list"></div>
+    </section>
+
+    <!-- ---- VIEW: RECORD ---- -->
+    <section class="view" id="view-record">
       <h2 class="section-title">บันทึก<em>ผล</em></h2>
-      <div class="card" style="text-align:center;padding:32px 20px">
-        <div style="font-size:48px;margin-bottom:16px">📷</div>
-        <p style="font-size:17px;font-weight:600;margin:0 0 10px">เปิดกล้องโทรศัพท์</p>
-        <p class="text-mute text-sm" style="margin:0">แล้ว scan QR Code ที่ติดไว้ที่สนาม<br><br>ชนะ = <strong style="color:var(--accent)">+3 pts</strong> &nbsp;·&nbsp; แพ้ = +1 pt</p>
+      <p class="text-mute text-sm" style="margin-bottom:16px">กดปุ่มที่ตรงกับผลของคุณในเกมนี้</p>
+      <div class="result-grid">
+        <button class="btn-result win" id="btn-win">
+          <span class="r-pts">+3</span>
+          <span class="r-label">ชนะ</span>
+        </button>
+        <button class="btn-result lose" id="btn-lose">
+          <span class="r-pts">+1</span>
+          <span class="r-label">แพ้</span>
+        </button>
       </div>
     </section>
 
@@ -374,15 +411,15 @@ select option{background:var(--bg-card);color:var(--ink)}
 // ⚙️ CONFIG
 // =================================================================
 const LIFF_ID  = '2009832825-of9TI64X';
-const API_BASE = 'https://script.google.com/macros/s/AKfycbwGqnz1oxW3Ao0uSYEiq_t5OJs6M-yf5IrENd2WsDI-ngl_0lYkcerjP5rCUPtL0o81ow/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbzDM6HdiONOB06_xywuNcSdINYTEJ852E67bYKiW5z59zwnma2lKrlEOa02wouF4Gw4Ng/exec';
 
 // =================================================================
 // STATE
 // =================================================================
-let currentUser  = null;   // { id, name, lineUserId, pictureUrl }
-let allPlayers   = [];
-let allMatches   = [];
-let allRankings  = [];
+let currentUser      = null;
+let allPlayers       = [];
+let allRankings      = [];
+let allWeeklyRankings = [];
 
 // =================================================================
 // DOM helpers
@@ -423,32 +460,50 @@ async function apiPost(body){
 // =================================================================
 
 async function loginWithLIFF(resultParam){
+  // ถ้ามี cache → แสดงแอปทันที ไม่รอ network
+  const cached = localStorage.getItem('shuttle_player');
+  if(cached){
+    currentUser = JSON.parse(cached);
+    showApp();
+    hideSplash();
+    if(resultParam === 'win' || resultParam === 'lose'){
+      window.history.replaceState({}, '', window.location.pathname);
+      await processResult(resultParam);
+      return;
+    }
+  }
+
+  // refresh ข้อมูล user ใน background (หรือ first-time login)
   try{
     const profile   = await liff.getProfile();
     const regResult = await apiPost({
-      action:      'registerPlayer',
-      name:        profile.displayName,
-      lineUserId:  profile.userId,
-      pictureUrl:  profile.pictureUrl || '',
+      action:     'registerPlayer',
+      name:       profile.displayName,
+      lineUserId: profile.userId,
+      pictureUrl: profile.pictureUrl || '',
     });
 
-    if(!regResult.success){ toast(regResult.error || 'เกิดข้อผิดพลาด'); hideSplash(); return; }
+    if(!regResult.success){ if(!cached){ toast(regResult.error || 'เกิดข้อผิดพลาด'); hideSplash(); } return; }
 
     currentUser = regResult.player;
     localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
 
-    showApp();
-    hideSplash();
-
-    if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
-
-    if(resultParam === 'win' || resultParam === 'lose'){
-      window.history.replaceState({}, '', window.location.pathname);
-      await processResult(resultParam);
+    if(!cached){
+      showApp();
+      hideSplash();
+      if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
+      if(resultParam === 'win' || resultParam === 'lose'){
+        window.history.replaceState({}, '', window.location.pathname);
+        await processResult(resultParam);
+      }
+    } else {
+      // อัปเดต display name/pic ถ้าเปลี่ยน
+      $('#display-name').textContent = currentUser.name;
+      if(currentUser.pictureUrl) $('#display-pic').src = currentUser.pictureUrl;
     }
   }catch(err){
     console.error('LIFF login error', err);
-    hideSplash();
+    if(!cached) hideSplash();
   }
 }
 
@@ -496,15 +551,18 @@ function hideSplash(){
 // =================================================================
 async function loadAllData(){
   try{
-    const [playersRes, rankingsRes] = await Promise.all([
+    const [playersRes, rankingsRes, weeklyRes] = await Promise.all([
       api('getPlayers'),
       api('getRankings'),
+      api('getWeeklyRankings'),
     ]);
 
-    allPlayers  = playersRes.players   || [];
-    allRankings = rankingsRes.rankings || [];
+    allPlayers        = playersRes.players   || [];
+    allRankings       = rankingsRes.rankings || [];
+    allWeeklyRankings = weeklyRes.rankings   || [];
 
     renderRanks();
+    renderWeekly();
   }catch(err){
     console.error('Data load error', err);
     toast('โหลดข้อมูลไม่สำเร็จ');
@@ -540,6 +598,31 @@ function renderRanks(){
   }).join('');
 }
 
+
+// =================================================================
+// RENDER: Weekly Rankings
+// =================================================================
+function renderWeekly(){
+  const container = $('#weekly-list');
+  if(allWeeklyRankings.length === 0){
+    container.innerHTML = '<div class="empty">ยังไม่มีเกมอาทิตย์นี้</div>';
+    return;
+  }
+  container.innerHTML = allWeeklyRankings.map((r, i) => {
+    const podium = i < 3 ? `p${i+1}` : '';
+    const medal  = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
+    const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
+    return `
+      <div class="rank-row ${podium}">
+        <div class="pos">${medal || (i+1)}</div>
+        <div class="info">
+          <span class="n">${picHtml}${escHtml(r.name)}</span>
+          <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
+        </div>
+        <div class="pts">${r.points}<small>pts</small></div>
+      </div>`;
+  }).join('');
+}
 
 // =================================================================
 // RECORD RESULT (from QR scan)
@@ -580,12 +663,21 @@ function switchTab(viewName){
 // =================================================================
 // EVENT WIRING
 // =================================================================
+async function recordResult(result){
+  const btn = result === 'win' ? $('#btn-win') : $('#btn-lose');
+  btn.classList.add('loading');
+  await processResult(result);
+  btn.classList.remove('loading');
+}
+
 function wireEvents(){
   $('#btn-line-login').addEventListener('click', () => liff.login({ redirectUri: window.location.href }));
   $('#btn-logout').addEventListener('click', logout);
   $$('.tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.view));
   });
+  $('#btn-win').addEventListener('click',  () => recordResult('win'));
+  $('#btn-lose').addEventListener('click', () => recordResult('lose'));
 }
 
 // =================================================================
