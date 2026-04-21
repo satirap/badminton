@@ -703,20 +703,42 @@ function renderWinRate(){
 async function processResult(result){
   if(!currentUser) return;
 
-  // Optimistic: แสดงผลทันที ไม่รอ API
+  const pts = result === 'win' ? 3 : 1;
+
+  // ── Optimistic UI: อัปเดตหน้าจอทันที ──
   toast(result === 'win' ? 'บันทึกชนะแล้ว! +3 pts 🏆' : 'บันทึกแพ้แล้ว +1 pt');
+
+  // อัปเดต allRankings และ allWeeklyRankings ใน memory ก่อนเลย
+  [allRankings, allWeeklyRankings].forEach(list => {
+    const entry = list.find(r => r.id === currentUser.id);
+    if(entry){
+      entry.played++;
+      entry.points += pts;
+      if(result === 'win') entry.wins++;
+      else entry.losses++;
+    } else {
+      // เพิ่ม entry ใหม่ถ้ายังไม่มีในลิสต์
+      list.push({
+        id: currentUser.id, name: currentUser.name,
+        pictureUrl: currentUser.pictureUrl || '',
+        played: 1, wins: result === 'win' ? 1 : 0,
+        losses: result === 'lose' ? 1 : 0, points: pts,
+      });
+    }
+  });
+
+  renderRanks(); renderWeekly(); renderWinRate();
   switchTab('weekly');
 
-  // ส่ง API ใน background
+  // ── Sync backend ใน background ──
   try{
     const res = await apiPost({
       action: 'recordResult',
       playerId: currentUser.id,
-      result: result,
-      points: result === 'win' ? 3 : 1,
+      result, points: pts,
     });
     if(res.success){
-      loadAllData(); // refresh ข้อมูลใน background (ไม่ await)
+      loadAllData(); // refresh ข้อมูลจริงจาก server
     } else {
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
