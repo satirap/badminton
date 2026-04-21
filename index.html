@@ -755,8 +755,6 @@ function setupRecordTab(){}
 async function boot(){
   wireEvents();
 
-  const resultParam = new URLSearchParams(window.location.search).get('result');
-
   try{
     await liff.init({ liffId: LIFF_ID });
   }catch(err){
@@ -765,6 +763,9 @@ async function boot(){
     hideSplash();
     return;
   }
+
+  // อ่าน result หลัง liff.init() เพราะ LIFF decode URL params ให้หลัง init
+  const resultParam = new URLSearchParams(window.location.search).get('result');
 
   if(!liff.isLoggedIn()){
     // scan จาก QR → auto-redirect ไป login แล้วกลับมาพร้อม result ใน URL
