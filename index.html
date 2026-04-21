@@ -83,6 +83,13 @@ body{
   font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;
   font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
 }
+.btn-refresh{
+  background:none;border:1px solid var(--line);color:var(--ink-mute);
+  font-size:16px;width:32px;height:32px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:transform .3s;
+}
+.btn-refresh.spinning{ animation:spin .6s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
 
 /* ---- Tab bar ---- */
 .tabs{
@@ -357,6 +364,7 @@ select option{background:var(--bg-card);color:var(--ink)}
       <div class="user-info">
         <span class="uname" id="display-name">—</span>
         <img id="display-pic" src="" alt="profile" />
+        <button class="btn-refresh" id="btn-refresh" title="รีเฟรช">↻</button>
         <button class="logout" id="btn-logout">ออก</button>
       </div>
     </header>
@@ -796,6 +804,12 @@ function wireEvents(){
   $('#btn-win').addEventListener('click',  () => recordResult('win'));
   $('#btn-lose').addEventListener('click', () => recordResult('lose'));
   $('#btn-scan-qr').addEventListener('click', openLineScanner);
+  $('#btn-refresh').addEventListener('click', async () => {
+    const btn = $('#btn-refresh');
+    btn.classList.add('spinning');
+    await loadAllData();
+    btn.classList.remove('spinning');
+  });
 }
 
 function setupRecordTab(){}
@@ -806,22 +820,19 @@ function setupRecordTab(){}
 async function boot(){
   wireEvents();
 
-  const urlParams   = new URLSearchParams(window.location.search);
   const cachedPlayer = localStorage.getItem('shuttle_player');
-  const isLogout    = localStorage.getItem('shuttle_logout');
-  // liff.state = LIFF ยังไม่ decode URL → เป็น QR scan redirect ครั้งแรก
-  const isLiffRedirect = urlParams.has('liff.state');
+  const isLogout     = localStorage.getItem('shuttle_logout');
 
-  // ══ FAST PATH ══
-  // มี cache + ไม่ได้ logout + ไม่ใช่ QR redirect → แสดง app ทันที ไม่รอ LIFF init
-  if(cachedPlayer && !isLogout && !isLiffRedirect){
+  // ══ FAST PATH ══ แสดง cache ทันทีเสมอ (แม้จะเป็น QR scan)
+  // user เห็น app ก่อน → liff.init ทำ background → process result หลัง init
+  if(cachedPlayer && !isLogout){
     currentUser = JSON.parse(cachedPlayer);
     showApp();
     hideSplash();
-    loadCachedData(); // แสดงข้อมูลเก่าทันที (loadAllData จะทำหลัง liff.init)
+    loadCachedData();
   }
 
-  // LIFF init (ทำ background สำหรับ fast path / ทำก่อนสำหรับ QR scan)
+  // liff.init ทำใน background (user เห็น app แล้ว)
   try{
     await liff.init({ liffId: LIFF_ID });
   }catch(err){
@@ -830,7 +841,7 @@ async function boot(){
     return;
   }
 
-  // อ่าน resultParam หลัง liff.init เสมอ (LIFF decode liff.state → query params)
+  // อ่าน resultParam หลัง liff.init (LIFF decode liff.state → query params)
   const resultParam = new URLSearchParams(window.location.search).get('result');
 
   if(!liff.isLoggedIn()){
@@ -838,7 +849,6 @@ async function boot(){
       liff.login({ redirectUri: window.location.href });
       return;
     }
-    // session หมดอายุ → เคลียร์ cache แล้วไปหน้า login
     currentUser = null;
     localStorage.removeItem('shuttle_player');
     showLogin();
