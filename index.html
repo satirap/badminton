@@ -430,7 +430,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 // ⚙️ CONFIG
 // =================================================================
 const LIFF_ID  = '2009832825-of9TI64X';
-const API_BASE = 'https://script.google.com/macros/s/AKfycbzDM6HdiONOB06_xywuNcSdINYTEJ852E67bYKiW5z59zwnma2lKrlEOa02wouF4Gw4Ng/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbwzlqagLLeFhpc_2hvwIZSxAFFRqzKNg24hVe6NI6cbDcEqbqD62kmamvgnlI8pAPbknA/exec';
 
 // =================================================================
 // STATE
@@ -599,15 +599,12 @@ function loadCachedData(){
 
 async function loadAllData(){
   try{
-    const [playersRes, rankingsRes, weeklyRes] = await Promise.all([
-      api('getPlayers'),
-      api('getRankings'),
-      api('getWeeklyRankings'),
-    ]);
+    // 1 call แทน 3 — เร็วกว่าเดิม 3x
+    const res = await api('getAllData');
 
-    allPlayers        = playersRes.players   || [];
-    allRankings       = rankingsRes.rankings || [];
-    allWeeklyRankings = weeklyRes.rankings   || [];
+    allPlayers        = res.players  || [];
+    allRankings       = res.rankings || [];
+    allWeeklyRankings = res.weekly   || [];
 
     // บันทึก cache ไว้สำหรับครั้งหน้า
     localStorage.setItem('shuttle_data', JSON.stringify({
