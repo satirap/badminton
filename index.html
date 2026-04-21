@@ -563,8 +563,9 @@ function showApp(){
 
 function hideSplash(){
   const s = $('#splash');
+  if(!s) return; // ป้องกัน call ซ้ำ
   s.classList.add('hide');
-  setTimeout(()=> s.remove(), 500);
+  setTimeout(()=> s.parentNode && s.remove(), 500);
 }
 
 // =================================================================
@@ -780,24 +781,40 @@ function setupRecordTab(){}
 async function boot(){
   wireEvents();
 
+  const urlParams   = new URLSearchParams(window.location.search);
+  const cachedPlayer = localStorage.getItem('shuttle_player');
+  const isLogout    = localStorage.getItem('shuttle_logout');
+  // liff.state = LIFF ยังไม่ decode URL → เป็น QR scan redirect ครั้งแรก
+  const isLiffRedirect = urlParams.has('liff.state');
+
+  // ══ FAST PATH ══
+  // มี cache + ไม่ได้ logout + ไม่ใช่ QR redirect → แสดง app ทันที ไม่รอ LIFF init
+  if(cachedPlayer && !isLogout && !isLiffRedirect){
+    currentUser = JSON.parse(cachedPlayer);
+    showApp();
+    hideSplash();
+  }
+
+  // LIFF init (ทำ background สำหรับ fast path / ทำก่อนสำหรับ QR scan)
   try{
     await liff.init({ liffId: LIFF_ID });
   }catch(err){
     console.error('LIFF init failed', err);
-    showLogin();
-    hideSplash();
+    if(!currentUser){ showLogin(); hideSplash(); }
     return;
   }
 
-  // อ่าน result หลัง liff.init() เพราะ LIFF decode URL params ให้หลัง init
+  // อ่าน resultParam หลัง liff.init เสมอ (LIFF decode liff.state → query params)
   const resultParam = new URLSearchParams(window.location.search).get('result');
 
   if(!liff.isLoggedIn()){
-    // scan จาก QR → auto-redirect ไป login แล้วกลับมาพร้อม result ใน URL
     if(resultParam === 'win' || resultParam === 'lose'){
       liff.login({ redirectUri: window.location.href });
       return;
     }
+    // session หมดอายุ → เคลียร์ cache แล้วไปหน้า login
+    currentUser = null;
+    localStorage.removeItem('shuttle_player');
     showLogin();
     hideSplash();
     return;
