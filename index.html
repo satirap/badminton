@@ -485,9 +485,13 @@ async function loginWithLIFF(resultParam){
     showApp();
     hideSplash();
     if(resultParam === 'win' || resultParam === 'lose'){
+      // QR scan: processResult จัดการ loadAllData เอง → ไม่โหลดซ้ำ
       window.history.replaceState({}, '', window.location.pathname);
       await processResult(resultParam);
-      return;
+    } else {
+      // เปิด app ปกติ: โหลด cache ก่อน แล้ว refresh background
+      loadCachedData();
+      loadAllData();
     }
   }
 
@@ -513,6 +517,8 @@ async function loginWithLIFF(resultParam){
       if(resultParam === 'win' || resultParam === 'lose'){
         window.history.replaceState({}, '', window.location.pathname);
         await processResult(resultParam);
+      } else {
+        loadAllData();
       }
     } else {
       // อัปเดต display name/pic ถ้าเปลี่ยน
@@ -555,10 +561,7 @@ function showApp(){
   } else {
     pic.style.display = 'none';
   }
-
-  // แสดง cache ก่อน → แล้วโหลด fresh ใน background
-  loadCachedData();
-  loadAllData();
+  // หมายเหตุ: loadAllData() ไม่อยู่ที่นี่แล้ว — caller จัดการเองเพื่อหลีกเลี่ยง concurrent GAS calls
 }
 
 function hideSplash(){
@@ -815,6 +818,7 @@ async function boot(){
     currentUser = JSON.parse(cachedPlayer);
     showApp();
     hideSplash();
+    loadCachedData(); // แสดงข้อมูลเก่าทันที (loadAllData จะทำหลัง liff.init)
   }
 
   // LIFF init (ทำ background สำหรับ fast path / ทำก่อนสำหรับ QR scan)
