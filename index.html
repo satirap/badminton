@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.4</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.5</p>
 
 </main>
 
@@ -439,7 +439,6 @@ let currentUser        = null;
 let allPlayers         = [];
 let allRankings        = [];
 let allWeeklyRankings  = [];
-let earlyRecordPromise = null; // API call เริ่มก่อน liff.init (parallel)
 
 // =================================================================
 // DOM helpers
@@ -721,20 +720,16 @@ async function processResult(result){
   if(!currentUser) return;
   const pts = result === 'win' ? 3 : 1;
 
-  // แสดง overlay ถ้ายังไม่แสดง (อาจแสดงไปแล้วก่อน liff.init)
+  // แสดง overlay (อาจแสดงไปแล้วจาก fast path)
   if($('#recording-overlay').style.display !== 'flex'){
     showRecording('กำลังบันทึก...', '⏳');
     switchTab('weekly');
   }
 
   try{
-    // ใช้ early record ที่เริ่มไปแล้ว (parallel กับ liff.init) หรือเริ่มใหม่
-    const recordCall = earlyRecordPromise || apiPost({
+    const res = await apiPost({
       action: 'recordResult', playerId: currentUser.id, result, points: pts,
     });
-    earlyRecordPromise = null;
-
-    const res = await recordCall;
     if(res.success){
       await loadAllData();
       showRecording(
@@ -747,7 +742,6 @@ async function processResult(result){
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
   }catch(err){
-    earlyRecordPromise = null;
     console.error(err);
     hideRecording();
     toast('บันทึกไม่สำเร็จ ลองใหม่');
@@ -858,16 +852,10 @@ async function boot(){
     hideSplash();
 
     if(preResult === 'win' || preResult === 'lose'){
-      // QR scan: แสดง ⏳ overlay ทันที + เริ่ม API พร้อมกับ liff.init (parallel)
+      // QR scan: แสดง ⏳ overlay ทันที (API จริงรอหลัง liff.init เสร็จ)
       showRecording('กำลังบันทึก...', '⏳');
       switchTab('weekly');
       loadCachedData();
-      earlyRecordPromise = apiPost({
-        action: 'recordResult',
-        playerId: currentUser.id,
-        result:   preResult,
-        points:   preResult === 'win' ? 3 : 1,
-      });
     } else {
       loadCachedData();
     }
