@@ -412,6 +412,12 @@ select option{background:var(--bg-card);color:var(--ink)}
 
 <div class="toast" id="toast"></div>
 
+<!-- Recording overlay -->
+<div id="recording-overlay" style="display:none;position:fixed;inset:0;background:#0e0f11ee;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div id="recording-icon" style="font-size:64px">⏳</div>
+  <div id="recording-msg" style="font-size:1.2rem;font-weight:700;color:#e8e6e1;text-align:center"></div>
+</div>
+
 <script>
 /* =================================================================
    SHUTTLE — BADMINTON TRACKER
@@ -700,10 +706,20 @@ function renderWinRate(){
 // =================================================================
 // RECORD RESULT (from QR scan)
 // =================================================================
+function showRecording(msg, icon){
+  const ov = $('#recording-overlay');
+  $('#recording-icon').textContent = icon || '⏳';
+  $('#recording-msg').textContent  = msg;
+  ov.style.display = 'flex';
+}
+function hideRecording(){ $('#recording-overlay').style.display = 'none'; }
+
 async function processResult(result){
   if(!currentUser) return;
   const pts = result === 'win' ? 3 : 1;
 
+  // แสดง overlay ทันที — user เห็นชัดเจนว่ากำลังบันทึก
+  showRecording('กำลังบันทึก...', '⏳');
   switchTab('weekly');
 
   try{
@@ -713,13 +729,20 @@ async function processResult(result){
       result, points: pts,
     });
     if(res.success){
-      toast(result === 'win' ? '🏆 ชนะ! +3 pts' : '✅ แพ้ +1 pt');
-      await loadAllData(); // โหลดข้อมูลสดจาก server — ถูกต้องเสมอ
+      // แสดงผลสำเร็จ 1.5 วิ แล้วหาย
+      showRecording(
+        result === 'win' ? 'ชนะ! +3 pts 🏆' : 'แพ้ +1 pt ✅',
+        result === 'win' ? '🏆' : '✅'
+      );
+      loadAllData(); // refresh background ไม่ await
+      setTimeout(hideRecording, 1500);
     } else {
+      hideRecording();
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
   }catch(err){
     console.error(err);
+    hideRecording();
     toast('บันทึกไม่สำเร็จ ลองใหม่');
   }
 }
