@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.5</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.6</p>
 
 </main>
 
@@ -439,6 +439,7 @@ let currentUser        = null;
 let allPlayers         = [];
 let allRankings        = [];
 let allWeeklyRankings  = [];
+let _resultHandled     = false; // guard: processResult เรียกได้ครั้งเดียวต่อ session
 
 // =================================================================
 // DOM helpers
@@ -479,31 +480,29 @@ async function apiPost(body){
 // =================================================================
 
 async function loginWithLIFF(resultParam){
-  // ถ้าเพิ่ง logout → ไม่ auto-login กลับ
   if(localStorage.getItem('shuttle_logout') && !resultParam){
     localStorage.removeItem('shuttle_logout');
     showLogin(); hideSplash(); return;
   }
   localStorage.removeItem('shuttle_logout');
 
-  // ถ้ามี cache → แสดงแอปทันที ไม่รอ network
-  const cached = localStorage.getItem('shuttle_player');
-  if(cached){
-    currentUser = JSON.parse(cached);
-    showApp();
-    hideSplash();
-    if(resultParam === 'win' || resultParam === 'lose'){
-      // QR scan: processResult จัดการ loadAllData เอง → ไม่โหลดซ้ำ
-      window.history.replaceState({}, '', window.location.pathname);
-      await processResult(resultParam);
-    } else {
-      // เปิด app ปกติ: โหลด cache ก่อน แล้ว refresh background
+  const isQRScan = resultParam === 'win' || resultParam === 'lose';
+  const cached   = localStorage.getItem('shuttle_player');
+
+  // ══ เปิด app ปกติ (ไม่ใช่ QR scan) ══
+  // แสดงจาก cache ทันที แล้ว refresh background
+  if(!isQRScan){
+    if(cached){
+      currentUser = JSON.parse(cached);
+      showApp(); hideSplash();
       loadCachedData();
-      loadAllData();
     }
+    _backgroundRefresh().catch(console.error);
+    return;
   }
 
-  // refresh ข้อมูล user ใน background (หรือ first-time login)
+  // ══ QR scan: verify user ก่อน แล้วค่อย record ══
+  // processResult ถูกเรียกจากที่นี่ที่เดียว — ไม่มีทางเรียกซ้ำ
   try{
     const profile   = await liff.getProfile();
     const regResult = await apiPost({
@@ -513,30 +512,48 @@ async function loginWithLIFF(resultParam){
       pictureUrl: profile.pictureUrl || '',
     });
 
-    if(!regResult.success){ if(!cached){ toast(regResult.error || 'เกิดข้อผิดพลาด'); hideSplash(); } return; }
+    if(!regResult.success){
+      hideRecording();
+      toast(regResult.error || 'เกิดข้อผิดพลาด');
+      return;
+    }
 
     currentUser = regResult.player;
     localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
 
     if(!cached){
-      showApp();
-      hideSplash();
+      showApp(); hideSplash();
       if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
-      if(resultParam === 'win' || resultParam === 'lose'){
-        window.history.replaceState({}, '', window.location.pathname);
-        await processResult(resultParam);
-      } else {
-        loadAllData();
-      }
-    } else {
-      // อัปเดต display name/pic ถ้าเปลี่ยน
-      $('#display-name').textContent = currentUser.name;
-      if(currentUser.pictureUrl) $('#display-pic').src = currentUser.pictureUrl;
     }
+
+    window.history.replaceState({}, '', window.location.pathname);
+    await processResult(resultParam);
+
   }catch(err){
     console.error('LIFF login error', err);
-    if(!cached) hideSplash();
+    hideRecording();
+    if(!cached){ showLogin(); hideSplash(); }
   }
+}
+
+// background refresh user info + data (non-blocking)
+async function _backgroundRefresh(){
+  try{
+    const profile   = await liff.getProfile();
+    const regResult = await apiPost({
+      action:     'registerPlayer',
+      name:       profile.displayName,
+      lineUserId: profile.userId,
+      pictureUrl: profile.pictureUrl || '',
+    });
+    if(regResult?.success){
+      currentUser = regResult.player;
+      localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
+      const n = $('#display-name'); if(n) n.textContent = currentUser.name;
+      const p = $('#display-pic');  if(p && currentUser.pictureUrl) p.src = currentUser.pictureUrl;
+    }
+    await loadAllData();
+  }catch(e){ console.error('background refresh', e); }
 }
 
 function logout(){
@@ -718,6 +735,10 @@ function hideRecording(){ $('#recording-overlay').style.display = 'none'; }
 
 async function processResult(result){
   if(!currentUser) return;
+  // Guard: ถ้าเรียกซ้ำใน session เดียวกัน → ไม่บันทึกซ้ำ
+  if(_resultHandled){ console.warn('processResult already handled'); return; }
+  _resultHandled = true;
+
   const pts = result === 'win' ? 3 : 1;
 
   // แสดง overlay (อาจแสดงไปแล้วจาก fast path)
@@ -833,6 +854,7 @@ function extractResult(search){
 // BOOT
 // =================================================================
 async function boot(){
+  _resultHandled = false; // reset ทุก page load
   wireEvents();
 
   // ══ ขั้นแรกสุด: จับ result จาก URL ก่อน liff.init แตะ URL ══
