@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.3</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.4</p>
 
 </main>
 
@@ -435,10 +435,11 @@ const API_BASE = 'https://script.google.com/macros/s/AKfycbyD6wYQsxvwuuEUo0sduA-
 // =================================================================
 // STATE
 // =================================================================
-let currentUser      = null;
-let allPlayers       = [];
-let allRankings      = [];
-let allWeeklyRankings = [];
+let currentUser        = null;
+let allPlayers         = [];
+let allRankings        = [];
+let allWeeklyRankings  = [];
+let earlyRecordPromise = null; // API call เริ่มก่อน liff.init (parallel)
 
 // =================================================================
 // DOM helpers
@@ -720,18 +721,22 @@ async function processResult(result){
   if(!currentUser) return;
   const pts = result === 'win' ? 3 : 1;
 
-  // แสดง overlay ทันที — user เห็นชัดเจนว่ากำลังบันทึก
-  showRecording('กำลังบันทึก...', '⏳');
-  switchTab('weekly');
+  // แสดง overlay ถ้ายังไม่แสดง (อาจแสดงไปแล้วก่อน liff.init)
+  if($('#recording-overlay').style.display !== 'flex'){
+    showRecording('กำลังบันทึก...', '⏳');
+    switchTab('weekly');
+  }
 
   try{
-    const res = await apiPost({
-      action: 'recordResult',
-      playerId: currentUser.id,
-      result, points: pts,
+    // ใช้ early record ที่เริ่มไปแล้ว (parallel กับ liff.init) หรือเริ่มใหม่
+    const recordCall = earlyRecordPromise || apiPost({
+      action: 'recordResult', playerId: currentUser.id, result, points: pts,
     });
+    earlyRecordPromise = null;
+
+    const res = await recordCall;
     if(res.success){
-      await loadAllData(); // รอข้อมูลสดก่อน แล้วค่อยแสดงผล
+      await loadAllData();
       showRecording(
         result === 'win' ? 'ชนะ! +3 pts 🏆' : 'แพ้ +1 pt ✅',
         result === 'win' ? '🏆' : '✅'
@@ -742,6 +747,7 @@ async function processResult(result){
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
   }catch(err){
+    earlyRecordPromise = null;
     console.error(err);
     hideRecording();
     toast('บันทึกไม่สำเร็จ ลองใหม่');
@@ -845,12 +851,26 @@ async function boot(){
   const cachedPlayer = localStorage.getItem('shuttle_player');
   const isLogout     = localStorage.getItem('shuttle_logout');
 
-  // ══ FAST PATH ══ แสดง cache ทันทีเสมอ (แม้จะเป็น QR scan)
+  // ══ FAST PATH ══ แสดง cache ทันทีเสมอ
   if(cachedPlayer && !isLogout){
     currentUser = JSON.parse(cachedPlayer);
     showApp();
     hideSplash();
-    loadCachedData();
+
+    if(preResult === 'win' || preResult === 'lose'){
+      // QR scan: แสดง ⏳ overlay ทันที + เริ่ม API พร้อมกับ liff.init (parallel)
+      showRecording('กำลังบันทึก...', '⏳');
+      switchTab('weekly');
+      loadCachedData();
+      earlyRecordPromise = apiPost({
+        action: 'recordResult',
+        playerId: currentUser.id,
+        result:   preResult,
+        points:   preResult === 'win' ? 3 : 1,
+      });
+    } else {
+      loadCachedData();
+    }
   }
 
   // liff.init (อาจ redirect หรือ rewrite URL)
