@@ -83,13 +83,6 @@ body{
   font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;
   font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
 }
-.btn-refresh{
-  background:none;border:1px solid var(--line);color:var(--ink-mute);
-  font-size:16px;width:32px;height:32px;border-radius:8px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:transform .3s;
-}
-.btn-refresh.spinning{ animation:spin .6s linear infinite; }
-@keyframes spin{ to{ transform:rotate(360deg); } }
 
 /* ---- Tab bar ---- */
 .tabs{
@@ -364,7 +357,6 @@ select option{background:var(--bg-card);color:var(--ink)}
       <div class="user-info">
         <span class="uname" id="display-name">—</span>
         <img id="display-pic" src="" alt="profile" />
-        <button class="btn-refresh" id="btn-refresh" title="รีเฟรช">↻</button>
         <button class="logout" id="btn-logout">ออก</button>
       </div>
     </header>
@@ -430,7 +422,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 // ⚙️ CONFIG
 // =================================================================
 const LIFF_ID  = '2009832825-of9TI64X';
-const API_BASE = 'https://script.google.com/macros/s/AKfycbwzlqagLLeFhpc_2hvwIZSxAFFRqzKNg24hVe6NI6cbDcEqbqD62kmamvgnlI8pAPbknA/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbyD6wYQsxvwuuEUo0sduA-QhcBY2KI1HbjDMWizf9_Q_GFFWKEo4t800ymRvBl6J6E_YA/exec';
 
 // =================================================================
 // STATE
@@ -710,35 +702,10 @@ function renderWinRate(){
 // =================================================================
 async function processResult(result){
   if(!currentUser) return;
-
   const pts = result === 'win' ? 3 : 1;
 
-  // ── Optimistic UI: อัปเดตหน้าจอทันที ──
-  toast(result === 'win' ? 'บันทึกชนะแล้ว! +3 pts 🏆' : 'บันทึกแพ้แล้ว +1 pt');
-
-  // อัปเดต allRankings และ allWeeklyRankings ใน memory ก่อนเลย
-  [allRankings, allWeeklyRankings].forEach(list => {
-    const entry = list.find(r => r.id === currentUser.id);
-    if(entry){
-      entry.played++;
-      entry.points += pts;
-      if(result === 'win') entry.wins++;
-      else entry.losses++;
-    } else {
-      // เพิ่ม entry ใหม่ถ้ายังไม่มีในลิสต์
-      list.push({
-        id: currentUser.id, name: currentUser.name,
-        pictureUrl: currentUser.pictureUrl || '',
-        played: 1, wins: result === 'win' ? 1 : 0,
-        losses: result === 'lose' ? 1 : 0, points: pts,
-      });
-    }
-  });
-
-  renderRanks(); renderWeekly(); renderWinRate();
   switchTab('weekly');
 
-  // ── Sync backend ใน background ──
   try{
     const res = await apiPost({
       action: 'recordResult',
@@ -746,7 +713,8 @@ async function processResult(result){
       result, points: pts,
     });
     if(res.success){
-      loadAllData(); // refresh ข้อมูลจริงจาก server
+      toast(result === 'win' ? '🏆 ชนะ! +3 pts' : '✅ แพ้ +1 pt');
+      await loadAllData(); // โหลดข้อมูลสดจาก server — ถูกต้องเสมอ
     } else {
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
@@ -801,12 +769,6 @@ function wireEvents(){
   $('#btn-win').addEventListener('click',  () => recordResult('win'));
   $('#btn-lose').addEventListener('click', () => recordResult('lose'));
   $('#btn-scan-qr').addEventListener('click', openLineScanner);
-  $('#btn-refresh').addEventListener('click', async () => {
-    const btn = $('#btn-refresh');
-    btn.classList.add('spinning');
-    await loadAllData();
-    btn.classList.remove('spinning');
-  });
 }
 
 function setupRecordTab(){}
