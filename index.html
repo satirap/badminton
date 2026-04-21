@@ -729,12 +729,11 @@ async function processResult(result){
       result, points: pts,
     });
     if(res.success){
-      // แสดงผลสำเร็จ 1.5 วิ แล้วหาย
+      await loadAllData(); // รอข้อมูลสดก่อน แล้วค่อยแสดงผล
       showRecording(
         result === 'win' ? 'ชนะ! +3 pts 🏆' : 'แพ้ +1 pt ✅',
         result === 'win' ? '🏆' : '✅'
       );
-      loadAllData(); // refresh background ไม่ await
       setTimeout(hideRecording, 1500);
     } else {
       hideRecording();
@@ -824,7 +823,16 @@ async function boot(){
   }
 
   // อ่าน resultParam หลัง liff.init (LIFF decode liff.state → query params)
-  const resultParam = new URLSearchParams(window.location.search).get('result');
+  let resultParam = new URLSearchParams(window.location.search).get('result');
+  // Fallback: LIFF บางเวอร์ชันไม่ decode liff.state ให้ → decode เอง
+  if(!resultParam){
+    try{
+      const liffState = new URLSearchParams(window.location.search).get('liff.state');
+      if(liffState){
+        resultParam = new URLSearchParams(decodeURIComponent(liffState)).get('result');
+      }
+    }catch(e){}
+  }
 
   if(!liff.isLoggedIn()){
     if(resultParam === 'win' || resultParam === 'lose'){
