@@ -556,7 +556,8 @@ function showApp(){
     pic.style.display = 'none';
   }
 
-  // Load data
+  // แสดง cache ก่อน → แล้วโหลด fresh ใน background
+  loadCachedData();
   loadAllData();
 }
 
@@ -569,6 +570,21 @@ function hideSplash(){
 // =================================================================
 // DATA LOADING
 // =================================================================
+
+// โหลด cache จาก localStorage → แสดงทันที ไม่รอ network
+function loadCachedData(){
+  try{
+    const c = localStorage.getItem('shuttle_data');
+    if(!c) return false;
+    const { players, rankings, weekly } = JSON.parse(c);
+    allPlayers        = players  || [];
+    allRankings       = rankings || [];
+    allWeeklyRankings = weekly   || [];
+    renderRanks(); renderWeekly(); renderWinRate();
+    return true;
+  }catch(e){ return false; }
+}
+
 async function loadAllData(){
   try{
     const [playersRes, rankingsRes, weeklyRes] = await Promise.all([
@@ -580,6 +596,11 @@ async function loadAllData(){
     allPlayers        = playersRes.players   || [];
     allRankings       = rankingsRes.rankings || [];
     allWeeklyRankings = weeklyRes.rankings   || [];
+
+    // บันทึก cache ไว้สำหรับครั้งหน้า
+    localStorage.setItem('shuttle_data', JSON.stringify({
+      players: allPlayers, rankings: allRankings, weekly: allWeeklyRankings
+    }));
 
     renderRanks();
     renderWeekly();
@@ -680,6 +701,12 @@ function renderWinRate(){
 // =================================================================
 async function processResult(result){
   if(!currentUser) return;
+
+  // Optimistic: แสดงผลทันที ไม่รอ API
+  toast(result === 'win' ? 'บันทึกชนะแล้ว! +3 pts 🏆' : 'บันทึกแพ้แล้ว +1 pt');
+  switchTab('weekly');
+
+  // ส่ง API ใน background
   try{
     const res = await apiPost({
       action: 'recordResult',
@@ -688,15 +715,13 @@ async function processResult(result){
       points: result === 'win' ? 3 : 1,
     });
     if(res.success){
-      toast(result === 'win' ? 'บันทึกชนะแล้ว! +3 pts' : 'บันทึกแพ้แล้ว +1 pt');
-      await loadAllData();
-      switchTab('weekly');
+      loadAllData(); // refresh ข้อมูลใน background (ไม่ await)
     } else {
-      toast(res.error || 'เกิดข้อผิดพลาด');
+      toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
   }catch(err){
     console.error(err);
-    toast('บันทึกไม่สำเร็จ');
+    toast('บันทึกไม่สำเร็จ ลองใหม่');
   }
 }
 
