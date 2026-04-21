@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.2</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.3</p>
 
 </main>
 
@@ -798,16 +798,54 @@ function wireEvents(){
 function setupRecordTab(){}
 
 // =================================================================
+// EXTRACT RESULT — อ่าน result=win/lose จาก URL search string
+// รองรับทุก format ที่ LIFF ใช้:
+//   ?result=lose         → ตรงๆ
+//   liff.state=?result=lose   → LIFF encode แบบ ?
+//   liff.state=/result=lose   → LIFF encode แบบ /
+//   liff.state=/?result=lose  → มี / และ ?
+//   liff.state=/badminton/?result=lose → มี path เต็ม
+// =================================================================
+function extractResult(search){
+  // 1) ลองตรงๆ ก่อน
+  const direct = new URLSearchParams(search).get('result');
+  if(direct === 'win' || direct === 'lose') return direct;
+
+  // 2) ลอง decode liff.state
+  const liffState = new URLSearchParams(search).get('liff.state');
+  if(!liffState) return null;
+
+  try{
+    const decoded = decodeURIComponent(liffState);
+    // หา query string: ตัดทุกอย่างก่อน ? (path) แล้วเอาส่วนหลัง ?
+    const qIdx = decoded.indexOf('?');
+    const qs   = qIdx !== -1
+      ? decoded.slice(qIdx + 1)          // เอาหลัง ?
+      : decoded.replace(/^[/?]+/, '');   // ไม่มี ? → ตัด / นำหน้า
+    const r = new URLSearchParams(qs).get('result');
+    if(r === 'win' || r === 'lose') return r;
+  }catch(e){}
+
+  return null;
+}
+
+// =================================================================
 // BOOT
 // =================================================================
 async function boot(){
   wireEvents();
 
+  // ══ ขั้นแรกสุด: จับ result จาก URL ก่อน liff.init แตะ URL ══
+  // liff.init อาจ trigger redirect เต็ม → boot() restart ใหม่
+  // การบันทึกลง localStorage ทำให้ค่ารอดผ่าน redirect ได้
+  const preSearch = window.location.search;
+  const preResult = extractResult(preSearch);
+  if(preResult) localStorage.setItem('shuttle_pending_result', preResult);
+
   const cachedPlayer = localStorage.getItem('shuttle_player');
   const isLogout     = localStorage.getItem('shuttle_logout');
 
   // ══ FAST PATH ══ แสดง cache ทันทีเสมอ (แม้จะเป็น QR scan)
-  // user เห็น app ก่อน → liff.init ทำ background → process result หลัง init
   if(cachedPlayer && !isLogout){
     currentUser = JSON.parse(cachedPlayer);
     showApp();
@@ -815,10 +853,7 @@ async function boot(){
     loadCachedData();
   }
 
-  // จับ URL search ก่อน liff.init เพราะ LIFF อาจ rewrite URL ระหว่าง init
-  const searchBeforeInit = window.location.search;
-
-  // liff.init ทำใน background (user เห็น app แล้ว)
+  // liff.init (อาจ redirect หรือ rewrite URL)
   try{
     await liff.init({ liffId: LIFF_ID });
   }catch(err){
@@ -827,36 +862,18 @@ async function boot(){
     return;
   }
 
-  // อ่าน resultParam หลัง liff.init (LIFF decode liff.state → query params)
-  let resultParam = new URLSearchParams(window.location.search).get('result');
+  // อ่าน resultParam จากทุกแหล่ง (เรียงตามความน่าเชื่อถือ)
+  const resultParam =
+    extractResult(window.location.search) || // หลัง liff.init decode
+    preResult                              || // pre-init URL snapshot
+    localStorage.getItem('shuttle_pending_result'); // รอดผ่าน redirect
 
-  // Fallback 1: ลองจาก URL ก่อน init (เผื่อ LIFF ลบ param ออก)
-  if(!resultParam){
-    resultParam = new URLSearchParams(searchBeforeInit).get('result');
-  }
-
-  // Fallback 2: decode liff.state เอง (รองรับ leading ?, / หรือ /?)
-  if(!resultParam){
-    try{
-      const rawLiffState = new URLSearchParams(window.location.search).get('liff.state')
-                        || new URLSearchParams(searchBeforeInit).get('liff.state');
-      if(rawLiffState){
-        // LIFF บางเวอร์ชันใส่ /result=lose (slash) แทน ?result=lose
-        const decoded = decodeURIComponent(rawLiffState).replace(/^[/?]+/, '');
-        resultParam = new URLSearchParams(decoded).get('result');
-      }
-    }catch(e){}
-  }
-
-  // Fallback 3: localStorage backup (กัน URL param หายหลัง login redirect)
-  if(!resultParam){
-    resultParam = localStorage.getItem('shuttle_pending_result');
-    localStorage.removeItem('shuttle_pending_result');
-  }
+  // เคลียร์ pending เสมอ (ไม่ให้ค้างข้าม session)
+  localStorage.removeItem('shuttle_pending_result');
 
   if(!liff.isLoggedIn()){
     if(resultParam === 'win' || resultParam === 'lose'){
-      // backup ไว้ก่อน redirect เผื่อ URL param หายหลัง login
+      // บันทึกก่อน login redirect (จะถูกอ่านใน boot() รอบหน้า)
       localStorage.setItem('shuttle_pending_result', resultParam);
       liff.login({ redirectUri: window.location.href });
       return;
