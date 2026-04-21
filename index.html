@@ -408,6 +408,8 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.1</p>
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -834,8 +836,16 @@ async function boot(){
     }catch(e){}
   }
 
+  // ถ้า resultParam ยังไม่มี ลองดึงจาก localStorage backup
+  if(!resultParam){
+    resultParam = localStorage.getItem('shuttle_pending_result');
+    localStorage.removeItem('shuttle_pending_result');
+  }
+
   if(!liff.isLoggedIn()){
     if(resultParam === 'win' || resultParam === 'lose'){
+      // backup ไว้ก่อน redirect เผื่อ URL param หายหลัง login
+      localStorage.setItem('shuttle_pending_result', resultParam);
       liff.login({ redirectUri: window.location.href });
       return;
     }
