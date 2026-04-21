@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.1</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.2</p>
 
 </main>
 
@@ -815,6 +815,9 @@ async function boot(){
     loadCachedData();
   }
 
+  // จับ URL search ก่อน liff.init เพราะ LIFF อาจ rewrite URL ระหว่าง init
+  const searchBeforeInit = window.location.search;
+
   // liff.init ทำใน background (user เห็น app แล้ว)
   try{
     await liff.init({ liffId: LIFF_ID });
@@ -826,17 +829,26 @@ async function boot(){
 
   // อ่าน resultParam หลัง liff.init (LIFF decode liff.state → query params)
   let resultParam = new URLSearchParams(window.location.search).get('result');
-  // Fallback: LIFF บางเวอร์ชันไม่ decode liff.state ให้ → decode เอง
+
+  // Fallback 1: ลองจาก URL ก่อน init (เผื่อ LIFF ลบ param ออก)
+  if(!resultParam){
+    resultParam = new URLSearchParams(searchBeforeInit).get('result');
+  }
+
+  // Fallback 2: decode liff.state เอง (รองรับ leading ?, / หรือ /?)
   if(!resultParam){
     try{
-      const liffState = new URLSearchParams(window.location.search).get('liff.state');
-      if(liffState){
-        resultParam = new URLSearchParams(decodeURIComponent(liffState)).get('result');
+      const rawLiffState = new URLSearchParams(window.location.search).get('liff.state')
+                        || new URLSearchParams(searchBeforeInit).get('liff.state');
+      if(rawLiffState){
+        // LIFF บางเวอร์ชันใส่ /result=lose (slash) แทน ?result=lose
+        const decoded = decodeURIComponent(rawLiffState).replace(/^[/?]+/, '');
+        resultParam = new URLSearchParams(decoded).get('result');
       }
     }catch(e){}
   }
 
-  // ถ้า resultParam ยังไม่มี ลองดึงจาก localStorage backup
+  // Fallback 3: localStorage backup (กัน URL param หายหลัง login redirect)
   if(!resultParam){
     resultParam = localStorage.getItem('shuttle_pending_result');
     localStorage.removeItem('shuttle_pending_result');
