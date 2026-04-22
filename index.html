@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.7</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.8</p>
 
 </main>
 
@@ -448,9 +448,9 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 function escHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function toast(msg){
+function toast(msg, duration=2500){
   const el=$('#toast');el.textContent=msg;el.classList.add('show');
-  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2000);
+  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),duration);
 }
 
 // =================================================================
@@ -741,16 +741,15 @@ function hideRecording(){ $('#recording-overlay').style.display = 'none'; }
 
 async function processResult(result){
   if(!currentUser) return;
-  // Guard: ถ้าเรียกซ้ำใน session เดียวกัน → ไม่บันทึกซ้ำ
   if(_resultHandled){ console.warn('processResult already handled'); return; }
   _resultHandled = true;
 
   const pts = result === 'win' ? 3 : 1;
 
-  // แสดง overlay (อาจแสดงไปแล้วจาก fast path)
-  if($('#recording-overlay').style.display !== 'flex'){
-    showRecording('กำลังบันทึก...', '⏳');
-    switchTab('weekly');
+  // แสดง loading ใน weekly list (ไม่ blocking ทั้งหน้า)
+  switchTab('weekly');
+  if($('#weekly-list').innerHTML.indexOf('loading') === -1){
+    $('#weekly-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
   }
 
   try{
@@ -758,20 +757,15 @@ async function processResult(result){
       action: 'recordResult', playerId: currentUser.id, result, points: pts,
     });
     if(res.success){
-      // แสดง ✅ ทันที ไม่รอ loadAllData — rankings อัปเดต background
-      showRecording(
-        result === 'win' ? 'ชนะ! +3 pts 🏆' : 'แพ้ +1 pt ✅',
-        result === 'win' ? '🏆' : '✅'
-      );
-      loadAllData(); // background — ไม่ await
-      setTimeout(hideRecording, 2000);
+      await loadAllData(); // อัปเดต rankings → renderWeekly() เคลียร์ loading เอง
+      toast(result === 'win' ? '🏆 ชนะ! +3 คะแนน' : '✅ แพ้ +1 คะแนน');
     } else {
-      hideRecording();
+      loadCachedData(); // restore ถ้า error
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
     }
   }catch(err){
     console.error(err);
-    hideRecording();
+    loadCachedData();
     toast('บันทึกไม่สำเร็จ ลองใหม่');
   }
 }
@@ -881,10 +875,10 @@ async function boot(){
     hideSplash();
 
     if(preResult === 'win' || preResult === 'lose'){
-      // QR scan: แสดง ⏳ overlay ทันที (API จริงรอหลัง liff.init เสร็จ)
-      showRecording('กำลังบันทึก...', '⏳');
+      // QR scan: โหลด cache ก่อน (tabs อื่นเห็นข้อมูล) แล้ว weekly แสดง loading
       switchTab('weekly');
       loadCachedData();
+      $('#weekly-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
     } else {
       loadCachedData();
     }
