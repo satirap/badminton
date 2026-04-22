@@ -359,7 +359,6 @@ let allDailyRankings   = [];
 let allMonthlyRankings = [];
 let allMonthlyWinners  = [];
 let _resultHandled     = false;
-let _isRecording       = false; // true = processResult กำลัง run, renderDaily ไม่ overwrite
 
 // =================================================================
 // DOM helpers
@@ -690,7 +689,6 @@ function renderDaily(){
   if(el) el.textContent = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const c = $('#daily-list');
   if(!c) return;
-  if(_isRecording) return; // processResult กำลัง run อยู่ ห้าม overwrite
   c.innerHTML = allDailyRankings.length === 0
     ? '<div class="empty">ยังไม่มีเกมวันนี้<br><small style="font-size:13px;font-family:\'DM Sans\',sans-serif;font-style:normal">สแกน QR ที่สนามเพื่อเริ่มบันทึก</small></div>'
     : allDailyRankings.map(rankRowHtml).join('');
@@ -747,31 +745,62 @@ function renderRanks(){
 }
 
 // =================================================================
-// RECORD RESULT — QR scan only, no manual button
+// OPTIMISTIC UPDATE — อัปเดต UI ทันที ไม่รอ Firestore (Facebook Like pattern)
+// =================================================================
+function applyOptimisticUpdate(playerId, result, pts){
+  // helper: เพิ่มคะแนนใน ranking list ทันที แล้ว re-sort
+  function updateList(list){
+    const idx = list.findIndex(r => r.id === playerId);
+    if(idx !== -1){
+      list[idx] = {
+        ...list[idx],
+        points:  (list[idx].points  || 0) + pts,
+        played:  (list[idx].played  || 0) + 1,
+        wins:    (list[idx].wins    || 0) + (result === 'win'  ? 1 : 0),
+        losses:  (list[idx].losses  || 0) + (result === 'lose' ? 1 : 0),
+      };
+    } else {
+      // player ยังไม่มีในวันนี้/เดือนนี้ → เพิ่มใหม่
+      list.push({
+        ...currentUser,
+        points: pts, played: 1,
+        wins:   result === 'win'  ? 1 : 0,
+        losses: result === 'lose' ? 1 : 0,
+      });
+    }
+    list.sort((a, b) => b.points - a.points || b.wins - a.wins);
+  }
+
+  updateList(allDailyRankings);
+  updateList(allMonthlyRankings);
+  updateList(allRankings);
+  renderAll(); // แสดงผลทันที
+}
+
+// =================================================================
+// RECORD RESULT — Optimistic first, Firestore sync ใน background
 // =================================================================
 async function processResult(result){
   if(!currentUser){ return; }
   if(_resultHandled){ console.warn('processResult already handled'); return; }
   _resultHandled = true;
-  _isRecording   = true;
 
   const pts = result === 'win' ? 3 : 1;
 
-  // Show inline loading in daily tab (won't be overwritten while _isRecording=true)
+  // ① แสดงผลทันทีเลย — ไม่รอ network
   switchTab('daily');
-  $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
+  applyOptimisticUpdate(currentUser.id, result, pts);
+  toast(result === 'win' ? '🏆 ชนะ! +3 คะแนน' : '✅ แพ้ +1 คะแนน');
 
+  // ② Firestore write + sync ใน background — user ไม่ต้องรอ
   try{
     await dbRecordResult(currentUser.id, result, pts);
-    _isRecording = false; // unlock renderDaily before loadAllData renders
-    await loadAllData();
-    toast(result === 'win' ? '🏆 ชนะ! +3 คะแนน' : '✅ แพ้ +1 คะแนน');
+    await loadAllData(); // sync ข้อมูลจริงจาก server (อาจมีคนอื่น scan ด้วย)
   }catch(err){
     console.error('recordResult error', err);
     _resultHandled = false; // allow retry
-    _isRecording   = false;
-    loadCachedData();
-    toast('บันทึกไม่สำเร็จ ลองใหม่');
+    loadCachedData();       // rollback UI กลับ state เดิม
+    toast('บันทึกไม่สำเร็จ กรุณาสแกนใหม่');
   }
 }
 
