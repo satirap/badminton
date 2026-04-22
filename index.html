@@ -408,7 +408,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.6</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.7</p>
 
 </main>
 
@@ -501,8 +501,18 @@ async function loginWithLIFF(resultParam){
     return;
   }
 
-  // ══ QR scan: verify user ก่อน แล้วค่อย record ══
-  // processResult ถูกเรียกจากที่นี่ที่เดียว — ไม่มีทางเรียกซ้ำ
+  // ══ QR scan ══
+  if(cached){
+    // Cached user: รู้จัก user แล้ว → record ทันที ไม่ต้องรอ verify ซ้ำ
+    // _backgroundRefresh อัปเดต profile/ข้อมูลหลัง record เสร็จ
+    currentUser = JSON.parse(cached);
+    window.history.replaceState({}, '', window.location.pathname);
+    await processResult(resultParam);
+    _backgroundRefresh().catch(console.error);
+    return;
+  }
+
+  // New user: ต้อง register ก่อนถึงจะรู้ playerId
   try{
     const profile   = await liff.getProfile();
     const regResult = await apiPost({
@@ -520,19 +530,15 @@ async function loginWithLIFF(resultParam){
 
     currentUser = regResult.player;
     localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
-
-    if(!cached){
-      showApp(); hideSplash();
-      if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
-    }
-
+    showApp(); hideSplash();
+    if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
     window.history.replaceState({}, '', window.location.pathname);
     await processResult(resultParam);
 
   }catch(err){
     console.error('LIFF login error', err);
     hideRecording();
-    if(!cached){ showLogin(); hideSplash(); }
+    showLogin(); hideSplash();
   }
 }
 
@@ -752,12 +758,13 @@ async function processResult(result){
       action: 'recordResult', playerId: currentUser.id, result, points: pts,
     });
     if(res.success){
-      await loadAllData();
+      // แสดง ✅ ทันที ไม่รอ loadAllData — rankings อัปเดต background
       showRecording(
         result === 'win' ? 'ชนะ! +3 pts 🏆' : 'แพ้ +1 pt ✅',
         result === 'win' ? '🏆' : '✅'
       );
-      setTimeout(hideRecording, 1500);
+      loadAllData(); // background — ไม่ await
+      setTimeout(hideRecording, 2000);
     } else {
       hideRecording();
       toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
