@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 /* =================================================================
    DESIGN SYSTEM
@@ -45,7 +47,7 @@ body{
 }
 
 /* ---- App shell ---- */
-.app{max-width:480px;margin:0 auto;padding:0 16px 120px;position:relative}
+.app{max-width:480px;margin:0 auto;padding:0 16px 100px;position:relative}
 
 /* ---- Loading / splash ---- */
 #splash{
@@ -84,12 +86,12 @@ body{
   font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
 }
 
-/* ---- Tab bar ---- */
+/* ---- Tab bar — 3 columns ---- */
 .tabs{
   position:sticky;top:0;z-index:20;
   background:var(--bg);
   border-bottom:1px solid var(--line);
-  display:grid;grid-template-columns:repeat(4,1fr);
+  display:grid;grid-template-columns:repeat(3,1fr);
   margin:0 -16px;padding:0 4px;
 }
 .tab{
@@ -115,70 +117,6 @@ section.view.active{display:block}
   letter-spacing:-.02em;margin:20px 0 16px;line-height:1.1;
 }
 .section-title em{font-style:italic;color:var(--ink-soft)}
-
-/* ---- Cards ---- */
-.card{
-  background:var(--bg-card);
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:18px;
-  box-shadow:var(--shadow);
-}
-.card+.card{margin-top:12px}
-
-/* ---- Form elements ---- */
-label.field{
-  display:block;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
-  letter-spacing:.16em;text-transform:uppercase;
-  color:var(--ink-soft);margin-bottom:8px;
-}
-select{
-  width:100%;background:var(--bg-input);
-  border:1.5px solid var(--line);border-radius:var(--radius-sm);
-  padding:14px;font:inherit;font-size:16px;color:var(--ink);
-  outline:none;-webkit-appearance:none;appearance:none;
-  background-image:
-    linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),
-    linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);
-  background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;
-  background-size:5px 5px,5px 5px;background-repeat:no-repeat;
-  padding-right:36px;transition:border-color .15s,box-shadow .15s;
-}
-select:focus{box-shadow:0 0 0 3px var(--accent-dim);border-color:var(--accent)}
-select option{background:var(--bg-card);color:var(--ink)}
-
-/* ---- Buttons ---- */
-.btn{
-  appearance:none;border:1.5px solid var(--line);
-  background:var(--bg-input);color:var(--ink);
-  font-family:inherit;font-weight:600;font-size:16px;
-  padding:16px 18px;width:100%;border-radius:var(--radius-sm);
-  cursor:pointer;transition:transform .06s,background .15s;
-  min-height:54px;
-}
-.btn:active{transform:translateY(1px)}
-.btn.primary{background:var(--accent);color:#111;border-color:var(--accent)}
-.btn.primary:disabled{opacity:.35;cursor:not-allowed}
-.btn.line-btn{
-  background:#06c755;color:#fff;border-color:#06c755;
-  font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;
-  min-height:58px;border-radius:var(--radius);
-}
-.btn.line-btn svg{flex-shrink:0}
-
-/* ---- Winner toggle ---- */
-.winner-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.winner-row button{
-  appearance:none;border:1.5px solid var(--line);
-  background:var(--bg-input);color:var(--ink);
-  padding:16px 10px;border-radius:var(--radius-sm);
-  font:inherit;font-weight:600;cursor:pointer;font-size:15px;min-height:54px;
-  transition:background .15s,border-color .15s,color .15s;
-}
-.winner-row button[aria-pressed="true"]{
-  background:var(--accent);color:#111;border-color:var(--accent);
-}
 
 /* ---- Ranking rows ---- */
 .rank-list{display:flex;flex-direction:column;gap:8px}
@@ -218,35 +156,6 @@ select option{background:var(--bg-card);color:var(--ink)}
 .rank-row.p3{border-color:var(--bronze)}
 .rank-row.p3 .pos{color:var(--bronze)}
 
-/* ---- Match history cards ---- */
-.match-card{
-  background:var(--bg-card);border:1px solid var(--line);
-  border-radius:var(--radius-sm);padding:14px;
-}
-.match-card+.match-card{margin-top:10px}
-.match-card .when{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);
-  margin-bottom:10px;display:flex;justify-content:space-between;
-}
-.match-card .sides{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
-.match-card .side{
-  padding:10px;border-radius:10px;
-  background:var(--bg-input);border:1px dashed transparent;
-}
-.match-card .side.win{background:var(--accent-dim);border-color:var(--accent)}
-.match-card .side .lbl{
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--ink-mute);
-  margin-bottom:4px;
-}
-.match-card .side.win .lbl{color:var(--accent)}
-.match-card .side .names{font-weight:600;font-size:14px;line-height:1.35}
-.match-card .mid{
-  font-family:'Instrument Serif',serif;font-style:italic;
-  color:var(--ink-mute);font-size:14px;text-align:center;
-}
-
 /* ---- Login screen ---- */
 #view-login{
   display:flex;flex-direction:column;align-items:center;
@@ -259,6 +168,23 @@ select option{background:var(--bg-card);color:var(--ink)}
 #view-login .hero .dot{display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:50%;margin:0 1px 8px 2px}
 #view-login .tagline{color:var(--ink-soft);font-size:15px;max-width:260px;margin:0 auto}
 #view-login .login-wrap{width:100%;max-width:320px}
+
+/* ---- Buttons ---- */
+.btn{
+  appearance:none;border:1.5px solid var(--line);
+  background:var(--bg-input);color:var(--ink);
+  font-family:inherit;font-weight:600;font-size:16px;
+  padding:16px 18px;width:100%;border-radius:var(--radius-sm);
+  cursor:pointer;transition:transform .06s,background .15s;
+  min-height:54px;
+}
+.btn:active{transform:translateY(1px)}
+.btn.line-btn{
+  background:#06c755;color:#fff;border-color:#06c755;
+  font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;
+  min-height:58px;border-radius:var(--radius);
+}
+.btn.line-btn svg{flex-shrink:0}
 
 /* ---- Toast ---- */
 .toast{
@@ -273,45 +199,12 @@ select option{background:var(--bg-card);color:var(--ink)}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-
 /* ---- Empty state ---- */
 .empty{
   text-align:center;padding:40px 20px;
   color:var(--ink-mute);font-style:italic;
   font-family:'Instrument Serif',serif;font-size:16px;
 }
-
-/* ---- Utility ---- */
-.mt{margin-top:14px}
-.mb{margin-bottom:14px}
-.gap-sm{gap:8px}
-.text-mute{color:var(--ink-mute)}
-.text-sm{font-size:13px}
-.text-center{text-align:center}
-
-/* ---- Result buttons ---- */
-.result-grid{display:grid;gap:14px;margin-top:8px}
-.btn-result{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:28px 20px;border-radius:var(--radius);border:2px solid;
-  cursor:pointer;background:none;width:100%;min-height:130px;
-  transition:transform .08s,opacity .15s;
-}
-.btn-result:active{transform:scale(.97)}
-.btn-result.win{border-color:var(--accent);background:var(--accent-dim)}
-.btn-result.lose{border-color:var(--line);background:var(--bg-card)}
-.btn-result .r-pts{
-  font-family:'Instrument Serif',serif;font-size:52px;line-height:1;
-  color:var(--accent);
-}
-.btn-result.lose .r-pts{color:var(--ink-soft)}
-.btn-result .r-label{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
-  letter-spacing:.2em;text-transform:uppercase;margin-top:8px;
-  color:var(--accent);
-}
-.btn-result.lose .r-label{color:var(--ink-mute)}
-.btn-result.loading{opacity:.5;pointer-events:none}
 
 /* ---- Monthly winners grid ---- */
 .winners-grid{
@@ -342,12 +235,15 @@ select option{background:var(--bg-card);color:var(--ink)}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .winner-card .wpts{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-mute);margin-top:2px}
-.winner-card.empty .mo{color:var(--line)}
+.winner-card.empty-slot .mo{color:var(--line)}
+
+/* ---- Utility ---- */
+.text-mute{color:var(--ink-mute)}
+.text-sm{font-size:13px}
 
 /* Small screens */
 @media(max-width:360px){
-  .match-card .sides{grid-template-columns:1fr}
-  .match-card .mid{padding:4px 0}
+  .section-title{font-size:26px}
 }
 </style>
 </head>
@@ -364,14 +260,13 @@ select option{background:var(--bg-card);color:var(--ink)}
 <main class="app">
 
   <!-- ================================================================
-       LOGIN SCREEN (shown when not authenticated)
+       LOGIN SCREEN
        ================================================================ -->
   <section id="view-login" class="view">
     <div class="hero">ก๊วนอยากตีแบด</div>
     <p class="tagline">สแกน QR ที่สนาม → เข้าสู่ระบบด้วย LINE → เก็บคะแนนแบดมินตัน</p>
     <div class="login-wrap">
       <button class="btn line-btn" id="btn-line-login">
-        <!-- LINE icon -->
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 5.83 2 10.43c0 4.18 3.7 7.68 8.7 8.34.34.07.8.22.91.51.1.26.07.67.03.93l-.15.88c-.04.26-.2 1.02.9.56 1.09-.47 5.89-3.47 8.04-5.94C22.19 13.74 22 12.14 22 10.43 22 5.83 17.52 2 12 2z" fill="#fff"/></svg>
         เข้าสู่ระบบด้วย LINE
       </button>
@@ -379,7 +274,7 @@ select option{background:var(--bg-card);color:var(--ink)}
   </section>
 
   <!-- ================================================================
-       MAIN APP (shown after login)
+       MAIN APP
        ================================================================ -->
   <div id="app-main" style="display:none">
 
@@ -387,16 +282,16 @@ select option{background:var(--bg-card);color:var(--ink)}
       <div class="brand">ก๊วนอยากตีแบด</div>
       <div class="user-info">
         <span class="uname" id="display-name">—</span>
-        <img id="display-pic" src="" alt="profile" />
+        <img id="display-pic" src="" alt="profile" style="display:none" />
         <button class="logout" id="btn-logout">ออก</button>
       </div>
     </header>
 
+    <!-- 3 tabs only — recording via QR scan exclusively -->
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true"  data-view="daily">วันนี้</button>
       <button class="tab" role="tab" aria-selected="false" data-view="monthly">เดือนนี้</button>
       <button class="tab" role="tab" aria-selected="false" data-view="ranks">ตลอดกาล</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึก</button>
     </nav>
 
     <!-- ---- VIEW: DAILY ---- -->
@@ -421,61 +316,50 @@ select option{background:var(--bg-card);color:var(--ink)}
       <div class="rank-list" id="rank-list"></div>
     </section>
 
-    <!-- ---- VIEW: RECORD ---- -->
-    <section class="view" id="view-record">
-      <h2 class="section-title">บันทึก<em>ผล</em></h2>
-      <p class="text-mute text-sm" style="margin-bottom:24px">สแกน QR Code ที่สนาม แล้วกดปุ่มด้านล่าง</p>
-      <button class="btn primary" id="btn-scan-qr" style="width:100%;padding:18px;font-size:1.1rem">
-        📷 สแกน QR บันทึกผล
-      </button>
-      <div style="display:none">
-        <button class="btn-result win" id="btn-win">
-          <span class="r-pts">+3</span>
-          <span class="r-label">ชนะ</span>
-        </button>
-        <button class="btn-result lose" id="btn-lose">
-          <span class="r-pts">+1</span>
-          <span class="r-label">แพ้</span>
-        </button>
-      </div>
-    </section>
-
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.9</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v2.0 · firebase</p>
 
 </main>
 
 <div class="toast" id="toast"></div>
 
-<!-- Recording overlay -->
-<div id="recording-overlay" style="display:none;position:fixed;inset:0;background:#0e0f11ee;z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div id="recording-icon" style="font-size:64px">⏳</div>
-  <div id="recording-msg" style="font-size:1.2rem;font-weight:700;color:#e8e6e1;text-align:center"></div>
-</div>
-
 <script>
 /* =================================================================
-   SHUTTLE — BADMINTON TRACKER
-   Frontend with LINE Login + Google Sheets API backend
+   SHUTTLE — BADMINTON TRACKER v2.0
+   LINE LIFF + Firebase Firestore
    ================================================================= */
 
 // =================================================================
-// ⚙️ CONFIG
+// ⚙️ CONFIG — แก้ค่าหลัง setup Firebase
 // =================================================================
-const LIFF_ID  = '2009832825-of9TI64X';
-const API_BASE = 'https://script.google.com/macros/s/AKfycbyD6wYQsxvwuuEUo0sduA-QhcBY2KI1HbjDMWizf9_Q_GFFWKEo4t800ymRvBl6J6E_YA/exec';
+const LIFF_ID = '2009832825-of9TI64X';
+
+const FIREBASE_CONFIG = {
+  apiKey:            'FILL_IN_API_KEY',
+  authDomain:        'FILL_IN_PROJECT_ID.firebaseapp.com',
+  projectId:         'FILL_IN_PROJECT_ID',
+  storageBucket:     'FILL_IN_PROJECT_ID.appspot.com',
+  messagingSenderId: 'FILL_IN_SENDER_ID',
+  appId:             'FILL_IN_APP_ID',
+};
+
+// =================================================================
+// FIREBASE INIT
+// =================================================================
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
 
 // =================================================================
 // STATE
 // =================================================================
-let currentUser         = null;
-let allPlayers          = [];
-let allRankings         = [];
-let allDailyRankings    = [];
-let allMonthlyRankings  = [];
-let allMonthlyWinners   = [];
-let _resultHandled      = false; // guard: processResult เรียกได้ครั้งเดียวต่อ session
+let currentUser        = null;
+let allRankings        = [];
+let allDailyRankings   = [];
+let allMonthlyRankings = [];
+let allMonthlyWinners  = [];
+let _resultHandled     = false;
+let _isRecording       = false; // true = processResult กำลัง run, renderDaily ไม่ overwrite
 
 // =================================================================
 // DOM helpers
@@ -484,31 +368,165 @@ const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 function escHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function toast(msg, duration=2500){
-  const el=$('#toast');el.textContent=msg;el.classList.add('show');
-  clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),duration);
+function toast(msg, duration=2800){
+  const el=$('#toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'), duration);
+}
+
+function tsToDate(val){
+  if(!val) return new Date(0);
+  if(val instanceof Date) return val;
+  if(typeof val.toDate === 'function') return val.toDate();
+  return new Date(0);
 }
 
 // =================================================================
-// API calls (Google Apps Script)
+// FIREBASE OPERATIONS
 // =================================================================
-async function api(action, params={}){
-  const url = new URL(API_BASE);
-  url.searchParams.set('action', action);
-  Object.entries(params).forEach(([k,v])=> url.searchParams.set(k,v));
-  const res = await fetch(url.toString());
-  return res.json();
+
+/**
+ * Register / update player in Firestore
+ * Document key = lineUserId for easy lookup
+ */
+async function dbRegisterPlayer(lineUserId, name, pictureUrl){
+  const ref  = db.collection('players').doc(lineUserId);
+  const snap = await ref.get();
+  const isNew = !snap.exists;
+
+  if(isNew){
+    await ref.set({
+      id: lineUserId,
+      name,
+      pictureUrl: pictureUrl || '',
+      totalPoints: 0,
+      wins: 0,
+      losses: 0,
+      played: 0,
+      createdAt: new Date(),
+    });
+  } else {
+    // Update display name / pic in case they changed in LINE
+    await ref.update({ name, pictureUrl: pictureUrl || '' });
+  }
+
+  const data = isNew
+    ? { id: lineUserId, name, pictureUrl: pictureUrl || '', totalPoints: 0, wins: 0, losses: 0, played: 0 }
+    : { ...snap.data(), name, pictureUrl: pictureUrl || '' };
+
+  return { success: true, isNew, player: data };
 }
 
-async function apiPost(body){
-  // Google Apps Script Web App requires redirect-following for POST
-  const res = await fetch(API_BASE, {
-    method: 'POST',
-    headers: {'Content-Type':'text/plain'},  // GAS quirk: use text/plain to avoid preflight
-    body: JSON.stringify(body),
-    redirect: 'follow',
+/**
+ * Record win/lose result using a batch write
+ * - adds score document
+ * - atomically increments player totals
+ */
+async function dbRecordResult(playerId, result, points){
+  const batch     = db.batch();
+  const scoreRef  = db.collection('scores').doc();
+  const playerRef = db.collection('players').doc(playerId);
+  const inc       = firebase.firestore.FieldValue.increment;
+
+  batch.set(scoreRef, {
+    playerId,
+    result,
+    points,
+    createdAt: new Date(),
   });
-  return res.json();
+
+  batch.update(playerRef, {
+    totalPoints: inc(points),
+    played:      inc(1),
+    [result === 'win' ? 'wins' : 'losses']: inc(1),
+  });
+
+  await batch.commit();
+  return { success: true };
+}
+
+/**
+ * Load all data needed for the 3 views in parallel:
+ *   - players (for all-time rankings) — already aggregated in player docs
+ *   - today's scores  (for daily view)
+ *   - this year's scores (for monthly view + winners grid)
+ */
+async function dbGetAllData(){
+  const now        = new Date();
+  const dayStart   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yearStart  = new Date(now.getFullYear(), 0, 1);
+  const curMonth   = now.getMonth(); // 0-11
+
+  const [playersSnap, dailySnap, yearSnap] = await Promise.all([
+    db.collection('players').orderBy('totalPoints','desc').get(),
+    db.collection('scores').where('createdAt','>=',dayStart).get(),
+    db.collection('scores').where('createdAt','>=',yearStart).get(),
+  ]);
+
+  // Player map  {lineUserId → player data}
+  const players   = playersSnap.docs.map(d => d.data());
+  const playerMap = {};
+  players.forEach(p => { playerMap[p.id] = p; });
+
+  // ── All-time rankings (from pre-aggregated player docs) ──
+  const rankings = players
+    .filter(p => (p.totalPoints || 0) > 0)
+    .map(p => ({
+      ...p,
+      points:  p.totalPoints || 0,
+      played:  p.played  || 0,
+      wins:    p.wins    || 0,
+      losses:  p.losses  || 0,
+    }));
+
+  // ── Daily rankings ──
+  const dailyAgg = {};
+  dailySnap.docs.forEach(d => {
+    const s = d.data();
+    if(!dailyAgg[s.playerId]) dailyAgg[s.playerId] = { points:0, wins:0, losses:0, played:0 };
+    dailyAgg[s.playerId].points += s.points;
+    dailyAgg[s.playerId].played++;
+    if(s.result === 'win') dailyAgg[s.playerId].wins++;
+    else                   dailyAgg[s.playerId].losses++;
+  });
+  const daily = Object.entries(dailyAgg)
+    .map(([id, stats]) => ({ ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...stats }))
+    .sort((a,b) => b.points - a.points || b.wins - a.wins);
+
+  // ── Monthly rankings + yearly winners (single pass over year scores) ──
+  const monthAgg  = {};
+  const yearlyAgg = {}; // month(0-11) → { playerId: totalPoints }
+
+  yearSnap.docs.forEach(d => {
+    const s  = d.data();
+    const mo = tsToDate(s.createdAt).getMonth(); // 0-11
+
+    // Current month aggregate
+    if(mo === curMonth){
+      if(!monthAgg[s.playerId]) monthAgg[s.playerId] = { points:0, wins:0, losses:0, played:0 };
+      monthAgg[s.playerId].points += s.points;
+      monthAgg[s.playerId].played++;
+      if(s.result === 'win') monthAgg[s.playerId].wins++;
+      else                   monthAgg[s.playerId].losses++;
+    }
+
+    // Yearly winners aggregate
+    if(!yearlyAgg[mo]) yearlyAgg[mo] = {};
+    yearlyAgg[mo][s.playerId] = (yearlyAgg[mo][s.playerId] || 0) + s.points;
+  });
+
+  const monthly = Object.entries(monthAgg)
+    .map(([id, stats]) => ({ ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...stats }))
+    .sort((a,b) => b.points - a.points || b.wins - a.wins);
+
+  const winners = Array.from({ length:12 }, (_, i) => {
+    const map = yearlyAgg[i];
+    if(!map || !Object.keys(map).length) return { month: i };
+    const [winnerId, pts] = Object.entries(map).sort((a,b) => b[1]-a[1])[0];
+    const player = playerMap[winnerId];
+    return { month: i, winner: player ? { ...player, points: pts } : null };
+  });
+
+  return { players, rankings, daily, monthly, winners };
 }
 
 // =================================================================
@@ -525,74 +543,53 @@ async function loginWithLIFF(resultParam){
   const isQRScan = resultParam === 'win' || resultParam === 'lose';
   const cached   = localStorage.getItem('shuttle_player');
 
-  // ══ เปิด app ปกติ (ไม่ใช่ QR scan) ══
-  // แสดงจาก cache ทันที แล้ว refresh background
+  // ── Normal open (no QR scan) ──
   if(!isQRScan){
-    if(cached){
-      currentUser = JSON.parse(cached);
-      showApp(); hideSplash();
-      loadCachedData();
-    }
+    if(cached){ currentUser = JSON.parse(cached); showApp(); hideSplash(); loadCachedData(); }
     _backgroundRefresh().catch(console.error);
     return;
   }
 
-  // ══ QR scan ══
+  // ── QR scan ──
   if(cached){
-    // Cached user: รู้จัก user แล้ว → record ทันที ไม่ต้องรอ verify ซ้ำ
-    // _backgroundRefresh อัปเดต profile/ข้อมูลหลัง record เสร็จ
+    // Known user → record immediately, refresh in background
     currentUser = JSON.parse(cached);
+    showApp(); hideSplash();
     window.history.replaceState({}, '', window.location.pathname);
     await processResult(resultParam);
     _backgroundRefresh().catch(console.error);
     return;
   }
 
-  // New user: ต้อง register ก่อนถึงจะรู้ playerId
+  // New user → register first
   try{
-    const profile   = await liff.getProfile();
-    const regResult = await apiPost({
-      action:     'registerPlayer',
-      name:       profile.displayName,
-      lineUserId: profile.userId,
-      pictureUrl: profile.pictureUrl || '',
-    });
-
-    if(!regResult.success){
-      hideRecording();
-      toast(regResult.error || 'เกิดข้อผิดพลาด');
-      return;
-    }
-
-    currentUser = regResult.player;
+    const profile = await liff.getProfile();
+    const reg     = await dbRegisterPlayer(profile.userId, profile.displayName, profile.pictureUrl || '');
+    if(!reg.success){ toast('เกิดข้อผิดพลาด ลองใหม่'); return; }
+    currentUser = reg.player;
     localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
     showApp(); hideSplash();
-    if(regResult.isNew) toast('ยินดีต้อนรับ! 🏸');
+    if(reg.isNew) toast('ยินดีต้อนรับ! 🏸');
     window.history.replaceState({}, '', window.location.pathname);
     await processResult(resultParam);
-
   }catch(err){
     console.error('LIFF login error', err);
-    hideRecording();
     showLogin(); hideSplash();
   }
 }
 
-// background refresh user info + data (non-blocking)
+// Background refresh: update profile + reload data without blocking UI
 async function _backgroundRefresh(){
   try{
-    const profile   = await liff.getProfile();
-    const regResult = await apiPost({
-      action:     'registerPlayer',
-      name:       profile.displayName,
-      lineUserId: profile.userId,
-      pictureUrl: profile.pictureUrl || '',
-    });
-    if(regResult?.success){
-      currentUser = regResult.player;
+    if(!liff.isLoggedIn()) return;
+    const profile = await liff.getProfile();
+    const reg     = await dbRegisterPlayer(profile.userId, profile.displayName, profile.pictureUrl || '');
+    if(reg?.success){
+      currentUser = reg.player;
       localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
       const n = $('#display-name'); if(n) n.textContent = currentUser.name;
-      const p = $('#display-pic');  if(p && currentUser.pictureUrl) p.src = currentUser.pictureUrl;
+      const p = $('#display-pic');
+      if(p && currentUser.pictureUrl){ p.src = currentUser.pictureUrl; p.style.display='block'; }
     }
     await loadAllData();
   }catch(e){ console.error('background refresh', e); }
@@ -600,81 +597,65 @@ async function _backgroundRefresh(){
 
 function logout(){
   localStorage.removeItem('shuttle_player');
-  localStorage.setItem('shuttle_logout', '1');
+  localStorage.setItem('shuttle_logout','1');
   currentUser = null;
   try{ liff.logout(); }catch(e){}
   window.location.reload();
 }
 
 // =================================================================
-// UI — Show/hide screens
+// UI
 // =================================================================
 function showLogin(){
   $('#view-login').style.display = 'flex';
-  $('#app-main').style.display = 'none';
+  $('#app-main').style.display   = 'none';
 }
 
 function showApp(){
   $('#view-login').style.display = 'none';
-  $('#app-main').style.display = 'block';
-  setupRecordTab();
-
-  // Display user info
-  $('#display-name').textContent = currentUser.name;
+  $('#app-main').style.display   = 'block';
+  $('#display-name').textContent  = currentUser.name;
   const pic = $('#display-pic');
-  if(currentUser.pictureUrl){
-    pic.src = currentUser.pictureUrl;
-    pic.style.display = 'block';
-  } else {
-    pic.style.display = 'none';
-  }
-  // หมายเหตุ: loadAllData() ไม่อยู่ที่นี่แล้ว — caller จัดการเองเพื่อหลีกเลี่ยง concurrent GAS calls
+  if(currentUser.pictureUrl){ pic.src = currentUser.pictureUrl; pic.style.display = 'block'; }
+  else { pic.style.display = 'none'; }
 }
 
 function hideSplash(){
   const s = $('#splash');
-  if(!s) return; // ป้องกัน call ซ้ำ
+  if(!s) return;
   s.classList.add('hide');
-  setTimeout(()=> s.parentNode && s.remove(), 500);
+  setTimeout(() => s.parentNode && s.remove(), 500);
 }
 
 // =================================================================
 // DATA LOADING
 // =================================================================
 
-function renderAll(){
-  renderDaily();
-  renderMonthly();
-  renderRanks();
-}
+function renderAll(){ renderDaily(); renderMonthly(); renderRanks(); }
 
-// โหลด cache จาก localStorage → แสดงทันที ไม่รอ network
 function loadCachedData(){
   try{
     const c = localStorage.getItem('shuttle_data');
     if(!c) return false;
     const d = JSON.parse(c);
-    allPlayers         = d.players  || [];
     allRankings        = d.rankings || [];
     allDailyRankings   = d.daily    || [];
     allMonthlyRankings = d.monthly  || [];
     allMonthlyWinners  = d.winners  || [];
-    renderAll();
-    return true;
+    renderAll(); return true;
   }catch(e){ return false; }
 }
 
 async function loadAllData(){
   try{
-    const res = await api('getAllData');
-    allPlayers         = res.players  || [];
+    const res = await dbGetAllData();
     allRankings        = res.rankings || [];
     allDailyRankings   = res.daily    || [];
     allMonthlyRankings = res.monthly  || [];
     allMonthlyWinners  = res.winners  || [];
     localStorage.setItem('shuttle_data', JSON.stringify({
-      players: allPlayers, rankings: allRankings,
-      daily: allDailyRankings, monthly: allMonthlyRankings, winners: allMonthlyWinners
+      rankings: allRankings, daily: allDailyRankings,
+      monthly: allMonthlyRankings, winners: allMonthlyWinners,
     }));
     renderAll();
   }catch(err){
@@ -697,29 +678,24 @@ function rankRowHtml(r, i){
     <div class="pos">${medal || (i+1)}</div>
     <div class="info">
       <span class="n">${picHtml}${escHtml(r.name)}</span>
-      <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
+      <span class="stats">${r.played||0} เกม · ${r.wins||0} ชนะ · ${r.losses||0} แพ้</span>
     </div>
     <div class="pts">${r.points}<small>pts</small></div>
   </div>`;
 }
 
-// =================================================================
-// RENDER: Daily
-// =================================================================
 function renderDaily(){
   const now = new Date();
   const el = $('#daily-date');
   if(el) el.textContent = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   const c = $('#daily-list');
   if(!c) return;
+  if(_isRecording) return; // processResult กำลัง run อยู่ ห้าม overwrite
   c.innerHTML = allDailyRankings.length === 0
-    ? '<div class="empty">ยังไม่มีเกมวันนี้</div>'
+    ? '<div class="empty">ยังไม่มีเกมวันนี้<br><small style="font-size:13px;font-family:\'DM Sans\',sans-serif;font-style:normal">สแกน QR ที่สนามเพื่อเริ่มบันทึก</small></div>'
     : allDailyRankings.map(rankRowHtml).join('');
 }
 
-// =================================================================
-// RENDER: Monthly rankings + winners grid
-// =================================================================
 function renderMonthly(){
   const now = new Date();
   const el = $('#monthly-label');
@@ -736,16 +712,15 @@ function renderMonthly(){
 function renderMonthlyWinners(){
   const grid = $('#monthly-winners-grid');
   if(!grid) return;
-  if(!allMonthlyWinners || allMonthlyWinners.length === 0){
-    grid.innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>';
-    return;
+  if(!allMonthlyWinners || !allMonthlyWinners.length){
+    grid.innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>'; return;
   }
-  const curMonth = new Date().getMonth();
+  const curMonth = new Date().getMonth(); // 0-11
   grid.innerHTML = '<div class="winners-grid">' + allMonthlyWinners.map(w => {
     const isCur = w.month === curMonth;
     const mo    = THAI_MONTHS_SHORT[w.month];
     if(!w.winner){
-      return `<div class="winner-card empty${isCur?' cur-month':''}">
+      return `<div class="winner-card empty-slot${isCur?' cur-month':''}">
         <div class="mo">${mo}</div>
         <div class="no-pic"></div>
         <div class="wname" style="color:var(--line)">—</div>
@@ -763,54 +738,38 @@ function renderMonthlyWinners(){
   }).join('') + '</div>';
 }
 
-// =================================================================
-// RENDER: All-time Rankings
-// =================================================================
 function renderRanks(){
   const c = $('#rank-list');
   if(!c) return;
   c.innerHTML = allRankings.length === 0
-    ? '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>scan QR แล้วเริ่มเล่นกันเลย!</div>'
+    ? '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>สแกน QR ที่สนามเพื่อเริ่มเล่น!</div>'
     : allRankings.map(rankRowHtml).join('');
 }
 
 // =================================================================
-// RECORD RESULT (from QR scan)
+// RECORD RESULT — QR scan only, no manual button
 // =================================================================
-function showRecording(msg, icon){
-  const ov = $('#recording-overlay');
-  $('#recording-icon').textContent = icon || '⏳';
-  $('#recording-msg').textContent  = msg;
-  ov.style.display = 'flex';
-}
-function hideRecording(){ $('#recording-overlay').style.display = 'none'; }
-
 async function processResult(result){
-  if(!currentUser) return;
+  if(!currentUser){ return; }
   if(_resultHandled){ console.warn('processResult already handled'); return; }
   _resultHandled = true;
+  _isRecording   = true;
 
   const pts = result === 'win' ? 3 : 1;
 
-  // แสดง loading ใน daily list (ไม่ blocking ทั้งหน้า)
+  // Show inline loading in daily tab (won't be overwritten while _isRecording=true)
   switchTab('daily');
-  if($('#daily-list').innerHTML.indexOf('loading') === -1){
-    $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
-  }
+  $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
 
   try{
-    const res = await apiPost({
-      action: 'recordResult', playerId: currentUser.id, result, points: pts,
-    });
-    if(res.success){
-      await loadAllData(); // อัปเดต rankings → renderWeekly() เคลียร์ loading เอง
-      toast(result === 'win' ? '🏆 ชนะ! +3 คะแนน' : '✅ แพ้ +1 คะแนน');
-    } else {
-      loadCachedData(); // restore ถ้า error
-      toast('บันทึกไม่สำเร็จ: ' + (res.error || 'ลองใหม่'));
-    }
+    await dbRecordResult(currentUser.id, result, pts);
+    _isRecording = false; // unlock renderDaily before loadAllData renders
+    await loadAllData();
+    toast(result === 'win' ? '🏆 ชนะ! +3 คะแนน' : '✅ แพ้ +1 คะแนน');
   }catch(err){
-    console.error(err);
+    console.error('recordResult error', err);
+    _resultHandled = false; // allow retry
+    _isRecording   = false;
     loadCachedData();
     toast('บันทึกไม่สำเร็จ ลองใหม่');
   }
@@ -828,69 +787,31 @@ function switchTab(viewName){
 }
 
 // =================================================================
-// EVENT WIRING
+// EVENTS
 // =================================================================
-async function recordResult(result){
-  const btn = result === 'win' ? $('#btn-win') : $('#btn-lose');
-  btn.classList.add('loading');
-  await processResult(result);
-  btn.classList.remove('loading');
-}
-
-async function openLineScanner(){
-  try{
-    const res = await liff.scanCodeV2();
-    const url  = new URL(res.value);
-    const gameResult = url.searchParams.get('result');
-    if(gameResult === 'win' || gameResult === 'lose'){
-      await processResult(gameResult);
-    } else {
-      toast('QR นี้ไม่ใช่ของก๊วน ลองใหม่');
-    }
-  }catch(err){
-    if(err?.code !== 'CANCEL') toast('ปิดกล้องแล้ว');
-  }
-}
-
 function wireEvents(){
   $('#btn-line-login').addEventListener('click', () => liff.login({ redirectUri: window.location.href }));
   $('#btn-logout').addEventListener('click', logout);
-  $$('.tab').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.view));
-  });
-  $('#btn-win').addEventListener('click',  () => recordResult('win'));
-  $('#btn-lose').addEventListener('click', () => recordResult('lose'));
-  $('#btn-scan-qr').addEventListener('click', openLineScanner);
+  $$('.tab').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.view)));
 }
 
-function setupRecordTab(){}
-
 // =================================================================
-// EXTRACT RESULT — อ่าน result=win/lose จาก URL search string
-// รองรับทุก format ที่ LIFF ใช้:
-//   ?result=lose         → ตรงๆ
-//   liff.state=?result=lose   → LIFF encode แบบ ?
-//   liff.state=/result=lose   → LIFF encode แบบ /
-//   liff.state=/?result=lose  → มี / และ ?
-//   liff.state=/badminton/?result=lose → มี path เต็ม
+// URL HELPERS — extract result=win/lose through all LIFF encodings
+// Handles: ?result=win  |  liff.state=?result=win
+//          liff.state=/result=win  |  liff.state=/?result=win
 // =================================================================
 function extractResult(search){
-  // 1) ลองตรงๆ ก่อน
   const direct = new URLSearchParams(search).get('result');
   if(direct === 'win' || direct === 'lose') return direct;
 
-  // 2) ลอง decode liff.state
   const liffState = new URLSearchParams(search).get('liff.state');
   if(!liffState) return null;
 
   try{
     const decoded = decodeURIComponent(liffState);
-    // หา query string: ตัดทุกอย่างก่อน ? (path) แล้วเอาส่วนหลัง ?
     const qIdx = decoded.indexOf('?');
-    const qs   = qIdx !== -1
-      ? decoded.slice(qIdx + 1)          // เอาหลัง ?
-      : decoded.replace(/^[/?]+/, '');   // ไม่มี ? → ตัด / นำหน้า
-    const r = new URLSearchParams(qs).get('result');
+    const qs   = qIdx !== -1 ? decoded.slice(qIdx+1) : decoded.replace(/^[/?]+/,'');
+    const r    = new URLSearchParams(qs).get('result');
     if(r === 'win' || r === 'lose') return r;
   }catch(e){}
 
@@ -901,12 +822,10 @@ function extractResult(search){
 // BOOT
 // =================================================================
 async function boot(){
-  _resultHandled = false; // reset ทุก page load
+  _resultHandled = false;
   wireEvents();
 
-  // ══ ขั้นแรกสุด: จับ result จาก URL ก่อน liff.init แตะ URL ══
-  // liff.init อาจ trigger redirect เต็ม → boot() restart ใหม่
-  // การบันทึกลง localStorage ทำให้ค่ารอดผ่าน redirect ได้
+  // Capture result param BEFORE liff.init can redirect
   const preSearch = window.location.search;
   const preResult = extractResult(preSearch);
   if(preResult) localStorage.setItem('shuttle_pending_result', preResult);
@@ -914,14 +833,11 @@ async function boot(){
   const cachedPlayer = localStorage.getItem('shuttle_player');
   const isLogout     = localStorage.getItem('shuttle_logout');
 
-  // ══ FAST PATH ══ แสดง cache ทันทีเสมอ
+  // Fast path: show cache immediately
   if(cachedPlayer && !isLogout){
     currentUser = JSON.parse(cachedPlayer);
-    showApp();
-    hideSplash();
-
+    showApp(); hideSplash();
     if(preResult === 'win' || preResult === 'lose'){
-      // QR scan: โหลด cache ก่อน (tabs อื่นเห็นข้อมูล) แล้ว daily แสดง loading
       switchTab('daily');
       loadCachedData();
       $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
@@ -930,7 +846,7 @@ async function boot(){
     }
   }
 
-  // liff.init (อาจ redirect หรือ rewrite URL)
+  // Init LIFF
   try{
     await liff.init({ liffId: LIFF_ID });
   }catch(err){
@@ -939,27 +855,22 @@ async function boot(){
     return;
   }
 
-  // อ่าน resultParam จากทุกแหล่ง (เรียงตามความน่าเชื่อถือ)
+  // Resolve result from all sources
   const resultParam =
-    extractResult(window.location.search) || // หลัง liff.init decode
-    preResult                              || // pre-init URL snapshot
-    localStorage.getItem('shuttle_pending_result'); // รอดผ่าน redirect
-
-  // เคลียร์ pending เสมอ (ไม่ให้ค้างข้าม session)
+    extractResult(window.location.search) ||
+    preResult ||
+    localStorage.getItem('shuttle_pending_result');
   localStorage.removeItem('shuttle_pending_result');
 
   if(!liff.isLoggedIn()){
     if(resultParam === 'win' || resultParam === 'lose'){
-      // บันทึกก่อน login redirect (จะถูกอ่านใน boot() รอบหน้า)
       localStorage.setItem('shuttle_pending_result', resultParam);
       liff.login({ redirectUri: window.location.href });
       return;
     }
     currentUser = null;
     localStorage.removeItem('shuttle_player');
-    showLogin();
-    hideSplash();
-    return;
+    showLogin(); hideSplash(); return;
   }
 
   await loginWithLIFF(resultParam);
