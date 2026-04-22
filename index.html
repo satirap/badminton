@@ -313,6 +313,37 @@ select option{background:var(--bg-card);color:var(--ink)}
 .btn-result.lose .r-label{color:var(--ink-mute)}
 .btn-result.loading{opacity:.5;pointer-events:none}
 
+/* ---- Monthly winners grid ---- */
+.winners-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;
+}
+.winner-card{
+  background:var(--bg-card);border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:12px 8px;text-align:center;
+}
+.winner-card.has-winner{border-color:var(--accent)}
+.winner-card.cur-month{background:linear-gradient(135deg,var(--bg-card) 50%,#c6f13512 100%)}
+.winner-card .mo{
+  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:8px;
+}
+.winner-card img{
+  width:44px;height:44px;border-radius:50%;object-fit:cover;
+  border:2px solid var(--accent);margin:0 auto 6px;display:block;
+}
+.winner-card .no-pic{
+  width:44px;height:44px;border-radius:50%;background:var(--bg-input);
+  border:2px solid var(--line);margin:0 auto 6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+}
+.winner-card .wname{
+  font-size:11px;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.winner-card .wpts{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-mute);margin-top:2px}
+.winner-card.empty .mo{color:var(--line)}
+
 /* Small screens */
 @media(max-width:360px){
   .match-card .sides{grid-template-columns:1fr}
@@ -362,29 +393,32 @@ select option{background:var(--bg-card);color:var(--ink)}
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true"  data-view="weekly">อาทิตย์นี้</button>
+      <button class="tab" role="tab" aria-selected="true"  data-view="daily">วันนี้</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="monthly">เดือนนี้</button>
       <button class="tab" role="tab" aria-selected="false" data-view="ranks">ตลอดกาล</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="winrate">% ชนะ</button>
       <button class="tab" role="tab" aria-selected="false" data-view="record">บันทึก</button>
     </nav>
 
-    <!-- ---- VIEW: WEEKLY ---- -->
-    <section class="view active" id="view-weekly">
-      <h2 class="section-title">อาทิตย์<em>นี้</em></h2>
-      <p class="text-mute text-sm" style="margin:-8px 0 16px">จันทร์ – อาทิตย์ · reset ทุกวันจันทร์</p>
-      <div class="rank-list" id="weekly-list"></div>
+    <!-- ---- VIEW: DAILY ---- -->
+    <section class="view active" id="view-daily">
+      <h2 class="section-title">วัน<em>นี้</em></h2>
+      <p class="text-mute text-sm" id="daily-date" style="margin:-8px 0 16px"></p>
+      <div class="rank-list" id="daily-list"></div>
+    </section>
+
+    <!-- ---- VIEW: MONTHLY ---- -->
+    <section class="view" id="view-monthly">
+      <h2 class="section-title">เดือน<em>นี้</em></h2>
+      <p class="text-mute text-sm" id="monthly-label" style="margin:-8px 0 16px"></p>
+      <div class="rank-list" id="monthly-list"></div>
+      <h2 class="section-title" style="margin-top:32px">ผู้ชนะ<em>ประจำเดือน</em></h2>
+      <div id="monthly-winners-grid"></div>
     </section>
 
     <!-- ---- VIEW: ALL-TIME RANKINGS ---- -->
     <section class="view" id="view-ranks">
       <h2 class="section-title">อันดับ<em>ตลอดกาล</em></h2>
       <div class="rank-list" id="rank-list"></div>
-    </section>
-
-    <!-- ---- VIEW: WIN RATE ---- -->
-    <section class="view" id="view-winrate">
-      <h2 class="section-title">% ชนะ<em>ตลอดกาล</em></h2>
-      <div class="rank-list" id="winrate-list"></div>
     </section>
 
     <!-- ---- VIEW: RECORD ---- -->
@@ -408,7 +442,7 @@ select option{background:var(--bg-card);color:var(--ink)}
 
   </div><!-- /app-main -->
 
-  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.8</p>
+  <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v1.9</p>
 
 </main>
 
@@ -435,11 +469,13 @@ const API_BASE = 'https://script.google.com/macros/s/AKfycbyD6wYQsxvwuuEUo0sduA-
 // =================================================================
 // STATE
 // =================================================================
-let currentUser        = null;
-let allPlayers         = [];
-let allRankings        = [];
-let allWeeklyRankings  = [];
-let _resultHandled     = false; // guard: processResult เรียกได้ครั้งเดียวต่อ session
+let currentUser         = null;
+let allPlayers          = [];
+let allRankings         = [];
+let allDailyRankings    = [];
+let allMonthlyRankings  = [];
+let allMonthlyWinners   = [];
+let _resultHandled      = false; // guard: processResult เรียกได้ครั้งเดียวต่อ session
 
 // =================================================================
 // DOM helpers
@@ -606,37 +642,41 @@ function hideSplash(){
 // DATA LOADING
 // =================================================================
 
+function renderAll(){
+  renderDaily();
+  renderMonthly();
+  renderRanks();
+}
+
 // โหลด cache จาก localStorage → แสดงทันที ไม่รอ network
 function loadCachedData(){
   try{
     const c = localStorage.getItem('shuttle_data');
     if(!c) return false;
-    const { players, rankings, weekly } = JSON.parse(c);
-    allPlayers        = players  || [];
-    allRankings       = rankings || [];
-    allWeeklyRankings = weekly   || [];
-    renderRanks(); renderWeekly(); renderWinRate();
+    const d = JSON.parse(c);
+    allPlayers         = d.players  || [];
+    allRankings        = d.rankings || [];
+    allDailyRankings   = d.daily    || [];
+    allMonthlyRankings = d.monthly  || [];
+    allMonthlyWinners  = d.winners  || [];
+    renderAll();
     return true;
   }catch(e){ return false; }
 }
 
 async function loadAllData(){
   try{
-    // 1 call แทน 3 — เร็วกว่าเดิม 3x
     const res = await api('getAllData');
-
-    allPlayers        = res.players  || [];
-    allRankings       = res.rankings || [];
-    allWeeklyRankings = res.weekly   || [];
-
-    // บันทึก cache ไว้สำหรับครั้งหน้า
+    allPlayers         = res.players  || [];
+    allRankings        = res.rankings || [];
+    allDailyRankings   = res.daily    || [];
+    allMonthlyRankings = res.monthly  || [];
+    allMonthlyWinners  = res.winners  || [];
     localStorage.setItem('shuttle_data', JSON.stringify({
-      players: allPlayers, rankings: allRankings, weekly: allWeeklyRankings
+      players: allPlayers, rankings: allRankings,
+      daily: allDailyRankings, monthly: allMonthlyRankings, winners: allMonthlyWinners
     }));
-
-    renderRanks();
-    renderWeekly();
-    renderWinRate();
+    renderAll();
   }catch(err){
     console.error('Data load error', err);
     toast('โหลดข้อมูลไม่สำเร็จ');
@@ -644,88 +684,94 @@ async function loadAllData(){
 }
 
 // =================================================================
-// RENDER: Rankings
+// RENDER helpers
+// =================================================================
+const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+function rankRowHtml(r, i){
+  const podium  = i < 3 ? `p${i+1}` : '';
+  const medal   = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
+  const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
+  return `<div class="rank-row ${podium}">
+    <div class="pos">${medal || (i+1)}</div>
+    <div class="info">
+      <span class="n">${picHtml}${escHtml(r.name)}</span>
+      <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
+    </div>
+    <div class="pts">${r.points}<small>pts</small></div>
+  </div>`;
+}
+
+// =================================================================
+// RENDER: Daily
+// =================================================================
+function renderDaily(){
+  const now = new Date();
+  const el = $('#daily-date');
+  if(el) el.textContent = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const c = $('#daily-list');
+  if(!c) return;
+  c.innerHTML = allDailyRankings.length === 0
+    ? '<div class="empty">ยังไม่มีเกมวันนี้</div>'
+    : allDailyRankings.map(rankRowHtml).join('');
+}
+
+// =================================================================
+// RENDER: Monthly rankings + winners grid
+// =================================================================
+function renderMonthly(){
+  const now = new Date();
+  const el = $('#monthly-label');
+  if(el) el.textContent = `${THAI_MONTHS_FULL[now.getMonth()]} ${now.getFullYear()}`;
+  const c = $('#monthly-list');
+  if(c){
+    c.innerHTML = allMonthlyRankings.length === 0
+      ? '<div class="empty">ยังไม่มีเกมเดือนนี้</div>'
+      : allMonthlyRankings.map(rankRowHtml).join('');
+  }
+  renderMonthlyWinners();
+}
+
+function renderMonthlyWinners(){
+  const grid = $('#monthly-winners-grid');
+  if(!grid) return;
+  if(!allMonthlyWinners || allMonthlyWinners.length === 0){
+    grid.innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>';
+    return;
+  }
+  const curMonth = new Date().getMonth();
+  grid.innerHTML = '<div class="winners-grid">' + allMonthlyWinners.map(w => {
+    const isCur = w.month === curMonth;
+    const mo    = THAI_MONTHS_SHORT[w.month];
+    if(!w.winner){
+      return `<div class="winner-card empty${isCur?' cur-month':''}">
+        <div class="mo">${mo}</div>
+        <div class="no-pic"></div>
+        <div class="wname" style="color:var(--line)">—</div>
+      </div>`;
+    }
+    const pic = w.winner.pictureUrl
+      ? `<img src="${escHtml(w.winner.pictureUrl)}" alt="${escHtml(w.winner.name)}" />`
+      : `<div class="no-pic">👤</div>`;
+    return `<div class="winner-card has-winner${isCur?' cur-month':''}">
+      <div class="mo">${mo}</div>
+      ${pic}
+      <div class="wname">${escHtml(w.winner.name)}</div>
+      <div class="wpts">${w.winner.points} pts</div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// =================================================================
+// RENDER: All-time Rankings
 // =================================================================
 function renderRanks(){
-  const container = $('#rank-list');
-  if(allRankings.length === 0){
-    container.innerHTML = '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>scan QR แล้วเริ่มเล่นกันเลย!</div>';
-    return;
-  }
-
-  container.innerHTML = allRankings.map((r, i) => {
-    const podium = i < 3 ? `p${i+1}` : '';
-    const medal = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
-    const picHtml = r.pictureUrl
-      ? `<img src="${escHtml(r.pictureUrl)}" alt="" />`
-      : '';
-    return `
-      <div class="rank-row ${podium}">
-        <div class="pos">${medal || (i+1)}</div>
-        <div class="info">
-          <span class="n">${picHtml}${escHtml(r.name)}</span>
-          <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
-        </div>
-        <div class="pts">${r.points}<small>pts</small></div>
-      </div>
-    `;
-  }).join('');
-}
-
-
-// =================================================================
-// RENDER: Weekly Rankings
-// =================================================================
-function renderWeekly(){
-  const container = $('#weekly-list');
-  if(allWeeklyRankings.length === 0){
-    container.innerHTML = '<div class="empty">ยังไม่มีเกมอาทิตย์นี้</div>';
-    return;
-  }
-  container.innerHTML = allWeeklyRankings.map((r, i) => {
-    const podium = i < 3 ? `p${i+1}` : '';
-    const medal  = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
-    const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
-    return `
-      <div class="rank-row ${podium}">
-        <div class="pos">${medal || (i+1)}</div>
-        <div class="info">
-          <span class="n">${picHtml}${escHtml(r.name)}</span>
-          <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
-        </div>
-        <div class="pts">${r.points}<small>pts</small></div>
-      </div>`;
-  }).join('');
-}
-
-// =================================================================
-// RENDER: Win Rate
-// =================================================================
-function renderWinRate(){
-  const container = $('#winrate-list');
-  const ranked = [...allRankings]
-    .filter(r => r.played > 0)
-    .map(r => ({ ...r, pct: Math.round(r.wins / r.played * 100) }))
-    .sort((a,b) => b.pct - a.pct || b.played - a.played || a.name.localeCompare(b.name));
-
-  if(ranked.length === 0){
-    container.innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>';
-    return;
-  }
-  container.innerHTML = ranked.map((r, i) => {
-    const podium  = i < 3 ? `p${i+1}` : '';
-    const medal   = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
-    const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
-    return `
-      <div class="rank-row ${podium}">
-        <div class="pos">${medal || (i+1)}</div>
-        <div class="info">
-          <span class="n">${picHtml}${escHtml(r.name)}</span>
-          <span class="stats">${r.played} เกม · ${r.wins} ชนะ · ${r.losses} แพ้</span>
-        </div>
-        <div class="pts">${r.pct}<small>%</small></div>
-      </div>`;
-  }).join('');
+  const c = $('#rank-list');
+  if(!c) return;
+  c.innerHTML = allRankings.length === 0
+    ? '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>scan QR แล้วเริ่มเล่นกันเลย!</div>'
+    : allRankings.map(rankRowHtml).join('');
 }
 
 // =================================================================
@@ -746,10 +792,10 @@ async function processResult(result){
 
   const pts = result === 'win' ? 3 : 1;
 
-  // แสดง loading ใน weekly list (ไม่ blocking ทั้งหน้า)
-  switchTab('weekly');
-  if($('#weekly-list').innerHTML.indexOf('loading') === -1){
-    $('#weekly-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
+  // แสดง loading ใน daily list (ไม่ blocking ทั้งหน้า)
+  switchTab('daily');
+  if($('#daily-list').innerHTML.indexOf('loading') === -1){
+    $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
   }
 
   try{
@@ -875,10 +921,10 @@ async function boot(){
     hideSplash();
 
     if(preResult === 'win' || preResult === 'lose'){
-      // QR scan: โหลด cache ก่อน (tabs อื่นเห็นข้อมูล) แล้ว weekly แสดง loading
-      switchTab('weekly');
+      // QR scan: โหลด cache ก่อน (tabs อื่นเห็นข้อมูล) แล้ว daily แสดง loading
+      switchTab('daily');
       loadCachedData();
-      $('#weekly-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
+      $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
     } else {
       loadCachedData();
     }
