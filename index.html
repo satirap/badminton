@@ -157,20 +157,16 @@ section.view.active{display:block}
   white-space:nowrap;
 }
 
-/* Win-rate bar */
-.rank-row .wr-wrap{display:flex;align-items:center;gap:6px}
-.rank-row .wr-label{
-  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
-  color:var(--ink-mute);white-space:nowrap;
+/* Gauge card */
+.gauge-card{
+  display:inline-flex;flex-direction:column;align-items:center;
+  background:var(--bg);border:1.5px solid var(--line);
+  border-radius:8px;padding:6px 10px 5px;gap:0;flex-shrink:0;
 }
-.rank-row .wr-bar{
-  width:52px;height:6px;border-radius:3px;
-  background:var(--line);overflow:hidden;flex-shrink:0;
-}
-.rank-row .wr-fill{height:100%;border-radius:3px;background:var(--accent)}
-.rank-row .wr-txt{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;
-  color:var(--ink);letter-spacing:.04em;
+.gauge-svg{width:66px;height:auto;display:block}
+.gauge-label{
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;
+  color:var(--ink-soft);white-space:nowrap;margin-top:1px;
 }
 
 /* Points */
@@ -694,6 +690,57 @@ async function loadAllData(){
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
+/* --- Gauge SVG: semicircle with needle ---
+   wr = 0-100 (win-rate %)
+   color: green ≥70%, gold 40-70%, red <40%  */
+function gaugeHtml(wr){
+  const cx=40, cy=40, r=26;
+  const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy}`;
+
+  // Fill arc
+  let fillPath = '';
+  if(wr > 0){
+    if(wr >= 100){
+      fillPath = bgPath;
+    } else {
+      const a  = (180 - (wr/100)*180) * Math.PI/180;
+      const fx = (cx + r*Math.cos(a)).toFixed(1);
+      const fy = (cy - r*Math.sin(a)).toFixed(1);
+      fillPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${fx} ${fy}`;
+    }
+  }
+
+  // Needle
+  const na = (180 - (wr/100)*180) * Math.PI/180;
+  const nl = r - 5;
+  const nx = (cx + nl*Math.cos(na)).toFixed(1);
+  const ny = (cy - nl*Math.sin(na)).toFixed(1);
+
+  // Color by win-rate
+  const col = wr >= 70 ? '#c8f135' : wr >= 40 ? '#fbbf24' : '#ef4444';
+
+  // Tick marks: 0%, 50%, 100%
+  const ticks = [0, 50, 100].map(t => {
+    const ta = (180 - (t/100)*180) * Math.PI/180;
+    const x1 = (cx + (r+1)*Math.cos(ta)).toFixed(1);
+    const y1 = (cy - (r+1)*Math.sin(ta)).toFixed(1);
+    const x2 = (cx + (r+5)*Math.cos(ta)).toFixed(1);
+    const y2 = (cy - (r+5)*Math.sin(ta)).toFixed(1);
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#4a4d56" stroke-width="1.5" stroke-linecap="round"/>`;
+  }).join('');
+
+  return `<div class="gauge-card">
+    <svg class="gauge-svg" viewBox="0 0 80 46" fill="none">
+      <path d="${bgPath}" stroke="#2e3038" stroke-width="5" stroke-linecap="round"/>
+      ${fillPath ? `<path d="${fillPath}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>` : ''}
+      ${ticks}
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#f5f3ee" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="3.5" fill="#f5f3ee"/>
+    </svg>
+    <div class="gauge-label">อัตราชนะ ${wr}%</div>
+  </div>`;
+}
+
 /* --- Tie-aware ranking: standard competition ranking (1,1,3,4...) ---
    Same points + same wins → same rank number
    Same points but more wins → better rank */
@@ -730,11 +777,7 @@ function rankRowHtml(r){
       <div class="stat-badges">
         <span class="badge-w">🏆 ${wins} ชนะ</span>
         <span class="badge-l">🎯 ${losses} แพ้</span>
-        <div class="wr-wrap">
-          <span class="wr-label">อัตราชนะ</span>
-          <div class="wr-bar"><div class="wr-fill" style="width:${wr}%"></div></div>
-          <span class="wr-txt">${wr}%</span>
-        </div>
+        ${gaugeHtml(wr)}
       </div>
     </div>
     <div class="pts">${r.points}<small>pts</small></div>
