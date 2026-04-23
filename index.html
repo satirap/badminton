@@ -111,6 +111,37 @@ section.view.active{display:block}
 }
 .section-title em{font-style:italic;color:var(--ink-soft)}
 
+/* ---- My score card ---- */
+.my-card{
+  background:var(--bg-card);border:1.5px solid var(--accent)50;
+  border-radius:var(--radius);padding:16px;margin-bottom:20px;
+}
+.my-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.my-info{display:flex;align-items:center;gap:10px}
+.my-info img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);flex-shrink:0}
+.my-name{font-size:16px;font-weight:800;color:var(--ink);line-height:1.2}
+.my-label{font-size:11px;color:var(--ink-mute);margin-top:2px}
+.my-pts-wrap{text-align:right;flex-shrink:0}
+.my-pts{font-family:'Instrument Serif',serif;font-size:42px;line-height:1;color:var(--accent);font-weight:400}
+.my-pts-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-mute);letter-spacing:.1em;margin-top:1px}
+.my-stats-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.my-stat-w{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#4ade80}
+.my-stat-l{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#f87171}
+.my-stat-sep{color:var(--line)}
+.my-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.my-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:16px 12px;border-radius:var(--radius-sm);border:2px solid transparent;
+  cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;
+  font-family:'DM Sans',sans-serif;
+}
+.my-btn.win{background:#16a34a22;border-color:#4ade8060;color:#4ade80}
+.my-btn.lose{background:#dc262622;border-color:#f8717160;color:#f87171}
+.my-btn:active{transform:scale(.96)}
+.my-btn-icon{font-size:22px;line-height:1}
+.my-btn-label{font-size:15px;font-weight:800;line-height:1}
+.my-btn-pts{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;opacity:.8}
+
 /* ---- Ranking rows ---- */
 .rank-list{display:flex;flex-direction:column;gap:8px}
 .rank-row{
@@ -314,7 +345,40 @@ section.view.active{display:block}
     <!-- ---- VIEW: DAILY ---- -->
     <section class="view active" id="view-daily">
       <h2 class="section-title">คะแนน<em>วันนี้</em></h2>
-      <p class="text-mute text-sm" id="daily-date" style="margin:-8px 0 16px"></p>
+      <p class="text-mute text-sm" id="daily-date" style="margin:-8px 0 14px"></p>
+
+      <!-- Personal score card -->
+      <div class="my-card" id="my-card">
+        <div class="my-card-top">
+          <div class="my-info">
+            <img id="my-pic" src="" alt="" style="display:none"/>
+            <div>
+              <div class="my-name" id="my-name">—</div>
+              <div class="my-label">คะแนนของฉัน (ระบบเชื่อใจ)</div>
+            </div>
+          </div>
+          <div class="my-pts-wrap">
+            <div class="my-pts" id="my-pts">0</div>
+            <div class="my-pts-lbl">pts วันนี้</div>
+          </div>
+        </div>
+        <div class="my-stats-row">
+          <span class="my-stat-w" id="my-wins">ชนะ 0</span>
+          <span class="my-stat-sep">·</span>
+          <span class="my-stat-l" id="my-losses">แพ้ 0</span>
+        </div>
+        <div class="my-btns">
+          <button class="my-btn win" onclick="manualRecord('win')">
+            <span class="my-btn-icon">🏆</span>
+            <span class="my-btn-label">ชนะ <span class="my-btn-pts">+3</span></span>
+          </button>
+          <button class="my-btn lose" onclick="manualRecord('lose')">
+            <span class="my-btn-icon">🎯</span>
+            <span class="my-btn-label">แพ้ <span class="my-btn-pts">+1</span></span>
+          </button>
+        </div>
+      </div>
+
       <div class="rank-list" id="daily-list"></div>
     </section>
 
@@ -758,6 +822,7 @@ function rankRowHtml(r){
 }
 
 function renderDaily(){
+  renderMyCard();
   const now = new Date();
   const el = $('#daily-date');
   if(el) el.textContent = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -816,6 +881,46 @@ function renderRanks(){
   c.innerHTML = allRankings.length === 0
     ? '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>สแกน QR ที่สนามเพื่อเริ่มเล่น!</div>'
     : withRanks(allRankings).map(rankRowHtml).join('');
+}
+
+// =================================================================
+// MY CARD — personal score widget on daily tab
+// =================================================================
+function renderMyCard(){
+  if(!currentUser) return;
+  const el = document.getElementById('my-card');
+  if(!el) return;
+
+  // ชื่อ + รูป
+  document.getElementById('my-name').textContent = currentUser.name || '—';
+  const pic = document.getElementById('my-pic');
+  if(currentUser.pictureUrl){ pic.src = currentUser.pictureUrl; pic.style.display = 'block'; }
+
+  // หา stats วันนี้จาก allDailyRankings
+  const me = allDailyRankings.find(r => r.id === currentUser.id);
+  const pts  = me?.points  || 0;
+  const wins = me?.wins    || 0;
+  const loss = me?.losses  || 0;
+
+  document.getElementById('my-pts').textContent    = pts;
+  document.getElementById('my-wins').textContent   = `ชนะ ${wins}`;
+  document.getElementById('my-losses').textContent = `แพ้ ${loss}`;
+}
+
+async function manualRecord(result){
+  if(!currentUser){ toast('กรุณา login ก่อน'); return; }
+  const pts = result === 'win' ? 3 : 1;
+  // optimistic update ทันที
+  applyOptimisticUpdate(currentUser.id, result, pts);
+  toast(result === 'win' ? '🏆 ชนะ! +3 คะแนน' : '✅ แพ้ +1 คะแนน');
+  try{
+    await dbRecordResult(currentUser.id, result, pts);
+    await loadAllData();
+  }catch(err){
+    console.error(err);
+    loadCachedData();
+    toast('บันทึกไม่สำเร็จ ลองใหม่');
+  }
 }
 
 // =================================================================
