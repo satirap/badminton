@@ -159,6 +159,10 @@ section.view.active{display:block}
 
 /* Win-rate bar */
 .rank-row .wr-wrap{display:flex;align-items:center;gap:6px}
+.rank-row .wr-label{
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  color:var(--ink-mute);white-space:nowrap;
+}
 .rank-row .wr-bar{
   width:52px;height:6px;border-radius:3px;
   background:var(--line);overflow:hidden;flex-shrink:0;
@@ -727,6 +731,7 @@ function rankRowHtml(r){
         <span class="badge-w">🏆 ${wins} ชนะ</span>
         <span class="badge-l">🎯 ${losses} แพ้</span>
         <div class="wr-wrap">
+          <span class="wr-label">อัตราชนะ</span>
           <div class="wr-bar"><div class="wr-fill" style="width:${wr}%"></div></div>
           <span class="wr-txt">${wr}%</span>
         </div>
