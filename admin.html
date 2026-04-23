@@ -687,49 +687,65 @@ $('#btn-diagnose').addEventListener('click', async () => {
   const logEl = $('#import-log');
   logEl.style.display = 'block';
   logEl.innerHTML = '';
-  log('🔍 กำลังตรวจสอบ...');
+  log('🔍 เปรียบเทียบ Google Sheets vs Firebase...\n');
 
   try{
-    // ดึง players จาก GAS
-    const res  = await fetch(`${GAS_URL}?action=getPlayers`);
-    const data = await res.json();
-    const gasPlayers = data.players || [];
-    log(`📋 พบ ${gasPlayers.length} คนใน Google Sheets`);
+    // ดึง GAS players + rankings พร้อมกัน
+    const [pRes, rRes] = await Promise.all([
+      fetch(`${GAS_URL}?action=getPlayers`).then(r=>r.json()),
+      fetch(`${GAS_URL}?action=getRankings`).then(r=>r.json()),
+    ]);
+    const gasPlayers = pRes.players  || [];
+    const rankings   = rRes.rankings || [];
+    const statsMap   = {};
+    rankings.forEach(r => { statsMap[r.id] = r; });
 
-    const noLineId   = gasPlayers.filter(p => !p.lineUserId);
-    const hasLineId  = gasPlayers.filter(p =>  p.lineUserId);
-    log(`✅ มี lineUserId: ${hasLineId.length} คน`);
+    // ดึง Firestore players + scores count ต่อ player
+    const fbSnap    = await db.collection('players').get();
+    const fbPlayers = {};
+    fbSnap.docs.forEach(d => { fbPlayers[d.id] = d.data(); });
 
-    if(noLineId.length){
-      log(`⚠️ ไม่มี lineUserId (import ไม่ได้): ${noLineId.length} คน`);
-      noLineId.forEach(p => log(`   · id="${p.id}"  ชื่อ="${p.name}"`));
+    const scSnap    = await db.collection('scores').limit(1000).get();
+    const scCount   = {};
+    scSnap.docs.forEach(d => {
+      const pid = d.data().playerId;
+      scCount[pid] = (scCount[pid]||0) + 1;
+    });
+
+    log(`GAS: ${gasPlayers.length} คน  |  Firebase: ${fbSnap.size} คน  |  Scores: ${scSnap.size} รายการ\n`);
+    log('──────────────────────────────────────────');
+
+    let problems = 0;
+    for(const p of gasPlayers){
+      const lineId  = p.lineUserId;
+      const gasStats = statsMap[p.id] || { points:0, wins:0, losses:0, played:0 };
+      const fb      = lineId ? fbPlayers[lineId] : null;
+      const fbPts   = fb?.totalPoints ?? '—';
+      const fbPld   = fb?.played      ?? '—';
+      const scores  = lineId ? (scCount[lineId]||0) : 0;
+      const ok      = fb && fb.totalPoints === gasStats.points;
+
+      const icon = !fb          ? '❌ ไม่มีใน Firebase'
+                 : !ok          ? '⚠️ คะแนนไม่ตรง'
+                 :                '✅';
+
+      log(`${icon}  ${p.name}`);
+      if(!ok || !fb){
+        log(`   GAS  → pts:${gasStats.points}  played:${gasStats.played}`);
+        log(`   FB   → pts:${fbPts}  played:${fbPld}  scores:${scores}`);
+        log(`   lineUserId: ${lineId||'⚠️ ว่าง'}`);
+        problems++;
+      }
+    }
+
+    log('\n──────────────────────────────────────────');
+    if(problems === 0){
+      log('🎉 ข้อมูลตรงกันทั้งหมด!');
     } else {
-      log('✅ ทุกคนมี lineUserId — ควร import ได้หมด');
+      log(`⚠️ พบ ${problems} คนที่ข้อมูลไม่ตรง → กด 📥 Import อีกครั้งเพื่อแก้ไข`);
     }
 
-    // ตรวจสอบ scores ที่ยังอ้างถึง GAS ID เดิม
-    const gasIdSet = new Set(gasPlayers.map(p => p.id));
-    const snap = await db.collection('scores').limit(500).get();
-    const orphan = snap.docs.filter(d => gasIdSet.has(d.data().playerId));
-    if(orphan.length){
-      log(`⚠️ scores ที่ยังใช้ GAS id (ยังไม่ได้ map): ${orphan.length} รายการ`);
-      const orphanIds = [...new Set(orphan.map(d => d.data().playerId))];
-      orphanIds.forEach(id => {
-        const p = gasPlayers.find(x => x.id === id);
-        log(`   · GAS id="${id}"  ชื่อ="${p?.name||'?'}"  lineUserId="${p?.lineUserId||'ว่าง!'}"`)
-      });
-    } else {
-      log('✅ ไม่มี orphan scores');
-    }
-
-    // เช็คว่า muazji9nojk3 คือใคร
-    const target = gasPlayers.find(p => p.id === 'muazji9nojk3');
-    if(target){
-      log(`\n🔎 muazji9nojk3 คือ: ${target.name}`);
-      log(`   lineUserId = "${target.lineUserId || '⚠️ ว่าง — นี่คือสาเหตุ!'}"`)
-    }
-
-  }catch(e){ log('❌ Error: '+e.message); }
+  }catch(e){ log('❌ Error: '+e.message); console.error(e); }
 });
 
 /* ================================================================
