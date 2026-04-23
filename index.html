@@ -140,7 +140,8 @@ section.view.active{display:block}
 }
 
 /* Stat badges row */
-.rank-row .stat-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rank-row .stat-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rank-row .stat-badges .wr-block{flex:1;min-width:90px}
 
 .rank-row .badge-w{
   display:inline-flex;align-items:center;gap:4px;
@@ -157,16 +158,17 @@ section.view.active{display:block}
   white-space:nowrap;
 }
 
-/* Gauge card */
-.gauge-card{
-  display:inline-flex;flex-direction:column;align-items:center;
-  background:var(--bg);border:1.5px solid var(--line);
-  border-radius:8px;padding:6px 10px 5px;gap:0;flex-shrink:0;
+/* Win-rate bar */
+.wr-block{display:flex;flex-direction:column;gap:4px;min-width:80px}
+.wr-header{display:flex;justify-content:space-between;align-items:baseline}
+.wr-label{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink-soft)}
+.wr-pct{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--ink)}
+.wr-track{
+  height:8px;border-radius:4px;background:var(--line);overflow:hidden;
 }
-.gauge-svg{width:80px;height:auto;display:block}
-.gauge-label{
-  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;
-  color:var(--ink-soft);white-space:nowrap;margin-top:1px;
+.wr-fill{
+  height:100%;border-radius:4px;
+  transition:width .4s ease;
 }
 
 /* Points */
@@ -712,48 +714,18 @@ async function loadAllData(){
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-/* --- Gauge SVG ---
-   wr = 0–100  |  green ≥70%, gold 40–69%, red <40% */
-function gaugeHtml(wr){
-  // Layout: viewBox 100×60, centre (50, 54), radius 42
-  // Arc runs from (8, 54) → (92, 54) sweeping counterclockwise (up through top)
-  const cx=50, cy=54, r=42;
-
-  // Background arc  M left-end A r r 0 0 0 right-end
-  // sweep-flag 0 = counterclockwise in SVG = visually goes UP ✓
-  const bg = `M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy}`;
-
-  // Coloured fill arc (same direction, stops at wr angle)
+/* --- Win-rate bar: label + % + thick bar ---
+   green ≥70%, gold 40–69%, red <40% */
+function wrBarHtml(wr){
   const col = wr >= 70 ? '#c8f135' : wr >= 40 ? '#fbbf24' : '#ef4444';
-  let fill = '';
-  if(wr > 0 && wr < 100){
-    // angle: 180° at 0%, 0° at 100%  (standard math, y-up)
-    const ang = (1 - wr/100) * Math.PI;       // radians
-    const ex  = +(cx + r * Math.cos(ang)).toFixed(2);
-    const ey  = +(cy - r * Math.sin(ang)).toFixed(2); // SVG y flips
-    // large-arc-flag = 1 only when wr > 50 (arc spans > 180° ... but max is 180°)
-    // Actually max arc is 180°; need flag=0 always except degenerate
-    const la  = 0; // never exceeds half-circle
-    fill = `M ${cx-r} ${cy} A ${r} ${r} 0 ${la} 0 ${ex} ${ey}`;
-  } else if(wr >= 100){
-    fill = bg;
-  }
-
-  // Needle
-  const ang = (1 - wr/100) * Math.PI;
-  const nl  = r - 8;
-  const nx  = +(cx + nl * Math.cos(ang)).toFixed(2);
-  const ny  = +(cy - nl * Math.sin(ang)).toFixed(2);
-
-  return `<div class="gauge-card">
-    <svg class="gauge-svg" viewBox="0 0 100 60" fill="none">
-      <path d="${bg}" stroke="#2e3038" stroke-width="6" stroke-linecap="round"/>
-      ${fill ? `<path d="${fill}" stroke="${col}" stroke-width="6" stroke-linecap="round"/>` : ''}
-      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"
-            stroke="#f5f3ee" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="4" fill="#f5f3ee"/>
-    </svg>
-    <div class="gauge-label">อัตราชนะ ${wr}%</div>
+  return `<div class="wr-block">
+    <div class="wr-header">
+      <span class="wr-label">อัตราชนะ</span>
+      <span class="wr-pct" style="color:${col}">${wr}%</span>
+    </div>
+    <div class="wr-track">
+      <div class="wr-fill" style="width:${wr}%;background:${col}"></div>
+    </div>
   </div>`;
 }
 
@@ -793,7 +765,7 @@ function rankRowHtml(r){
       <div class="stat-badges">
         <span class="badge-w">🏆 ${wins} ชนะ</span>
         <span class="badge-l">🎯 ${losses} แพ้</span>
-        ${gaugeHtml(wr)}
+        ${wrBarHtml(wr)}
       </div>
     </div>
     <div class="pts">${r.points}<small>pts</small></div>
