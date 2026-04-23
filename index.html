@@ -139,52 +139,33 @@ section.view.active{display:block}
   flex-shrink:0;border:1.5px solid var(--line);
 }
 
-/* Stat badges row */
-.rank-row .stat-badges{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.rank-row .stat-badges .wr-block{flex:1;min-width:90px}
-
-.rank-row .badge-w{
-  display:inline-flex;align-items:center;gap:4px;
-  background:var(--green-bg);color:var(--green-txt);
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
-  padding:4px 10px;border-radius:6px;border:1.5px solid var(--green);
-  white-space:nowrap;
+/* Stat line (single row, compact) */
+.rank-row .stat-line{
+  display:flex;align-items:center;gap:0;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+  color:var(--ink-soft);white-space:nowrap;flex-wrap:wrap;gap:6px;
 }
-.rank-row .badge-l{
-  display:inline-flex;align-items:center;gap:4px;
-  background:var(--red-bg);color:var(--red-txt);
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
-  padding:4px 10px;border-radius:6px;border:1.5px solid var(--red);
-  white-space:nowrap;
-}
-
-/* Win-rate bar */
-.wr-block{display:flex;flex-direction:column;gap:4px;min-width:80px}
-.wr-header{display:flex;justify-content:space-between;align-items:baseline}
-.wr-label{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink-soft)}
-.wr-pct{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:var(--ink)}
-.wr-track{
-  height:8px;border-radius:4px;background:var(--line);overflow:hidden;
-}
-.wr-fill{
-  height:100%;border-radius:4px;
-  transition:width .4s ease;
-}
+.rank-row .stat-w{color:#4ade80}
+.rank-row .stat-l{color:#f87171}
+.rank-row .stat-sep{color:var(--line);margin:0 1px}
+.rank-row .stat-wr{color:var(--ink-soft)}
 
 /* Points */
 .rank-row .pts{
-  font-family:'Instrument Serif',serif;font-size:30px;
-  text-align:right;line-height:1;white-space:nowrap;color:var(--ink);
+  font-family:'Instrument Serif',serif;font-size:38px;
+  text-align:right;line-height:1;white-space:nowrap;color:var(--accent);
 }
 .rank-row .pts small{
   font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:2px;
+  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:3px;
 }
+/* rank 2,3 pts color */
+.rank-row.p2 .pts{color:var(--silver)}
+.rank-row.p3 .pts{color:var(--bronze)}
 
 /* Podium highlights */
 .rank-row.p1{background:linear-gradient(110deg,var(--bg-card) 55%,#c8f13518 100%);border-color:var(--accent)}
 .rank-row.p1 .pos .medal{filter:drop-shadow(0 0 6px #c8f13580)}
-.rank-row.p1 .pts{color:var(--accent)}
 .rank-row.p2{border-color:var(--silver)}
 .rank-row.p3{border-color:var(--bronze)}
 
@@ -714,20 +695,6 @@ async function loadAllData(){
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-/* --- Win-rate bar: label + % + thick bar ---
-   green ≥70%, gold 40–69%, red <40% */
-function wrBarHtml(wr){
-  const col = wr >= 70 ? '#c8f135' : wr >= 40 ? '#fbbf24' : '#ef4444';
-  return `<div class="wr-block">
-    <div class="wr-header">
-      <span class="wr-label">อัตราชนะ</span>
-      <span class="wr-pct" style="color:${col}">${wr}%</span>
-    </div>
-    <div class="wr-track">
-      <div class="wr-fill" style="width:${wr}%;background:${col}"></div>
-    </div>
-  </div>`;
-}
 
 /* --- Tie-aware ranking: standard competition ranking (1,1,3,4...) ---
    Same points + same wins → same rank number
@@ -762,10 +729,12 @@ function rankRowHtml(r){
     <div class="pos">${posHtml}</div>
     <div class="info">
       <span class="n">${picHtml}${escHtml(r.name)}</span>
-      <div class="stat-badges">
-        <span class="badge-w">🏆 ${wins} ชนะ</span>
-        <span class="badge-l">🎯 ${losses} แพ้</span>
-        ${wrBarHtml(wr)}
+      <div class="stat-line">
+        <span class="stat-w">▲ ${wins} ชนะ</span>
+        <span class="stat-sep">·</span>
+        <span class="stat-l">▼ ${losses} แพ้</span>
+        <span class="stat-sep">·</span>
+        <span class="stat-wr">${wr}% ชนะ</span>
       </div>
     </div>
     <div class="pts">${r.points}<small>pts</small></div>
