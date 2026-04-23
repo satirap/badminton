@@ -163,7 +163,7 @@ section.view.active{display:block}
   background:var(--bg);border:1.5px solid var(--line);
   border-radius:8px;padding:6px 10px 5px;gap:0;flex-shrink:0;
 }
-.gauge-svg{width:66px;height:auto;display:block}
+.gauge-svg{width:80px;height:auto;display:block}
 .gauge-label{
   font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;
   color:var(--ink-soft);white-space:nowrap;margin-top:1px;
@@ -690,52 +690,46 @@ async function loadAllData(){
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-/* --- Gauge SVG: semicircle with needle ---
-   wr = 0-100 (win-rate %)
-   color: green ≥70%, gold 40-70%, red <40%  */
+/* --- Gauge SVG ---
+   wr = 0–100  |  green ≥70%, gold 40–69%, red <40% */
 function gaugeHtml(wr){
-  const cx=40, cy=40, r=26;
-  const bgPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy}`;
+  // Layout: viewBox 100×60, centre (50, 54), radius 42
+  // Arc runs from (8, 54) → (92, 54) sweeping counterclockwise (up through top)
+  const cx=50, cy=54, r=42;
 
-  // Fill arc
-  let fillPath = '';
-  if(wr > 0){
-    if(wr >= 100){
-      fillPath = bgPath;
-    } else {
-      const a  = (180 - (wr/100)*180) * Math.PI/180;
-      const fx = (cx + r*Math.cos(a)).toFixed(1);
-      const fy = (cy - r*Math.sin(a)).toFixed(1);
-      fillPath = `M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${fx} ${fy}`;
-    }
+  // Background arc  M left-end A r r 0 0 0 right-end
+  // sweep-flag 0 = counterclockwise in SVG = visually goes UP ✓
+  const bg = `M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy}`;
+
+  // Coloured fill arc (same direction, stops at wr angle)
+  const col = wr >= 70 ? '#c8f135' : wr >= 40 ? '#fbbf24' : '#ef4444';
+  let fill = '';
+  if(wr > 0 && wr < 100){
+    // angle: 180° at 0%, 0° at 100%  (standard math, y-up)
+    const ang = (1 - wr/100) * Math.PI;       // radians
+    const ex  = +(cx + r * Math.cos(ang)).toFixed(2);
+    const ey  = +(cy - r * Math.sin(ang)).toFixed(2); // SVG y flips
+    // large-arc-flag = 1 only when wr > 50 (arc spans > 180° ... but max is 180°)
+    // Actually max arc is 180°; need flag=0 always except degenerate
+    const la  = 0; // never exceeds half-circle
+    fill = `M ${cx-r} ${cy} A ${r} ${r} 0 ${la} 0 ${ex} ${ey}`;
+  } else if(wr >= 100){
+    fill = bg;
   }
 
   // Needle
-  const na = (180 - (wr/100)*180) * Math.PI/180;
-  const nl = r - 5;
-  const nx = (cx + nl*Math.cos(na)).toFixed(1);
-  const ny = (cy - nl*Math.sin(na)).toFixed(1);
-
-  // Color by win-rate
-  const col = wr >= 70 ? '#c8f135' : wr >= 40 ? '#fbbf24' : '#ef4444';
-
-  // Tick marks: 0%, 50%, 100%
-  const ticks = [0, 50, 100].map(t => {
-    const ta = (180 - (t/100)*180) * Math.PI/180;
-    const x1 = (cx + (r+1)*Math.cos(ta)).toFixed(1);
-    const y1 = (cy - (r+1)*Math.sin(ta)).toFixed(1);
-    const x2 = (cx + (r+5)*Math.cos(ta)).toFixed(1);
-    const y2 = (cy - (r+5)*Math.sin(ta)).toFixed(1);
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#4a4d56" stroke-width="1.5" stroke-linecap="round"/>`;
-  }).join('');
+  const ang = (1 - wr/100) * Math.PI;
+  const nl  = r - 8;
+  const nx  = +(cx + nl * Math.cos(ang)).toFixed(2);
+  const ny  = +(cy - nl * Math.sin(ang)).toFixed(2);
 
   return `<div class="gauge-card">
-    <svg class="gauge-svg" viewBox="0 0 80 46" fill="none">
-      <path d="${bgPath}" stroke="#2e3038" stroke-width="5" stroke-linecap="round"/>
-      ${fillPath ? `<path d="${fillPath}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>` : ''}
-      ${ticks}
-      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#f5f3ee" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="3.5" fill="#f5f3ee"/>
+    <svg class="gauge-svg" viewBox="0 0 100 60" fill="none">
+      <path d="${bg}" stroke="#2e3038" stroke-width="6" stroke-linecap="round"/>
+      ${fill ? `<path d="${fill}" stroke="${col}" stroke-width="6" stroke-linecap="round"/>` : ''}
+      <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}"
+            stroke="#f5f3ee" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="4" fill="#f5f3ee"/>
     </svg>
     <div class="gauge-label">อัตราชนะ ${wr}%</div>
   </div>`;
