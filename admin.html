@@ -826,20 +826,24 @@ async function importFromSheets(){
         const existing = await ref.get();
         const stats = statsMap[player.id] || { played:0, wins:0, losses:0, points:0 };
 
+        // อัปเดต stats จาก GAS เสมอ (ทั้ง create ใหม่และ update ที่มีอยู่)
+        const statsUpdate = {
+          name:        player.name,
+          pictureUrl:  player.pictureUrl || '',
+          totalPoints: stats.points  || 0,
+          wins:        stats.wins    || 0,
+          losses:      stats.losses  || 0,
+          played:      stats.played  || 0,
+        };
         if(!existing.exists){
           batch.set(ref, {
-            id:          player.lineUserId,
-            name:        player.name,
-            pictureUrl:  player.pictureUrl || '',
-            totalPoints: stats.points  || 0,
-            wins:        stats.wins    || 0,
-            losses:      stats.losses  || 0,
-            played:      stats.played  || 0,
-            createdAt:   player.createdAt ? new Date(player.createdAt) : new Date(),
+            id:        player.lineUserId,
+            createdAt: player.createdAt ? new Date(player.createdAt) : new Date(),
+            ...statsUpdate,
           });
           imported++;
         } else {
-          batch.update(ref, { name: player.name, pictureUrl: player.pictureUrl || '' });
+          batch.update(ref, statsUpdate); // sync stats จาก GAS ด้วย
           skipped++;
         }
       }
