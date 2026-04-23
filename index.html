@@ -99,6 +99,7 @@ body{
   content:'';position:absolute;left:10%;right:10%;bottom:-2px;
   height:3px;background:var(--accent);border-radius:2px 2px 0 0;
 }
+#tab-monthly{white-space:normal;text-align:center;line-height:1.25;padding-top:10px;padding-bottom:10px}
 
 /* ---- Views ---- */
 section.view{display:none;animation:fadeUp .25s ease}
@@ -338,7 +339,7 @@ section.view.active{display:block}
     <!-- 3 tabs only — recording via QR scan exclusively -->
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true"  data-view="daily">คะแนนวันนี้</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="monthly">คะแนนเดือนนี้</button>
+      <button class="tab" id="tab-monthly" role="tab" aria-selected="false" data-view="monthly">คะแนนเดือนนี้</button>
       <button class="tab" role="tab" aria-selected="false" data-view="ranks">ทำเนียบสมาชิก</button>
     </nav>
 
@@ -771,6 +772,14 @@ async function loadAllData(){
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
+function updateMonthlyTabLabel(){
+  const now   = new Date();
+  const month = THAI_MONTHS_FULL[now.getMonth()];
+  const year  = now.getFullYear() + 543;
+  const tab   = document.getElementById('tab-monthly');
+  if(tab) tab.innerHTML = `คะแนนเดือน<br><span style="font-size:12px;font-weight:700;opacity:.9">${month} ${year}</span>`;
+}
+
 
 /* --- Tie-aware ranking: standard competition ranking (1,1,3,4...) ---
    Same points + same wins → same rank number
@@ -836,7 +845,7 @@ function renderDaily(){
 function renderMonthly(){
   const now = new Date();
   const el = $('#monthly-label');
-  if(el) el.textContent = `${THAI_MONTHS_FULL[now.getMonth()]} ${now.getFullYear()}`;
+  if(el) el.textContent = `${THAI_MONTHS_FULL[now.getMonth()]} ${now.getFullYear() + 543}`;
   const c = $('#monthly-list');
   if(c){
     c.innerHTML = allMonthlyRankings.length === 0
@@ -1032,6 +1041,7 @@ function extractResult(search){
 async function boot(){
   _resultHandled = false;
   wireEvents();
+  updateMonthlyTabLabel();
 
   // Capture result param BEFORE liff.init can redirect
   const preSearch = window.location.search;
