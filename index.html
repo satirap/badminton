@@ -313,21 +313,21 @@ section.view.active{display:block}
 
     <!-- 3 tabs only — recording via QR scan exclusively -->
     <nav class="tabs" role="tablist">
-      <button class="tab" role="tab" aria-selected="true"  data-view="daily">วันนี้</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="monthly">เดือนนี้</button>
-      <button class="tab" role="tab" aria-selected="false" data-view="ranks">ตลอดกาล</button>
+      <button class="tab" role="tab" aria-selected="true"  data-view="daily">คะแนนวันนี้</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="monthly">คะแนนเดือนนี้</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="ranks">ทำเนียบสมาชิก</button>
     </nav>
 
     <!-- ---- VIEW: DAILY ---- -->
     <section class="view active" id="view-daily">
-      <h2 class="section-title">วัน<em>นี้</em></h2>
+      <h2 class="section-title">คะแนน<em>วันนี้</em></h2>
       <p class="text-mute text-sm" id="daily-date" style="margin:-8px 0 16px"></p>
       <div class="rank-list" id="daily-list"></div>
     </section>
 
     <!-- ---- VIEW: MONTHLY ---- -->
     <section class="view" id="view-monthly">
-      <h2 class="section-title">เดือน<em>นี้</em></h2>
+      <h2 class="section-title">คะแนน<em>เดือนนี้</em></h2>
       <p class="text-mute text-sm" id="monthly-label" style="margin:-8px 0 16px"></p>
       <div class="rank-list" id="monthly-list"></div>
       <h2 class="section-title" style="margin-top:32px">ผู้ชนะ<em>ประจำเดือน</em></h2>
@@ -336,7 +336,7 @@ section.view.active{display:block}
 
     <!-- ---- VIEW: ALL-TIME RANKINGS ---- -->
     <section class="view" id="view-ranks">
-      <h2 class="section-title">อันดับ<em>ตลอดกาล</em></h2>
+      <h2 class="section-title">ทำเนียบ<em>สมาชิก</em></h2>
       <div class="rank-list" id="rank-list"></div>
     </section>
 
@@ -490,9 +490,8 @@ async function dbGetAllData(){
   const playerMap = {};
   players.forEach(p => { playerMap[p.id] = p; });
 
-  // ── All-time rankings (from pre-aggregated player docs) ──
+  // ── All-time rankings (ทำเนียบสมาชิก) — แสดงทุกคนรวมถึงคนที่ยังไม่มีคะแนน ──
   const rankings = players
-    .filter(p => (p.totalPoints || 0) > 0)
     .map(p => ({
       ...p,
       points:  p.totalPoints || 0,
