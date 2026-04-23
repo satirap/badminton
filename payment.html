@@ -46,34 +46,59 @@ body{min-height:100dvh}
 }
 .header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2}
 .header-card .brand span{color:var(--accent)}
-.header-card .date-box{text-align:right;flex-shrink:0}
+.header-card .date-box{text-align:right;flex:1;margin-right:8px}
 .header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--ink)}
 .header-card .date-box .date-sub{font-size:11px;color:var(--mute);margin-top:1px}
-
-/* ── Tabs ── */
-.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);
-  border:1.5px solid var(--border);border-radius:var(--rsm);
-  padding:3px;margin-bottom:16px;gap:3px}
-.tab-btn{
-  padding:10px 8px;border:none;background:transparent;
-  color:var(--mute);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
-  border-radius:8px;cursor:pointer;transition:all .15s;
+.history-icon-btn{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:var(--card2);border:1.5px solid var(--border);
+  color:var(--ink);font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;
 }
-.tab-btn.active{background:var(--card);color:var(--ink);box-shadow:0 1px 4px #0006}
+.history-icon-btn:active{transform:scale(.92);border-color:var(--accent)}
+.back-btn{
+  width:100%;padding:12px 16px;margin-bottom:12px;
+  background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+}
+.back-btn:active{background:var(--card)}
+
+/* ── Amount-per-person bar ── */
+.amount-bar{
+  display:flex;align-items:center;gap:12px;
+  background:var(--card);border:1.5px solid var(--accent);
+  border-radius:var(--radius);padding:14px 18px;margin-bottom:12px;
+}
+.amount-bar .amt-lbl{font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0}
+.amount-bar input{
+  flex:1;width:100%;padding:10px 14px;border-radius:var(--rsm);
+  border:1.5px solid var(--border);background:var(--input);color:var(--ink);
+  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
+  text-align:center;outline:none;min-width:0;
+}
+.amount-bar input:focus{border-color:var(--accent)}
+.amount-bar .amt-unit{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
 
 /* ── Summary bar ── */
 .summary-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  background:var(--card2);border:1.5px solid var(--border);
-  border-radius:var(--rsm);padding:12px 16px;margin-bottom:12px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  margin-bottom:12px;
 }
-.summary-bar .s-item{text-align:center}
-.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;line-height:1}
-.summary-bar .s-lbl{font-size:11px;color:var(--mute);margin-top:2px;font-weight:600}
-.summary-bar .s-num.paid{color:var(--accent)}
-.summary-bar .s-num.cash{color:var(--green)}
-.summary-bar .s-num.transfer{color:var(--blue)}
-.summary-bar .divider{width:1px;height:36px;background:var(--border)}
+.summary-bar .s-item{
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:12px 6px;text-align:center;
+}
+.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;line-height:1.1;color:var(--ink)}
+.summary-bar .s-num .baht{font-size:12px;font-weight:700;opacity:.7;margin-left:2px}
+.summary-bar .s-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:700}
+.summary-bar .s-item.cash{border-color:var(--green)60}
+.summary-bar .s-item.cash .s-num{color:var(--gtxt)}
+.summary-bar .s-item.transfer{border-color:var(--blue)60}
+.summary-bar .s-item.transfer .s-num{color:var(--btxt)}
+.summary-bar .s-item.total{border-color:var(--accent)60}
+.summary-bar .s-item.total .s-num{color:var(--accent)}
 
 /* ── Player table ── */
 .player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
@@ -82,7 +107,7 @@ body{min-height:100dvh}
   display:grid;grid-template-columns:36px 1fr auto auto auto;
   align-items:center;gap:8px;
   background:var(--card);border:1.5px solid var(--border);
-  border-radius:var(--rsm);padding:10px 12px;
+  border-radius:var(--rsm);padding:14px 12px;
   transition:border-color .2s;
 }
 .player-row.paid-both{border-color:var(--accent)30}
@@ -90,11 +115,11 @@ body{min-height:100dvh}
 .player-row.paid-transfer{border-color:var(--blue)50}
 
 .player-row .num{
-  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;
   color:var(--mute);text-align:center;
 }
 .player-row .name{
-  font-size:15px;font-weight:700;color:var(--ink);
+  font-size:19px;font-weight:800;color:var(--ink);line-height:1.3;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
@@ -228,37 +253,32 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" id="tab-collect" onclick="switchTab('collect')">💰 เก็บเงิน</button>
-    <button class="tab-btn" id="tab-history" onclick="switchTab('history')">📋 ประวัติ</button>
+    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
   <!-- ============ TAB: COLLECT ============ -->
   <div id="view-collect">
 
-    <!-- Summary -->
+    <!-- Amount per person -->
+    <div class="amount-bar">
+      <span class="amt-lbl">ยอดต่อคน</span>
+      <input type="number" id="per-person" value="120" min="0" step="10" inputmode="numeric"/>
+      <span class="amt-unit">บาท</span>
+    </div>
+
+    <!-- Summary (in baht) -->
     <div class="summary-bar">
-      <div class="s-item">
-        <div class="s-num" id="sum-total">0</div>
-        <div class="s-lbl">ทั้งหมด</div>
+      <div class="s-item total">
+        <div class="s-num" id="sum-total-baht">0<span class="baht">฿</span></div>
+        <div class="s-lbl">รวมทั้งหมด</div>
       </div>
-      <div class="divider"></div>
-      <div class="s-item">
-        <div class="s-num paid" id="sum-paid">0</div>
-        <div class="s-lbl">จ่ายแล้ว</div>
+      <div class="s-item cash">
+        <div class="s-num" id="sum-cash-baht">0<span class="baht">฿</span></div>
+        <div class="s-lbl">💵 เงินสด</div>
       </div>
-      <div class="divider"></div>
-      <div class="s-item">
-        <div class="s-num cash" id="sum-cash">0</div>
-        <div class="s-lbl">เงินสด</div>
-      </div>
-      <div class="divider"></div>
-      <div class="s-item">
-        <div class="s-num transfer" id="sum-transfer">0</div>
-        <div class="s-lbl">โอนเงิน</div>
+      <div class="s-item transfer">
+        <div class="s-num" id="sum-transfer-baht">0<span class="baht">฿</span></div>
+        <div class="s-lbl">📲 โอน</div>
       </div>
     </div>
 
@@ -284,6 +304,8 @@ body{min-height:100dvh}
 
   <!-- ============ TAB: HISTORY ============ -->
   <div id="view-history" style="display:none">
+    <button class="back-btn" onclick="switchTab('collect')">← กลับหน้าเก็บเงิน</button>
+    <h3 style="margin:0 0 12px;font-size:17px;color:var(--ink);font-weight:800">📋 ประวัติการเก็บเงิน</h3>
     <div class="history-list" id="history-list">
       <div class="empty">กำลังโหลด...</div>
     </div>
@@ -345,10 +367,20 @@ function newSession(){
     date:        iso,
     dateDisplay: thaiDate(iso),
     status:      'open',
+    perPerson:   120,
     players:     [],
     createdAt:   new Date().toISOString(),
     completedAt: null,
   };
+}
+
+function getPerPerson(){
+  const v = parseInt(document.getElementById('per-person').value, 10);
+  return isNaN(v) || v < 0 ? 0 : v;
+}
+
+function fmtBaht(n){
+  return Math.round(n).toLocaleString('en-US');
 }
 
 function loadDraft(){
@@ -449,15 +481,20 @@ function renderSummary(){
   const cashN    = session.players.filter(p => p.cash).length;
   const transN   = session.players.filter(p => p.transfer).length;
   const paidN    = cashN + transN;
-  document.getElementById('sum-total').textContent    = total;
-  document.getElementById('sum-paid').textContent     = paidN;
-  document.getElementById('sum-cash').textContent     = cashN;
-  document.getElementById('sum-transfer').textContent = transN;
+  const pp       = getPerPerson();
+  const totalB   = total * pp;
+  const cashB    = cashN * pp;
+  const transB   = transN * pp;
+
+  document.getElementById('sum-total-baht').innerHTML    = `${fmtBaht(totalB)}<span class="baht">฿</span>`;
+  document.getElementById('sum-cash-baht').innerHTML     = `${fmtBaht(cashB)}<span class="baht">฿</span>`;
+  document.getElementById('sum-transfer-baht').innerHTML = `${fmtBaht(transB)}<span class="baht">฿</span>`;
+
   const btn = document.getElementById('btn-complete');
   btn.disabled = total === 0;
   btn.textContent = paidN >= total && total > 0
-    ? `✅ ครบแล้ว ${total} คน — บันทึก`
-    : `💾 บันทึก (${paidN}/${total} จ่ายแล้ว)`;
+    ? `✅ ครบแล้ว ${total} คน (${fmtBaht(totalB)}฿) — บันทึก`
+    : `💾 บันทึก · ${paidN}/${total} คน จ่ายแล้ว ${fmtBaht(cashB + transB)}฿`;
 }
 
 function renderDate(){
@@ -477,15 +514,20 @@ async function completeSession(){
   try{
     const cashN   = session.players.filter(p => p.cash).length;
     const transN  = session.players.filter(p => p.transfer).length;
+    const pp      = getPerPerson();
     const payload = {
       date:        session.date,
       dateDisplay: session.dateDisplay,
       status:      'complete',
       players:     session.players,
+      perPerson:   pp,
       cashCount:   cashN,
       transferCount: transN,
       totalCount:  session.players.length,
       paidCount:   cashN + transN,
+      cashAmount:     cashN * pp,
+      transferAmount: transN * pp,
+      totalAmount:    session.players.length * pp,
       createdAt:   session.createdAt ? new Date(session.createdAt) : new Date(),
       completedAt: new Date(),
     };
@@ -554,12 +596,12 @@ async function loadHistory(){
           <div class="hc-date">${escHtml(d.dateDisplay||d.date||'')}</div>
           ${badge}
         </div>
-        <div class="hc-stats">
-          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน</strong></span>
-          <span class="hc-stat">💵 <strong>${d.cashCount||0}</strong></span>
-          <span class="hc-stat">📲 <strong>${d.transferCount||0}</strong></span>
-          <span class="hc-stat">ยังไม่จ่าย <strong>${(d.totalCount||0)-(d.paidCount||0)}</strong></span>
+        <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
+          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(d.totalAmount||0)}฿</strong></span>
+          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(d.cashAmount||0)}฿</strong> (${d.cashCount||0})</span>
+          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(d.transferAmount||0)}฿</strong> (${d.transferCount||0})</span>
         </div>
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน</div>
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
           <button class="hc-btn edit" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
@@ -581,6 +623,7 @@ async function editSession(docId){
       date:        d.date,
       dateDisplay: d.dateDisplay || thaiDate(d.date),
       status:      'open',
+      perPerson:   d.perPerson || 120,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       completedAt: null,
@@ -588,6 +631,7 @@ async function editSession(docId){
     saveDraft();
     switchTab('collect');
     renderDate();
+    document.getElementById('per-person').value = session.perPerson || 120;
     renderTable();
     renderSummary();
     toast('โหลดข้อมูลแล้ว ✏️ แก้ไขได้เลย');
@@ -610,9 +654,8 @@ async function deleteSession(docId, btn){
 function switchTab(tab){
   document.getElementById('view-collect').style.display  = tab==='collect' ? 'block' : 'none';
   document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
-  document.getElementById('tab-collect').classList.toggle('active', tab==='collect');
-  document.getElementById('tab-history').classList.toggle('active', tab==='history');
   if(tab==='history') loadHistory();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 /* ================================================================
@@ -635,6 +678,12 @@ document.getElementById('name-input').addEventListener('keydown', e => {
   if(e.key==='Enter') addPlayer();
 });
 
+document.getElementById('per-person').addEventListener('input', () => {
+  session.perPerson = getPerPerson();
+  saveDraft();
+  renderSummary();
+});
+
 /* ================================================================
    BOOT
    ================================================================ */
@@ -643,6 +692,7 @@ document.getElementById('name-input').addEventListener('keydown', e => {
     session = newSession();
     saveDraft();
   }
+  document.getElementById('per-person').value = session.perPerson || 120;
   renderDate();
   renderTable();
   renderSummary();
