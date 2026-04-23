@@ -90,13 +90,13 @@ body{
 }
 .tab{
   appearance:none;border:0;background:transparent;
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
-  color:var(--ink-mute);padding:15px 4px 13px;cursor:pointer;
-  position:relative;transition:color .2s;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  color:var(--ink-soft);padding:16px 4px 14px;cursor:pointer;
+  position:relative;transition:color .2s;letter-spacing:.01em;
 }
 .tab[aria-selected="true"]{color:var(--ink)}
 .tab[aria-selected="true"]::after{
-  content:'';position:absolute;left:12%;right:12%;bottom:-2px;
+  content:'';position:absolute;left:10%;right:10%;bottom:-2px;
   height:3px;background:var(--accent);border-radius:2px 2px 0 0;
 }
 
