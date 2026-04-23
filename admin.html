@@ -748,6 +748,52 @@ async function importFromSheets(){
     }
 
     log(`✅ เพิ่มใหม่ ${imported} คน · มีอยู่แล้ว ${skipped} คน`);
+    setBar(65);
+
+    // ── ดึง scores ทั้งหมด (raw) พร้อมวันที่เดิม ──
+    log('📡 ดึง scores จาก Google Sheets...');
+    const scoresRes = await fetch(`${GAS_URL}?action=getAllScores`);
+    const scoresData = await scoresRes.json();
+    const gasScores = scoresData.scores || [];
+    log(`✅ พบ scores ${gasScores.length} รายการ`);
+    setBar(72);
+
+    // map: GAS player id → lineUserId
+    const gasIdToLineId = {};
+    gasPlayers.forEach(p => { if(p.lineUserId) gasIdToLineId[p.id] = p.lineUserId; });
+
+    // เช็คว่า scores ไหนมีใน Firestore แล้ว (ป้องกัน duplicate)
+    log('💾 Import scores...');
+    let scImported = 0, scSkipped = 0;
+    const SC_BATCH = 400;
+
+    for(let i = 0; i < gasScores.length; i += SC_BATCH){
+      const chunk   = gasScores.slice(i, i + SC_BATCH);
+      const batch   = db.batch();
+
+      for(const sc of chunk){
+        const lineId = gasIdToLineId[sc.playerId];
+        if(!lineId){ scSkipped++; continue; }
+
+        // ใช้ GAS score id เป็น Firestore doc id → import ซ้ำได้ปลอดภัย
+        const ref      = db.collection('scores').doc('gas_' + sc.id);
+        const existing = await ref.get();
+        if(existing.exists){ scSkipped++; continue; }
+
+        batch.set(ref, {
+          playerId:  lineId,
+          result:    sc.result,
+          points:    sc.points,
+          createdAt: new Date(sc.createdAt), // preserve วันที่เดิม ← สำคัญ!
+        });
+        scImported++;
+      }
+
+      await batch.commit();
+      setBar(72 + Math.round(20 * (i + chunk.length) / Math.max(gasScores.length, 1)));
+    }
+
+    log(`✅ Scores: เพิ่มใหม่ ${scImported} · ซ้ำ/ข้าม ${scSkipped}`);
     setBar(95);
     await loadAll();
     setBar(100);

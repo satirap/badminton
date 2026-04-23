@@ -49,6 +49,9 @@ function doGet(e) {
       case 'getRankings':
         result = getRankings();
         break;
+      case 'getAllScores':
+        result = getAllScores();
+        break;
       case 'getWeeklyRankings':
         result = getWeeklyRankings();
         break;
@@ -565,6 +568,27 @@ function getMonthlyWinners() {
   }
 
   return { winners };
+}
+
+/**
+ * ดึง scores ทั้งหมด (raw) สำหรับ migrate ไป Firebase
+ */
+function getAllScores() {
+  const sheet = getSheet('scores');
+  if (!sheet) return { scores: [] };
+  const data = sheet.getDataRange().getValues();
+  const scores = [];
+  for (let i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    scores.push({
+      id:        String(data[i][0]),
+      playerId:  String(data[i][1]),
+      result:    String(data[i][2]),
+      points:    Number(data[i][3]),
+      createdAt: data[i][4] ? new Date(data[i][4]).toISOString() : new Date().toISOString(),
+    });
+  }
+  return { scores };
 }
 
 function getAllData() {
