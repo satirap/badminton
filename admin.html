@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — ก๊วนอยากตีแบด</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0e0f11;--card:#181a1e;--input:#1f2228;--ink:#e8e6e1;
+  --soft:#9b9a95;--mute:#5c5b57;--line:#2a2c31;
+  --accent:#c6f135;--danger:#f14e4e;--gold:#ffd644;
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;min-height:100vh;-webkit-font-smoothing:antialiased}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+/* ── Layout ── */
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px 80px}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.sub{color:var(--soft);font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em}
+
+/* ── Password gate ── */
+#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+.gate-box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:32px;width:320px;text-align:center}
+.gate-box h2{font-size:20px;margin-bottom:8px}
+.gate-box p{color:var(--soft);font-size:13px;margin-bottom:20px}
+.gate-box input{width:100%;background:var(--input);border:1.5px solid var(--line);border-radius:8px;padding:12px;font:inherit;font-size:15px;color:var(--ink);outline:none;margin-bottom:12px}
+.gate-box input:focus{border-color:var(--accent)}
+.gate-err{color:var(--danger);font-size:12px;margin-top:-6px;margin-bottom:8px;display:none}
+
+/* ── Stats bar ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-align:center}
+.stat-card .val{font-size:28px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:11px;color:var(--mute);font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+
+/* ── Section ── */
+.section{margin-top:32px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.section-head h2{font-size:17px;font-weight:700}
+
+/* ── Buttons ── */
+.btn{appearance:none;border:1.5px solid var(--line);background:var(--input);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;transition:background .15s}
+.btn:hover{background:#282b32}
+.btn.primary{background:var(--accent);color:#111;border-color:var(--accent)}
+.btn.primary:hover{background:#b8e020}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn.danger:hover{background:#f14e4e22}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+
+/* ── Import box ── */
+.import-box{background:var(--card);border:1px solid var(--accent);border-radius:var(--r);padding:20px;margin-top:24px}
+.import-box h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.import-box p{color:var(--soft);font-size:13px;margin-bottom:14px;line-height:1.5}
+.progress{background:var(--input);border-radius:8px;height:8px;margin-top:12px;overflow:hidden;display:none}
+.progress-bar{height:100%;background:var(--accent);transition:width .3s;width:0}
+.import-log{margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--soft);max-height:100px;overflow-y:auto;display:none}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#ffffff08}
+.avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--accent);flex-shrink:0}
+.no-avatar{width:28px;height:28px;border-radius:50%;background:var(--input);display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+.player-cell{display:flex;align-items:center;gap:10px}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.badge.win{background:#c6f13530;color:var(--accent)}
+.badge.lose{background:#ffffff10;color:var(--soft)}
+.pts{font-weight:700;font-size:15px}
+.empty-row td{text-align:center;color:var(--mute);padding:32px;font-style:italic}
+
+/* ── Add score form ── */
+.add-form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-top:0}
+.add-form h3{font-size:15px;font-weight:700;margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+label.field{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:6px}
+select,input[type=text],input[type=password]{width:100%;background:var(--input);border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
+select:focus,input:focus{border-color:var(--accent)}
+select option{background:var(--card)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(40px);background:var(--accent);color:#111;padding:10px 20px;border-radius:100px;font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;z-index:200;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Pagination ── */
+.pager{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--soft)}
+
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr;gap:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     PASSWORD GATE
+     ================================================================ -->
+<div id="gate">
+  <div class="gate-box">
+    <h2>🏸 Admin</h2>
+    <p>ก๊วนอยากตีแบด — จัดการข้อมูล</p>
+    <input type="password" id="pwd-input" placeholder="รหัสผ่าน" />
+    <div class="gate-err" id="gate-err">รหัสผ่านไม่ถูก</div>
+    <button class="btn primary" style="width:100%" id="pwd-btn">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<!-- ================================================================
+     MAIN CONTENT
+     ================================================================ -->
+<div class="wrap" id="main" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <h1>🏸 Admin Panel</h1>
+      <div class="sub">ก๊วนอยากตีแบด · Firebase</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="btn-refresh">🔄 Refresh</button>
+      <button class="btn danger btn-sm" id="btn-logout-admin">ออก</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="val" id="stat-players">—</div><div class="lbl">ผู้เล่น</div></div>
+    <div class="stat-card"><div class="val" id="stat-scores">—</div><div class="lbl">Score ทั้งหมด</div></div>
+    <div class="stat-card"><div class="val" id="stat-today">—</div><div class="lbl">วันนี้</div></div>
+    <div class="stat-card"><div class="val" id="stat-month">—</div><div class="lbl">เดือนนี้</div></div>
+  </div>
+
+  <!-- ── Import from Google Sheets ── -->
+  <div class="import-box">
+    <h3>📥 Import ข้อมูลเก่าจาก Google Sheets</h3>
+    <p>ดึงข้อมูลผู้เล่นและคะแนนสะสมจาก Google Apps Script มาไว้ใน Firebase<br>
+    (ทำครั้งเดียว · ข้อมูลที่มีอยู่แล้วใน Firebase จะไม่ถูกทับ)</p>
+    <button class="btn primary" id="btn-import">📥 เริ่ม Import จาก Sheets</button>
+    <div class="progress" id="import-progress"><div class="progress-bar" id="import-bar"></div></div>
+    <div class="import-log" id="import-log"></div>
+  </div>
+
+  <!-- ── Players ── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>👥 ผู้เล่นทั้งหมด</h2>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>ผู้เล่น</th><th>คะแนนรวม</th>
+            <th>เกม</th><th>ชนะ</th><th>แพ้</th><th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="players-tbody">
+          <tr class="empty-row"><td colspan="7">กำลังโหลด...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Add Score ── -->
+  <div class="section">
+    <div class="section-head"><h2>➕ เพิ่ม Score</h2></div>
+    <div class="add-form">
+      <div class="form-row">
+        <div>
+          <label class="field">ผู้เล่น</label>
+          <select id="add-player">
+            <option value="">— เลือกผู้เล่น —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field">ผลลัพธ์</label>
+          <select id="add-result">
+            <option value="win">🏆 ชนะ (+3)</option>
+            <option value="lose">✅ แพ้ (+1)</option>
+          </select>
+        </div>
+        <div style="padding-bottom:0">
+          <label class="field" style="opacity:0">add</label>
+          <button class="btn primary" id="btn-add-score">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scores ── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>📋 Scores ล่าสุด</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="filter-player" style="padding:8px 12px;font-size:13px;width:auto">
+          <option value="">ทุกคน</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>ผู้เล่น</th><th>ผล</th><th>คะแนน</th><th>วันที่</th><th>ลบ</th></tr>
+        </thead>
+        <tbody id="scores-tbody">
+          <tr class="empty-row"><td colspan="6">กำลังโหลด...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pager">
+      <button class="btn btn-sm" id="btn-prev" disabled>← ก่อนหน้า</button>
+      <span id="page-info">หน้า 1</span>
+      <button class="btn btn-sm" id="btn-next">ถัดไป →</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const ADMIN_PASSWORD  = 'badmin888';   // ← เปลี่ยนรหัสผ่านได้ที่นี่
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyD6wYQsxvwuuEUo0sduA-QhcBY2KI1HbjDMWizf9_Q_GFFWKEo4t800ymRvBl6J6E_YA/exec';
+
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyCi2kIvaA9zk_2whDe-SlHW9ngnVWuIhEQ',
+  authDomain:        'badminton-642a3.firebaseapp.com',
+  projectId:         'badminton-642a3',
+  storageBucket:     'badminton-642a3.firebasestorage.app',
+  messagingSenderId: '65806979876',
+  appId:             '1:65806979876:web:3ee9d17c6f0ede5b2819b1',
+};
+
+/* ================================================================
+   FIREBASE
+   ================================================================ */
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+/* ================================================================
+   STATE
+   ================================================================ */
+let allPlayers  = [];
+let allScores   = [];
+let playerMap   = {};
+let scoresPage  = 0;
+const PAGE_SIZE = 50;
+
+/* ================================================================
+   DOM
+   ================================================================ */
+const $ = (s) => document.querySelector(s);
+function escHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+function fmtDate(val){
+  if(!val) return '—';
+  const d = typeof val.toDate==='function' ? val.toDate() : (val instanceof Date ? val : new Date(val));
+  return d.toLocaleString('th-TH',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function toast(msg, dur=2500){
+  const el=$('#toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+function log(msg){
+  const box = $('#import-log');
+  box.style.display = 'block';
+  box.innerHTML += `<div>${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ================================================================
+   PASSWORD GATE
+   ================================================================ */
+function checkPwd(){
+  const v = $('#pwd-input').value;
+  if(v === ADMIN_PASSWORD || localStorage.getItem('admin_auth') === ADMIN_PASSWORD){
+    localStorage.setItem('admin_auth', ADMIN_PASSWORD);
+    $('#gate').style.display = 'none';
+    $('#main').style.display = 'block';
+    loadAll();
+  } else {
+    $('#gate-err').style.display = 'block';
+    $('#pwd-input').value = '';
+    $('#pwd-input').focus();
+  }
+}
+
+$('#pwd-btn').addEventListener('click', checkPwd);
+$('#pwd-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPwd(); });
+$('#btn-logout-admin').addEventListener('click', () => {
+  localStorage.removeItem('admin_auth');
+  location.reload();
+});
+
+// Auto-login if already authenticated
+if(localStorage.getItem('admin_auth') === ADMIN_PASSWORD){
+  $('#gate').style.display = 'none';
+  $('#main').style.display = 'block';
+}
+
+/* ================================================================
+   LOAD ALL DATA
+   ================================================================ */
+async function loadAll(){
+  await Promise.all([loadPlayers(), loadScores()]);
+  updateStats();
+}
+
+async function loadPlayers(){
+  const snap = await db.collection('players').orderBy('totalPoints','desc').get();
+  allPlayers = snap.docs.map(d => ({docId: d.id, ...d.data()}));
+  playerMap = {};
+  allPlayers.forEach(p => { playerMap[p.id] = p; });
+  renderPlayers();
+  populatePlayerSelects();
+}
+
+async function loadScores(){
+  const snap = await db.collection('scores').orderBy('createdAt','desc').limit(500).get();
+  allScores = snap.docs.map(d => ({docId: d.id, ...d.data()}));
+  scoresPage = 0;
+  renderScores();
+}
+
+function updateStats(){
+  const now = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const moStart  = new Date(now.getFullYear(), now.getMonth(), 1);
+  const todayCount = allScores.filter(s => {
+    const d = typeof s.createdAt?.toDate==='function' ? s.createdAt.toDate() : new Date(s.createdAt||0);
+    return d >= dayStart;
+  }).length;
+  const moCount = allScores.filter(s => {
+    const d = typeof s.createdAt?.toDate==='function' ? s.createdAt.toDate() : new Date(s.createdAt||0);
+    return d >= moStart;
+  }).length;
+  $('#stat-players').textContent = allPlayers.length;
+  $('#stat-scores').textContent  = allScores.length;
+  $('#stat-today').textContent   = todayCount;
+  $('#stat-month').textContent   = moCount;
+}
+
+/* ================================================================
+   RENDER PLAYERS
+   ================================================================ */
+function renderPlayers(){
+  const tbody = $('#players-tbody');
+  if(!allPlayers.length){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">ยังไม่มีผู้เล่น</td></tr>'; return;
+  }
+  tbody.innerHTML = allPlayers.map((p,i) => {
+    const pic = p.pictureUrl
+      ? `<img class="avatar" src="${escHtml(p.pictureUrl)}" alt="" />`
+      : `<span class="no-avatar">👤</span>`;
+    return `<tr>
+      <td style="color:var(--mute)">${i+1}</td>
+      <td><div class="player-cell">${pic}<span>${escHtml(p.name)}</span></div></td>
+      <td><strong>${p.totalPoints||0}</strong></td>
+      <td>${p.played||0}</td>
+      <td style="color:var(--accent)">${p.wins||0}</td>
+      <td style="color:var(--soft)">${p.losses||0}</td>
+      <td><button class="btn danger btn-sm" onclick="deletePlayer('${escHtml(p.docId)}','${escHtml(p.name)}')">ลบ</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function populatePlayerSelects(){
+  const opts = allPlayers.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('');
+  $('#add-player').innerHTML = '<option value="">— เลือกผู้เล่น —</option>' + opts;
+  $('#filter-player').innerHTML = '<option value="">ทุกคน</option>' + opts;
+}
+
+/* ================================================================
+   RENDER SCORES (paginated)
+   ================================================================ */
+function getFilteredScores(){
+  const filter = $('#filter-player').value;
+  return filter ? allScores.filter(s => s.playerId === filter) : allScores;
+}
+
+function renderScores(){
+  const list  = getFilteredScores();
+  const start = scoresPage * PAGE_SIZE;
+  const page  = list.slice(start, start + PAGE_SIZE);
+  const tbody = $('#scores-tbody');
+
+  if(!page.length){
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">ไม่มีข้อมูล</td></tr>';
+  } else {
+    tbody.innerHTML = page.map((s,i) => {
+      const p = playerMap[s.playerId];
+      const pic = p?.pictureUrl
+        ? `<img class="avatar" src="${escHtml(p.pictureUrl)}" alt="" style="width:22px;height:22px"/>`
+        : `<span class="no-avatar" style="width:22px;height:22px;font-size:11px">👤</span>`;
+      const name = p?.name || s.playerId || '?';
+      return `<tr>
+        <td style="color:var(--mute)">${start+i+1}</td>
+        <td><div class="player-cell">${pic}<span>${escHtml(name)}</span></div></td>
+        <td><span class="badge ${s.result}">${s.result==='win'?'ชนะ':'แพ้'}</span></td>
+        <td><span class="pts" style="color:${s.result==='win'?'var(--accent)':'var(--soft)'}">${s.points||0}</span></td>
+        <td style="color:var(--mute);font-size:12px">${fmtDate(s.createdAt)}</td>
+        <td><button class="btn danger btn-sm" onclick="deleteScore('${escHtml(s.docId)}','${escHtml(s.playerId)}',${s.points||0},'${s.result}')">ลบ</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  $('#page-info').textContent = `หน้า ${scoresPage+1} / ${totalPages} (${list.length} รายการ)`;
+  $('#btn-prev').disabled = scoresPage === 0;
+  $('#btn-next').disabled = (scoresPage+1) * PAGE_SIZE >= list.length;
+}
+
+$('#filter-player').addEventListener('change', () => { scoresPage=0; renderScores(); });
+$('#btn-prev').addEventListener('click', () => { scoresPage--; renderScores(); });
+$('#btn-next').addEventListener('click', () => { scoresPage++; renderScores(); });
+$('#btn-refresh').addEventListener('click', () => { loadAll().then(()=>toast('รีเฟรชแล้ว ✅')); });
+
+/* ================================================================
+   DELETE
+   ================================================================ */
+async function deleteScore(docId, playerId, points, result){
+  if(!confirm('ลบ score นี้? คะแนนผู้เล่นจะถูกหักกลับด้วย')) return;
+  try{
+    const batch = db.batch();
+    batch.delete(db.collection('scores').doc(docId));
+    const inc = firebase.firestore.FieldValue.increment;
+    batch.update(db.collection('players').doc(playerId), {
+      totalPoints: inc(-points),
+      played:      inc(-1),
+      [result==='win'?'wins':'losses']: inc(-1),
+    });
+    await batch.commit();
+    toast('ลบแล้ว ✅');
+    await loadAll();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+async function deletePlayer(docId, name){
+  if(!confirm(`ลบผู้เล่น "${name}"?\n(scores ของผู้เล่นคนนี้ยังคงอยู่)`)) return;
+  try{
+    await db.collection('players').doc(docId).delete();
+    toast(`ลบ ${name} แล้ว`);
+    await loadAll();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+/* ================================================================
+   ADD SCORE MANUALLY
+   ================================================================ */
+$('#btn-add-score').addEventListener('click', async () => {
+  const playerId = $('#add-player').value;
+  const result   = $('#add-result').value;
+  if(!playerId){ toast('เลือกผู้เล่นก่อน'); return; }
+  const points = result==='win' ? 3 : 1;
+  const btn = $('#btn-add-score');
+  btn.disabled = true;
+  try{
+    const batch = db.batch();
+    const scoreRef = db.collection('scores').doc();
+    batch.set(scoreRef, { playerId, result, points, createdAt: new Date() });
+    const inc = firebase.firestore.FieldValue.increment;
+    batch.update(db.collection('players').doc(playerId), {
+      totalPoints: inc(points), played: inc(1),
+      [result==='win'?'wins':'losses']: inc(1),
+    });
+    await batch.commit();
+    toast(`บันทึกแล้ว +${points} คะแนน ✅`);
+    await loadAll();
+  }catch(e){ toast('Error: '+e.message); }
+  btn.disabled = false;
+});
+
+/* ================================================================
+   IMPORT FROM GOOGLE SHEETS
+   ================================================================ */
+$('#btn-import').addEventListener('click', importFromSheets);
+
+async function importFromSheets(){
+  const btn = $('#btn-import');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลัง Import...';
+  $('#import-progress').style.display = 'block';
+  $('#import-log').style.display = 'block';
+  $('#import-log').innerHTML = '';
+
+  const setBar = (pct) => { $('#import-bar').style.width = pct+'%'; };
+
+  try{
+    log('📡 ดึงข้อมูลจาก Google Sheets...');
+    setBar(10);
+
+    // ── ดึง players (มี id + lineUserId) ──
+    const playersRes = await fetch(`${GAS_URL}?action=getPlayers`);
+    const playersData = await playersRes.json();
+    const gasPlayers = playersData.players || [];
+    log(`✅ พบผู้เล่น ${gasPlayers.length} คน`);
+    setBar(25);
+
+    // ── ดึง rankings (มี stats aggregated) ──
+    const rankRes = await fetch(`${GAS_URL}?action=getRankings`);
+    const rankData = await rankRes.json();
+    const rankings = rankData.rankings || [];
+    log(`✅ พบ rankings ${rankings.length} รายการ`);
+    setBar(40);
+
+    // สร้าง map: gasPlayerId → stats
+    const statsMap = {};
+    rankings.forEach(r => { statsMap[r.id] = r; });
+
+    // ── เขียน players ลง Firestore ──
+    log('💾 กำลัง import ผู้เล่น...');
+    let imported = 0, skipped = 0;
+    const BATCH_SIZE = 400;
+
+    for(let i = 0; i < gasPlayers.length; i += BATCH_SIZE){
+      const chunk = gasPlayers.slice(i, i+BATCH_SIZE);
+      const batch = db.batch();
+
+      for(const player of chunk){
+        if(!player.lineUserId) { skipped++; continue; }
+
+        // เช็คว่ามีใน Firestore แล้วหรือยัง
+        const ref = db.collection('players').doc(player.lineUserId);
+        const existing = await ref.get();
+
+        const stats = statsMap[player.id] || { played:0, wins:0, losses:0, points:0 };
+
+        if(!existing.exists){
+          // ยังไม่มี → สร้างใหม่
+          batch.set(ref, {
+            id:          player.lineUserId,
+            name:        player.name,
+            pictureUrl:  player.pictureUrl || '',
+            totalPoints: stats.points  || 0,
+            wins:        stats.wins    || 0,
+            losses:      stats.losses  || 0,
+            played:      stats.played  || 0,
+            createdAt:   player.createdAt ? new Date(player.createdAt) : new Date(),
+          });
+          imported++;
+        } else {
+          // มีแล้ว → อัปเดตแค่ชื่อ/รูป ไม่แตะ stats (ป้องกันทับข้อมูลใหม่)
+          batch.update(ref, {
+            name:       player.name,
+            pictureUrl: player.pictureUrl || '',
+          });
+          skipped++;
+        }
+      }
+
+      await batch.commit();
+      setBar(40 + Math.round(50 * (i+chunk.length) / gasPlayers.length));
+    }
+
+    log(`✅ Import ผู้เล่นเสร็จ: เพิ่มใหม่ ${imported} คน, มีอยู่แล้ว ${skipped} คน`);
+    setBar(95);
+
+    // ── โหลดข้อมูลใหม่ ──
+    await loadAll();
+    setBar(100);
+    log('🎉 Import เสร็จสมบูรณ์!');
+    toast('Import เสร็จแล้ว 🎉');
+
+  }catch(e){
+    log('❌ Error: '+e.message);
+    toast('Import ล้มเหลว: '+e.message);
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📥 Import อีกครั้ง';
+}
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+if(localStorage.getItem('admin_auth') === ADMIN_PASSWORD){
+  document.addEventListener('DOMContentLoaded', loadAll);
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    $('#pwd-input').focus();
+  });
+}
+</script>
+</body>
+</html>
