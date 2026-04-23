@@ -317,6 +317,16 @@ select option{background:var(--card)}
         <button class="btn primary" id="btn-import">📥 เริ่ม Import</button>
       </div>
     </div>
+    <div class="form-row" style="margin-top:12px;align-items:flex-end">
+      <div>
+        <label class="field">📅 ใช้วันที่นี้สำหรับ scores ที่ import (แทนวันที่เดิมใน Sheets)</label>
+        <input type="date" id="import-date" value="2026-04-22" />
+      </div>
+      <div style="padding-bottom:2px">
+        <label class="field" style="opacity:0">·</label>
+        <p style="font-size:12px;color:var(--soft);margin:0">เว้นว่างไว้ = ใช้วันที่เดิมจาก Sheets</p>
+      </div>
+    </div>
     <div class="progress" id="import-progress"><div class="progress-bar" id="import-bar"></div></div>
     <div class="import-log" id="import-log"></div>
   </div>
@@ -362,6 +372,14 @@ select option{background:var(--card)}
             <option value="win">🏆 ชนะ (+3)</option>
             <option value="lose">🎯 แพ้ (+1)</option>
           </select>
+        </div>
+        <div>
+          <label class="field">วันที่</label>
+          <input type="date" id="add-date" />
+        </div>
+        <div>
+          <label class="field">เวลา</label>
+          <input type="time" id="add-time" value="12:00" />
         </div>
         <div>
           <label class="field" style="opacity:0">·</label>
@@ -662,12 +680,18 @@ $('#btn-add-score').addEventListener('click', async () => {
   const result   = $('#add-result').value;
   if(!playerId){ toast('เลือกผู้เล่นก่อน'); return; }
   const points = result==='win' ? 3 : 1;
+
+  // รวม date + time → Date object
+  const dateVal = $('#add-date').value;
+  const timeVal = $('#add-time').value || '12:00';
+  const createdAt = dateVal ? new Date(`${dateVal}T${timeVal}:00`) : new Date();
+
   const btn = $('#btn-add-score');
   btn.disabled = true;
   try{
     const batch = db.batch();
     const scoreRef = db.collection('scores').doc();
-    batch.set(scoreRef, { playerId, result, points, createdAt: new Date() });
+    batch.set(scoreRef, { playerId, result, points, createdAt });
     const inc = firebase.firestore.FieldValue.increment;
     batch.update(db.collection('players').doc(playerId), {
       totalPoints: inc(points), played: inc(1),
@@ -760,6 +784,12 @@ async function importFromSheets(){
   $('#import-progress').style.display = 'block';
   $('#import-log').style.display = 'block';
   $('#import-log').innerHTML = '';
+
+  // วันที่สำหรับ override (ถ้าเลือกไว้)
+  const importDateVal = $('#import-date').value;
+  const importDate = importDateVal ? new Date(importDateVal + 'T12:00:00') : null;
+  if(importDate) log(`📅 ใช้วันที่: ${importDate.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}`);
+  else log('📅 ใช้วันที่เดิมจาก Sheets');
 
   const setBar = (pct) => { $('#import-bar').style.width = pct+'%'; };
 
@@ -855,7 +885,7 @@ async function importFromSheets(){
           playerId:  lineId,
           result:    sc.result,
           points:    sc.points,
-          createdAt: new Date(sc.createdAt), // preserve วันที่เดิม ← สำคัญ!
+          createdAt: importDate || new Date(sc.createdAt),
         });
         scImported++;
       }
@@ -884,6 +914,17 @@ async function importFromSheets(){
 /* ================================================================
    BOOT
    ================================================================ */
+// ตั้งค่า default วันที่วันนี้สำหรับฟอร์มเพิ่ม score
+(function setDefaultDates(){
+  const today = new Date();
+  const yyyy  = today.getFullYear();
+  const mm    = String(today.getMonth()+1).padStart(2,'0');
+  const dd    = String(today.getDate()).padStart(2,'0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const addDateEl = $('#add-date');
+  if(addDateEl) addDateEl.value = todayStr;
+})();
+
 if(localStorage.getItem('admin_auth') === ADMIN_PASSWORD){
   document.addEventListener('DOMContentLoaded', loadAll);
 } else {
