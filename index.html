@@ -151,12 +151,16 @@ section.view.active{display:block}
 .rank-row .stat-wr{color:var(--ink-soft)}
 
 /* Win-rate bar (thin, below stat line) */
-.rank-row .wr-row{display:flex;align-items:center;gap:8px;width:100%}
+.rank-row .wr-row{width:100%;display:block;margin-top:2px}
 .rank-row .wr-track{
-  flex:1;height:6px;border-radius:3px;
-  background:#3a3d48;overflow:hidden;min-width:30px;
+  display:block;width:100%;height:6px;border-radius:3px;
+  background:#3a3d48;overflow:hidden;
 }
-.rank-row .wr-fill{height:100%;border-radius:3px;min-width:2px}
+.rank-row .wr-fill{display:block;height:6px;border-radius:3px}
+.rank-row .wr-pct{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  color:var(--ink-soft);float:right;margin-bottom:3px;
+}
 
 /* Points */
 .rank-row .pts{
@@ -743,8 +747,10 @@ function rankRowHtml(r){
         <span class="stat-l">▼ ${losses} แพ้</span>
       </div>
       <div class="wr-row">
-        <div class="wr-track"><div class="wr-fill" style="width:${wr}%;background:${wr>=70?'#c8f135':wr>=40?'#fbbf24':'#ef4444'}"></div></div>
-        <span class="stat-wr" style="font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ink-soft)">${wr}%</span>
+        <span class="wr-pct">${wr}%</span>
+        <div class="wr-track">
+          <div class="wr-fill" style="width:${wr}%;background:${wr>=70?'#c8f135':wr>=40?'#fbbf24':'#ef4444'}"></div>
+        </div>
       </div>
     </div>
     <div class="pts">${r.points}<small>pts</small></div>
