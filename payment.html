@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>เก็บเงิน — ก๊วนอยากตีแบด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:      #0c0d10;
+  --card:    #16181d;
+  --card2:   #1c1e24;
+  --input:   #1e2028;
+  --border:  #2e3038;
+  --ink:     #f5f3ee;
+  --soft:    #c9c7c0;
+  --mute:    #8e8c85;
+  --accent:  #c8f135;
+  --green:   #22c55e;
+  --gbg:     #14532d;
+  --gtxt:    #bbf7d0;
+  --blue:    #3b82f6;
+  --bbg:     #1e3a5f;
+  --btxt:    #bfdbfe;
+  --red:     #ef4444;
+  --radius:  14px;
+  --rsm:     10px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif;font-size:16px;
+  line-height:1.45;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh}
+
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 120px}
+
+/* ── Header card ── */
+.header-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;margin:16px 0 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2}
+.header-card .brand span{color:var(--accent)}
+.header-card .date-box{text-align:right;flex-shrink:0}
+.header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--ink)}
+.header-card .date-box .date-sub{font-size:11px;color:var(--mute);margin-top:1px}
+
+/* ── Tabs ── */
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--card2);
+  border:1.5px solid var(--border);border-radius:var(--rsm);
+  padding:3px;margin-bottom:16px;gap:3px}
+.tab-btn{
+  padding:10px 8px;border:none;background:transparent;
+  color:var(--mute);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+  border-radius:8px;cursor:pointer;transition:all .15s;
+}
+.tab-btn.active{background:var(--card);color:var(--ink);box-shadow:0 1px 4px #0006}
+
+/* ── Summary bar ── */
+.summary-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:12px 16px;margin-bottom:12px;
+}
+.summary-bar .s-item{text-align:center}
+.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;line-height:1}
+.summary-bar .s-lbl{font-size:11px;color:var(--mute);margin-top:2px;font-weight:600}
+.summary-bar .s-num.paid{color:var(--accent)}
+.summary-bar .s-num.cash{color:var(--green)}
+.summary-bar .s-num.transfer{color:var(--blue)}
+.summary-bar .divider{width:1px;height:36px;background:var(--border)}
+
+/* ── Player table ── */
+.player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+
+.player-row{
+  display:grid;grid-template-columns:36px 1fr auto auto auto;
+  align-items:center;gap:8px;
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:10px 12px;
+  transition:border-color .2s;
+}
+.player-row.paid-both{border-color:var(--accent)30}
+.player-row.paid-cash{border-color:var(--green)50}
+.player-row.paid-transfer{border-color:var(--blue)50}
+
+.player-row .num{
+  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;
+  color:var(--mute);text-align:center;
+}
+.player-row .name{
+  font-size:15px;font-weight:700;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* Toggle buttons */
+.pay-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  padding:7px 10px;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;
+  border:1.5px solid var(--border);background:var(--input);color:var(--mute);
+  cursor:pointer;transition:all .15s;white-space:nowrap;min-width:64px;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.pay-btn:active{transform:scale(.95)}
+.pay-btn.on.cash{background:var(--gbg);border-color:var(--green);color:var(--gtxt)}
+.pay-btn.on.transfer{background:var(--bbg);border-color:var(--blue);color:var(--btxt)}
+
+.del-btn{
+  width:32px;height:32px;border-radius:8px;border:none;
+  background:transparent;color:var(--mute);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;
+}
+.del-btn:active{background:#ef444420;color:var(--red)}
+
+/* ── Add player form ── */
+.add-form{
+  display:flex;gap:8px;margin-bottom:12px;
+}
+.add-form input{
+  flex:1;padding:14px 16px;border-radius:var(--rsm);
+  border:1.5px solid var(--border);background:var(--input);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
+  outline:none;transition:border-color .15s;
+}
+.add-form input::placeholder{color:var(--mute)}
+.add-form input:focus{border-color:var(--accent)}
+.add-form .add-btn{
+  padding:14px 18px;border-radius:var(--rsm);
+  border:none;background:var(--accent);color:#111;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;flex-shrink:0;transition:opacity .15s;
+}
+.add-form .add-btn:active{opacity:.8}
+
+/* ── Action buttons ── */
+.action-row{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.btn-complete{
+  width:100%;padding:18px;border-radius:var(--radius);border:none;
+  background:var(--accent);color:#111;
+  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:800;
+  cursor:pointer;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-complete:active{opacity:.8}
+.btn-complete:disabled{opacity:.4;cursor:not-allowed}
+.btn-clear{
+  width:100%;padding:14px;border-radius:var(--radius);
+  border:1.5px solid var(--border);background:transparent;color:var(--soft);
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.btn-clear:active{background:var(--card)}
+
+/* ── History list ── */
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+}
+.history-card .hc-head{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+}
+.history-card .hc-date{font-size:15px;font-weight:800;color:var(--ink)}
+.history-card .hc-badge{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:20px;
+}
+.hc-badge.complete{background:#c8f13520;color:var(--accent);border:1px solid var(--accent)40}
+.hc-badge.open{background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2440}
+.history-card .hc-stats{
+  display:flex;gap:16px;margin-bottom:12px;
+}
+.hc-stat{font-size:13px;color:var(--soft)}
+.hc-stat strong{font-weight:800;color:var(--ink)}
+.history-card .hc-names{
+  font-size:12px;color:var(--mute);line-height:1.8;
+  border-top:1px solid var(--border);padding-top:10px;
+}
+.history-card .hc-actions{display:flex;gap:8px;margin-top:12px}
+.hc-btn{
+  flex:1;padding:10px;border-radius:var(--rsm);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;border:1.5px solid var(--border);
+  background:var(--input);color:var(--soft);
+}
+.hc-btn.edit{border-color:var(--accent)60;color:var(--accent)}
+.hc-btn:active{opacity:.7}
+
+/* ── Empty state ── */
+.empty{
+  text-align:center;padding:48px 20px;
+  color:var(--mute);font-size:15px;line-height:1.8;
+}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--accent);color:#111;
+  padding:13px 24px;border-radius:100px;
+  font-size:14px;font-weight:800;
+  opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
+  z-index:99;pointer-events:none;box-shadow:0 8px 24px #000a;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Saved chip ── */
+.autosave{
+  font-size:11px;color:var(--mute);text-align:center;
+  padding:6px 0;font-family:'IBM Plex Mono',monospace;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header-card">
+    <div class="brand">ก๊วนอยาก<br><span>ตีแบด</span></div>
+    <div class="date-box">
+      <div class="date-big" id="date-big">—</div>
+      <div class="date-sub">วันที่เก็บเงิน</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-collect" onclick="switchTab('collect')">💰 เก็บเงิน</button>
+    <button class="tab-btn" id="tab-history" onclick="switchTab('history')">📋 ประวัติ</button>
+  </div>
+
+  <!-- ============ TAB: COLLECT ============ -->
+  <div id="view-collect">
+
+    <!-- Summary -->
+    <div class="summary-bar">
+      <div class="s-item">
+        <div class="s-num" id="sum-total">0</div>
+        <div class="s-lbl">ทั้งหมด</div>
+      </div>
+      <div class="divider"></div>
+      <div class="s-item">
+        <div class="s-num paid" id="sum-paid">0</div>
+        <div class="s-lbl">จ่ายแล้ว</div>
+      </div>
+      <div class="divider"></div>
+      <div class="s-item">
+        <div class="s-num cash" id="sum-cash">0</div>
+        <div class="s-lbl">เงินสด</div>
+      </div>
+      <div class="divider"></div>
+      <div class="s-item">
+        <div class="s-num transfer" id="sum-transfer">0</div>
+        <div class="s-lbl">โอนเงิน</div>
+      </div>
+    </div>
+
+    <!-- Player list -->
+    <div class="player-table" id="player-table"></div>
+
+    <!-- Add form -->
+    <div class="add-form">
+      <input type="text" id="name-input" placeholder="ชื่อสมาชิก..." maxlength="30" autocomplete="off"/>
+      <button class="add-btn" onclick="addPlayer()">+ เพิ่ม</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+      <button class="btn-complete" id="btn-complete" onclick="completeSession()">
+        ✅ จ่ายครบแล้ว — บันทึก
+      </button>
+      <button class="btn-clear" onclick="clearSession()">🗑 ล้างรายชื่อทั้งหมด</button>
+    </div>
+
+    <div class="autosave" id="autosave-label"></div>
+  </div>
+
+  <!-- ============ TAB: HISTORY ============ -->
+  <div id="view-history" style="display:none">
+    <div class="history-list" id="history-list">
+      <div class="empty">กำลังโหลด...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyCi2kIvaA9zk_2whDe-SlHW9ngnVWuIhEQ',
+  authDomain:        'badminton-642a3.firebaseapp.com',
+  projectId:         'badminton-642a3',
+  storageBucket:     'badminton-642a3.firebasestorage.app',
+  messagingSenderId: '65806979876',
+  appId:             '1:65806979876:web:3ee9d17c6f0ede5b2819b1',
+};
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const DRAFT_KEY = 'payment_draft';
+
+let session = null;   // { id, date, dateDisplay, status, players[], createdAt, completedAt }
+let editingId = null; // Firestore doc ID being edited
+
+/* ================================================================
+   DATE HELPERS
+   ================================================================ */
+function todayISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function thaiDate(isoStr){
+  const d = isoStr ? new Date(isoStr + 'T12:00:00') : new Date();
+  return d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+}
+
+function thaiDateShort(isoStr){
+  const d = isoStr ? new Date(isoStr + 'T12:00:00') : new Date();
+  return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+}
+
+/* ================================================================
+   SESSION MANAGEMENT
+   ================================================================ */
+function newSession(){
+  const iso = todayISO();
+  return {
+    id:          null,
+    date:        iso,
+    dateDisplay: thaiDate(iso),
+    status:      'open',
+    players:     [],
+    createdAt:   new Date().toISOString(),
+    completedAt: null,
+  };
+}
+
+function loadDraft(){
+  try{
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if(raw){
+      session = JSON.parse(raw);
+      // assign temp ids if missing
+      session.players.forEach((p,i) => { if(!p.id) p.id = 'p'+Date.now()+i; });
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+function saveDraft(){
+  try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  updateAutosaveLabel();
+}
+
+function clearDraft(){
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function updateAutosaveLabel(){
+  const el = document.getElementById('autosave-label');
+  if(!el) return;
+  const now = new Date();
+  el.textContent = `บันทึกชั่วคราวแล้ว ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+}
+
+/* ================================================================
+   PLAYER OPERATIONS
+   ================================================================ */
+function addPlayer(){
+  const inp = document.getElementById('name-input');
+  const name = inp.value.trim();
+  if(!name){ inp.focus(); return; }
+  session.players.push({ id:'p'+Date.now(), name, cash:false, transfer:false });
+  inp.value = '';
+  inp.focus();
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
+function deletePlayer(id){
+  session.players = session.players.filter(p => p.id !== id);
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
+function togglePay(id, type){
+  const p = session.players.find(p => p.id === id);
+  if(!p) return;
+  if(type === 'cash'){
+    p.cash = !p.cash;
+    if(p.cash) p.transfer = false; // เลือก cash → ยกเลิก transfer
+  } else {
+    p.transfer = !p.transfer;
+    if(p.transfer) p.cash = false; // เลือก transfer → ยกเลิก cash
+  }
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
+/* ================================================================
+   RENDER
+   ================================================================ */
+function renderTable(){
+  const el = document.getElementById('player-table');
+  if(!session.players.length){
+    el.innerHTML = '<div class="empty">ยังไม่มีรายชื่อ<br>เพิ่มด้านล่างได้เลยครับ</div>';
+    return;
+  }
+  el.innerHTML = session.players.map((p,i) => {
+    const rowClass = p.cash && p.transfer ? 'paid-both'
+                   : p.cash ? 'paid-cash'
+                   : p.transfer ? 'paid-transfer' : '';
+    return `<div class="player-row ${rowClass}">
+      <div class="num">${i+1}</div>
+      <div class="name">${escHtml(p.name)}</div>
+      <button class="pay-btn cash ${p.cash?'on':''}" onclick="togglePay('${p.id}','cash')">
+        💵 เงินสด
+      </button>
+      <button class="pay-btn transfer ${p.transfer?'on':''}" onclick="togglePay('${p.id}','transfer')">
+        📲 โอน
+      </button>
+      <button class="del-btn" onclick="deletePlayer('${p.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderSummary(){
+  const total    = session.players.length;
+  const cashN    = session.players.filter(p => p.cash).length;
+  const transN   = session.players.filter(p => p.transfer).length;
+  const paidN    = cashN + transN;
+  document.getElementById('sum-total').textContent    = total;
+  document.getElementById('sum-paid').textContent     = paidN;
+  document.getElementById('sum-cash').textContent     = cashN;
+  document.getElementById('sum-transfer').textContent = transN;
+  const btn = document.getElementById('btn-complete');
+  btn.disabled = total === 0;
+  btn.textContent = paidN >= total && total > 0
+    ? `✅ ครบแล้ว ${total} คน — บันทึก`
+    : `💾 บันทึก (${paidN}/${total} จ่ายแล้ว)`;
+}
+
+function renderDate(){
+  const el = document.getElementById('date-big');
+  if(el) el.textContent = thaiDateShort(session?.date || todayISO());
+}
+
+/* ================================================================
+   COMPLETE / CLEAR SESSION
+   ================================================================ */
+async function completeSession(){
+  if(!session.players.length){ toast('ยังไม่มีรายชื่อ'); return; }
+  const btn = document.getElementById('btn-complete');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังบันทึก...';
+
+  try{
+    const cashN   = session.players.filter(p => p.cash).length;
+    const transN  = session.players.filter(p => p.transfer).length;
+    const payload = {
+      date:        session.date,
+      dateDisplay: session.dateDisplay,
+      status:      'complete',
+      players:     session.players,
+      cashCount:   cashN,
+      transferCount: transN,
+      totalCount:  session.players.length,
+      paidCount:   cashN + transN,
+      createdAt:   session.createdAt ? new Date(session.createdAt) : new Date(),
+      completedAt: new Date(),
+    };
+
+    if(editingId){
+      await db.collection('payment_sessions').doc(editingId).set(payload);
+    } else {
+      const ref = await db.collection('payment_sessions').add(payload);
+      editingId = ref.id;
+    }
+
+    session.status = 'complete';
+    clearDraft();
+    toast('บันทึกเรียบร้อย ✅');
+    // reset for next session
+    setTimeout(() => {
+      editingId = null;
+      session = newSession();
+      saveDraft();
+      renderTable();
+      renderSummary();
+      renderDate();
+      document.getElementById('autosave-label').textContent = '';
+    }, 1500);
+
+  }catch(e){
+    console.error(e);
+    toast('บันทึกไม่สำเร็จ: ' + e.message);
+    btn.disabled = false;
+    renderSummary();
+  }
+}
+
+function clearSession(){
+  if(!session.players.length) return;
+  if(!confirm('ล้างรายชื่อทั้งหมด?')) return;
+  editingId = null;
+  session = newSession();
+  saveDraft();
+  renderTable();
+  renderSummary();
+  renderDate();
+}
+
+/* ================================================================
+   HISTORY
+   ================================================================ */
+async function loadHistory(){
+  const el = document.getElementById('history-list');
+  el.innerHTML = '<div class="empty">กำลังโหลด...</div>';
+  try{
+    const snap = await db.collection('payment_sessions')
+      .orderBy('createdAt','desc').limit(30).get();
+    if(snap.empty){ el.innerHTML = '<div class="empty">ยังไม่มีประวัติ</div>'; return; }
+    el.innerHTML = snap.docs.map(doc => {
+      const d = doc.data();
+      const names = (d.players||[]).map(p => {
+        const icon = p.cash ? '💵' : p.transfer ? '📲' : '⬜';
+        return `${icon} ${escHtml(p.name)}`;
+      }).join('  ');
+      const badge = d.status==='complete'
+        ? '<span class="hc-badge complete">จ่ายครบ</span>'
+        : '<span class="hc-badge open">กำลังเก็บ</span>';
+      return `<div class="history-card">
+        <div class="hc-head">
+          <div class="hc-date">${escHtml(d.dateDisplay||d.date||'')}</div>
+          ${badge}
+        </div>
+        <div class="hc-stats">
+          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน</strong></span>
+          <span class="hc-stat">💵 <strong>${d.cashCount||0}</strong></span>
+          <span class="hc-stat">📲 <strong>${d.transferCount||0}</strong></span>
+          <span class="hc-stat">ยังไม่จ่าย <strong>${(d.totalCount||0)-(d.paidCount||0)}</strong></span>
+        </div>
+        <div class="hc-names">${names||'—'}</div>
+        <div class="hc-actions">
+          <button class="hc-btn edit" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
+          <button class="hc-btn" onclick="deleteSession('${doc.id}',this)">🗑 ลบ</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML = `<div class="empty">โหลดไม่ได้: ${e.message}</div>`; }
+}
+
+async function editSession(docId){
+  try{
+    const snap = await db.collection('payment_sessions').doc(docId).get();
+    if(!snap.exists){ toast('ไม่พบข้อมูล'); return; }
+    const d = snap.data();
+    editingId = docId;
+    session = {
+      id:          docId,
+      date:        d.date,
+      dateDisplay: d.dateDisplay || thaiDate(d.date),
+      status:      'open',
+      players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
+      createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      completedAt: null,
+    };
+    saveDraft();
+    switchTab('collect');
+    renderDate();
+    renderTable();
+    renderSummary();
+    toast('โหลดข้อมูลแล้ว ✏️ แก้ไขได้เลย');
+  }catch(e){ toast('เกิดข้อผิดพลาด: '+e.message); }
+}
+
+async function deleteSession(docId, btn){
+  if(!confirm('ลบประวัตินี้?')) return;
+  btn.disabled = true;
+  try{
+    await db.collection('payment_sessions').doc(docId).delete();
+    toast('ลบแล้ว');
+    loadHistory();
+  }catch(e){ toast('ลบไม่ได้: '+e.message); btn.disabled=false; }
+}
+
+/* ================================================================
+   TAB NAVIGATION
+   ================================================================ */
+function switchTab(tab){
+  document.getElementById('view-collect').style.display  = tab==='collect' ? 'block' : 'none';
+  document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
+  document.getElementById('tab-collect').classList.toggle('active', tab==='collect');
+  document.getElementById('tab-history').classList.toggle('active', tab==='history');
+  if(tab==='history') loadHistory();
+}
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+function escHtml(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toast(msg,dur=2500){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+/* ================================================================
+   ENTER KEY
+   ================================================================ */
+document.getElementById('name-input').addEventListener('keydown', e => {
+  if(e.key==='Enter') addPlayer();
+});
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+(function boot(){
+  if(!loadDraft()){
+    session = newSession();
+    saveDraft();
+  }
+  renderDate();
+  renderTable();
+  renderSummary();
+})();
+</script>
+</body>
+</html>
