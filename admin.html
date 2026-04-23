@@ -312,7 +312,10 @@ select option{background:var(--card)}
         <h3>📥 Import จาก Google Sheets</h3>
         <p>ดึงข้อมูลผู้เล่นและคะแนนสะสมจาก Google Apps Script มาใส่ Firebase<br>ทำครั้งเดียว · ข้อมูลที่มีอยู่แล้วจะไม่ถูกทับ</p>
       </div>
-      <button class="btn primary" id="btn-import" style="flex-shrink:0">📥 เริ่ม Import</button>
+      <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
+        <button class="btn" id="btn-diagnose">🔍 Diagnose</button>
+        <button class="btn primary" id="btn-import">📥 เริ่ม Import</button>
+      </div>
     </div>
     <div class="progress" id="import-progress"><div class="progress-bar" id="import-bar"></div></div>
     <div class="import-log" id="import-log"></div>
@@ -675,6 +678,58 @@ $('#btn-add-score').addEventListener('click', async () => {
     await loadAll();
   }catch(e){ toast('Error: '+e.message); }
   btn.disabled = false;
+});
+
+/* ================================================================
+   DIAGNOSE — ดูว่า player ไหน import ไม่ได้และทำไม
+   ================================================================ */
+$('#btn-diagnose').addEventListener('click', async () => {
+  const logEl = $('#import-log');
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+  log('🔍 กำลังตรวจสอบ...');
+
+  try{
+    // ดึง players จาก GAS
+    const res  = await fetch(`${GAS_URL}?action=getPlayers`);
+    const data = await res.json();
+    const gasPlayers = data.players || [];
+    log(`📋 พบ ${gasPlayers.length} คนใน Google Sheets`);
+
+    const noLineId   = gasPlayers.filter(p => !p.lineUserId);
+    const hasLineId  = gasPlayers.filter(p =>  p.lineUserId);
+    log(`✅ มี lineUserId: ${hasLineId.length} คน`);
+
+    if(noLineId.length){
+      log(`⚠️ ไม่มี lineUserId (import ไม่ได้): ${noLineId.length} คน`);
+      noLineId.forEach(p => log(`   · id="${p.id}"  ชื่อ="${p.name}"`));
+    } else {
+      log('✅ ทุกคนมี lineUserId — ควร import ได้หมด');
+    }
+
+    // ตรวจสอบ scores ที่ยังอ้างถึง GAS ID เดิม
+    const gasIdSet = new Set(gasPlayers.map(p => p.id));
+    const snap = await db.collection('scores').limit(500).get();
+    const orphan = snap.docs.filter(d => gasIdSet.has(d.data().playerId));
+    if(orphan.length){
+      log(`⚠️ scores ที่ยังใช้ GAS id (ยังไม่ได้ map): ${orphan.length} รายการ`);
+      const orphanIds = [...new Set(orphan.map(d => d.data().playerId))];
+      orphanIds.forEach(id => {
+        const p = gasPlayers.find(x => x.id === id);
+        log(`   · GAS id="${id}"  ชื่อ="${p?.name||'?'}"  lineUserId="${p?.lineUserId||'ว่าง!'}"`)
+      });
+    } else {
+      log('✅ ไม่มี orphan scores');
+    }
+
+    // เช็คว่า muazji9nojk3 คือใคร
+    const target = gasPlayers.find(p => p.id === 'muazji9nojk3');
+    if(target){
+      log(`\n🔎 muazji9nojk3 คือ: ${target.name}`);
+      log(`   lineUserId = "${target.lineUserId || '⚠️ ว่าง — นี่คือสาเหตุ!'}"`)
+    }
+
+  }catch(e){ log('❌ Error: '+e.message); }
 });
 
 /* ================================================================
