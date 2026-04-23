@@ -119,33 +119,57 @@ section.view.active{display:block}
 .section-title em{font-style:italic;color:var(--ink-soft)}
 
 /* ---- Ranking rows ---- */
-.rank-list{display:flex;flex-direction:column;gap:8px}
+.rank-list{display:flex;flex-direction:column;gap:6px}
 .rank-row{
-  display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:12px;
+  display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;
   background:var(--bg-card);border:1px solid var(--line);
-  border-radius:var(--radius-sm);padding:14px 16px;
+  border-radius:var(--radius-sm);padding:12px 14px;
   position:relative;overflow:hidden;
 }
 .rank-row .pos{
   font-family:'Instrument Serif',serif;font-weight:400;
-  font-size:24px;text-align:center;color:var(--ink-soft);
+  font-size:22px;text-align:center;color:var(--ink-soft);line-height:1;
 }
-.rank-row .info{min-width:0;display:flex;flex-direction:column;gap:2px}
+.rank-row .pos .pos-num{
+  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;
+  color:var(--ink-soft);
+}
+.rank-row .info{min-width:0;display:flex;flex-direction:column;gap:5px}
 .rank-row .info .n{
-  font-weight:600;font-size:15px;display:flex;align-items:center;gap:8px;
+  font-weight:600;font-size:14px;display:flex;align-items:center;gap:7px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.rank-row .info .n img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0}
-.rank-row .info .stats{
-  font-family:'IBM Plex Mono',monospace;font-size:10.5px;
-  letter-spacing:.08em;color:var(--ink-mute);text-transform:uppercase;
+.rank-row .info .n img{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.rank-row .info .stat-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.rank-row .badge-w{
+  display:inline-flex;align-items:center;gap:3px;
+  background:#16a34a22;color:#4ade80;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:4px;border:1px solid #4ade8033;letter-spacing:.04em;
+}
+.rank-row .badge-l{
+  display:inline-flex;align-items:center;gap:3px;
+  background:#dc262622;color:#f87171;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:4px;border:1px solid #f8717133;letter-spacing:.04em;
+}
+.rank-row .wr-wrap{display:flex;align-items:center;gap:5px}
+.rank-row .wr-bar{
+  width:48px;height:4px;border-radius:2px;
+  background:var(--line);overflow:hidden;flex-shrink:0;
+}
+.rank-row .wr-fill{height:100%;border-radius:2px;background:var(--accent)}
+.rank-row .wr-txt{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  color:var(--ink-mute);letter-spacing:.04em;
 }
 .rank-row .pts{
-  font-family:'Instrument Serif',serif;font-size:28px;text-align:right;
+  font-family:'Instrument Serif',serif;font-size:26px;text-align:right;
+  line-height:1;white-space:nowrap;
 }
 .rank-row .pts small{
   font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:-4px;
+  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:1px;
 }
 
 /* Podium highlights */
@@ -669,15 +693,47 @@ async function loadAllData(){
 const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 
-function rankRowHtml(r, i){
-  const podium  = i < 3 ? `p${i+1}` : '';
-  const medal   = i===0 ? '🥇' : i===1 ? '🥈' : i===2 ? '🥉' : '';
+/* --- Tie-aware ranking: standard competition ranking (1,1,3,4...) ---
+   Same points + same wins → same rank number
+   Same points but more wins → better rank */
+function withRanks(list){
+  const out = [];
+  for(let i = 0; i < list.length; i++){
+    if(i === 0){
+      out.push({ ...list[i], _rank: 1 });
+    } else {
+      const prev = out[i-1];
+      const tied = list[i].points === prev.points && (list[i].wins||0) === (prev.wins||0);
+      out.push({ ...list[i], _rank: tied ? prev._rank : i + 1 });
+    }
+  }
+  return out;
+}
+
+function rankRowHtml(r){
+  const rank    = r._rank;
+  const podium  = rank === 1 ? 'p1' : rank === 2 ? 'p2' : rank === 3 ? 'p3' : '';
+  const medal   = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+  const posHtml = medal
+    ? `<span style="font-size:22px">${medal}</span>`
+    : `<span class="pos-num">${rank}</span>`;
   const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
+  const wins    = r.wins   || 0;
+  const losses  = r.losses || 0;
+  const played  = r.played || 0;
+  const wr      = played > 0 ? Math.round(wins / played * 100) : 0;
   return `<div class="rank-row ${podium}">
-    <div class="pos">${medal || (i+1)}</div>
+    <div class="pos">${posHtml}</div>
     <div class="info">
       <span class="n">${picHtml}${escHtml(r.name)}</span>
-      <span class="stats">${r.played||0} เกม · ${r.wins||0} ชนะ · ${r.losses||0} แพ้</span>
+      <div class="stat-badges">
+        <span class="badge-w">W ${wins}</span>
+        <span class="badge-l">L ${losses}</span>
+        <div class="wr-wrap">
+          <div class="wr-bar"><div class="wr-fill" style="width:${wr}%"></div></div>
+          <span class="wr-txt">${wr}%</span>
+        </div>
+      </div>
     </div>
     <div class="pts">${r.points}<small>pts</small></div>
   </div>`;
@@ -691,7 +747,7 @@ function renderDaily(){
   if(!c) return;
   c.innerHTML = allDailyRankings.length === 0
     ? '<div class="empty">ยังไม่มีเกมวันนี้<br><small style="font-size:13px;font-family:\'DM Sans\',sans-serif;font-style:normal">สแกน QR ที่สนามเพื่อเริ่มบันทึก</small></div>'
-    : allDailyRankings.map(rankRowHtml).join('');
+    : withRanks(allDailyRankings).map(rankRowHtml).join('');
 }
 
 function renderMonthly(){
@@ -702,7 +758,7 @@ function renderMonthly(){
   if(c){
     c.innerHTML = allMonthlyRankings.length === 0
       ? '<div class="empty">ยังไม่มีเกมเดือนนี้</div>'
-      : allMonthlyRankings.map(rankRowHtml).join('');
+      : withRanks(allMonthlyRankings).map(rankRowHtml).join('');
   }
   renderMonthlyWinners();
 }
@@ -741,7 +797,7 @@ function renderRanks(){
   if(!c) return;
   c.innerHTML = allRankings.length === 0
     ? '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>สแกน QR ที่สนามเพื่อเริ่มเล่น!</div>'
-    : allRankings.map(rankRowHtml).join('');
+    : withRanks(allRankings).map(rankRowHtml).join('');
 }
 
 // =================================================================
