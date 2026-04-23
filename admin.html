@@ -4,208 +4,389 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Admin — ก๊วนอยากตีแบด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --bg:#0e0f11;--card:#181a1e;--input:#1f2228;--ink:#e8e6e1;
-  --soft:#9b9a95;--mute:#5c5b57;--line:#2a2c31;
-  --accent:#c6f135;--danger:#f14e4e;--gold:#ffd644;
-  --r:12px;
+  --bg:     #0c0d10;
+  --card:   #14161b;
+  --card2:  #1a1c22;
+  --input:  #1e2028;
+  --border: #25272f;
+  --ink:    #eeecea;
+  --soft:   #8b8a86;
+  --mute:   #4a4a48;
+  --accent: #c6f135;
+  --green:  #22c55e;
+  --red:    #ef4444;
+  --gold:   #fbbf24;
+  --r:      14px;
+  --r-sm:   8px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;min-height:100vh;-webkit-font-smoothing:antialiased}
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif;
+  font-size:14px;line-height:1.5;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Password Gate ── */
+#gate{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;z-index:100;
+}
+.gate-box{
+  width:340px;padding:40px 36px;
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  text-align:center;
+}
+.gate-logo{font-size:40px;margin-bottom:16px}
+.gate-box h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.gate-box p{color:var(--soft);font-size:13px;margin-bottom:24px}
+.gate-box input{
+  width:100%;background:var(--input);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);padding:13px 14px;font:inherit;font-size:15px;
+  color:var(--ink);outline:none;margin-bottom:10px;letter-spacing:.06em;
+}
+.gate-box input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #c6f13520}
+.gate-err{color:var(--red);font-size:12px;margin-bottom:10px;display:none}
 
 /* ── Layout ── */
-.wrap{max-width:960px;margin:0 auto;padding:24px 20px 80px}
-h1{font-size:22px;font-weight:700;margin-bottom:4px}
-.sub{color:var(--soft);font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em}
+.wrap{max-width:1000px;margin:0 auto;padding:28px 24px 100px}
 
-/* ── Password gate ── */
-#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
-.gate-box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:32px;width:320px;text-align:center}
-.gate-box h2{font-size:20px;margin-bottom:8px}
-.gate-box p{color:var(--soft);font-size:13px;margin-bottom:20px}
-.gate-box input{width:100%;background:var(--input);border:1.5px solid var(--line);border-radius:8px;padding:12px;font:inherit;font-size:15px;color:var(--ink);outline:none;margin-bottom:12px}
-.gate-box input:focus{border-color:var(--accent)}
-.gate-err{color:var(--danger);font-size:12px;margin-top:-6px;margin-bottom:8px;display:none}
+/* ── Topbar ── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:20px;border-bottom:1px solid var(--border);margin-bottom:24px;
+  flex-wrap:wrap;gap:12px;
+}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-logo{
+  width:40px;height:40px;border-radius:10px;
+  background:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.topbar-title{font-size:18px;font-weight:700}
+.topbar-sub{font-size:11px;color:var(--soft);font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;margin-top:1px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
 
-/* ── Stats bar ── */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
-.stat-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;text-align:center}
-.stat-card .val{font-size:28px;font-weight:700;color:var(--accent)}
-.stat-card .lbl{font-size:11px;color:var(--mute);font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
-
-/* ── Section ── */
-.section{margin-top:32px}
-.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
-.section-head h2{font-size:17px;font-weight:700}
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px 16px;
+}
+.stat-icon{font-size:18px;margin-bottom:8px}
+.stat-val{font-size:26px;font-weight:700;line-height:1;color:var(--accent);font-family:'IBM Plex Mono',monospace}
+.stat-lbl{font-size:11px;color:var(--soft);margin-top:5px;font-weight:500}
 
 /* ── Buttons ── */
-.btn{appearance:none;border:1.5px solid var(--line);background:var(--input);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;transition:background .15s}
-.btn:hover{background:#282b32}
-.btn.primary{background:var(--accent);color:#111;border-color:var(--accent)}
-.btn.primary:hover{background:#b8e020}
-.btn.danger{border-color:var(--danger);color:var(--danger)}
-.btn.danger:hover{background:#f14e4e22}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px}
+.btn{
+  appearance:none;border:1.5px solid var(--border);background:var(--input);
+  color:var(--ink);font-family:inherit;font-size:13px;font-weight:600;
+  padding:8px 14px;border-radius:var(--r-sm);cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;
+  transition:background .15s,border-color .15s,color .15s;white-space:nowrap;
+}
+.btn:hover{background:var(--card2);border-color:#3a3d48}
+.btn.primary{background:var(--accent);color:#0c0d10;border-color:var(--accent);font-weight:700}
+.btn.primary:hover{background:#b5e020}
+.btn.ghost-red{background:transparent;border-color:var(--red);color:var(--red)}
+.btn.ghost-red:hover{background:#ef444418}
+.btn.icon{padding:7px 10px}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
 
-/* ── Import box ── */
-.import-box{background:var(--card);border:1px solid var(--accent);border-radius:var(--r);padding:20px;margin-top:24px}
-.import-box h3{font-size:15px;font-weight:700;margin-bottom:6px}
-.import-box p{color:var(--soft);font-size:13px;margin-bottom:14px;line-height:1.5}
-.progress{background:var(--input);border-radius:8px;height:8px;margin-top:12px;overflow:hidden;display:none}
-.progress-bar{height:100%;background:var(--accent);transition:width .3s;width:0}
-.import-log{margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--soft);max-height:100px;overflow-y:auto;display:none}
+/* ── Import card ── */
+.import-card{
+  background:var(--card);border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  border-radius:var(--r);padding:20px 22px;margin-bottom:28px;
+}
+.import-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.import-card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.import-card p{font-size:12px;color:var(--soft);line-height:1.6;max-width:500px}
+.progress{background:var(--input);border-radius:100px;height:6px;margin-top:14px;overflow:hidden;display:none}
+.progress-bar{height:100%;background:var(--accent);transition:width .4s ease;width:0;border-radius:100px}
+.import-log{
+  margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--soft);max-height:90px;overflow-y:auto;
+  background:var(--input);border-radius:6px;padding:8px 10px;display:none;
+  line-height:1.7;
+}
+
+/* ── Section ── */
+.section{margin-bottom:32px}
+.section-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;flex-wrap:wrap;gap:10px;
+}
+.section-head h2{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.section-count{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--soft);background:var(--input);
+  padding:3px 9px;border-radius:100px;margin-left:8px;
+}
 
 /* ── Table ── */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}
+thead{background:var(--card2)}
+th{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:var(--mute);padding:11px 14px;
+  border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;
+}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#ffffff08}
-.avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--accent);flex-shrink:0}
-.no-avatar{width:28px;height:28px;border-radius:50%;background:var(--input);display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+tbody tr:hover td{background:#ffffff06}
+
+/* ── Player cell ── */
 .player-cell{display:flex;align-items:center;gap:10px}
-.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace}
-.badge.win{background:#c6f13530;color:var(--accent)}
-.badge.lose{background:#ffffff10;color:var(--soft)}
-.pts{font-weight:700;font-size:15px}
-.empty-row td{text-align:center;color:var(--mute);padding:32px;font-style:italic}
+.avatar{
+  width:30px;height:30px;border-radius:50%;object-fit:cover;
+  border:2px solid var(--accent);flex-shrink:0;
+}
+.no-avatar{
+  width:30px;height:30px;border-radius:50%;background:var(--input);
+  border:2px solid var(--border);display:inline-flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0;
+}
+.player-name{font-weight:600;font-size:13px}
+
+/* ── Rank badge ── */
+.rank-num{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  color:var(--mute);min-width:20px;text-align:center;
+}
+
+/* ── Points ── */
+.pts-big{
+  font-family:'IBM Plex Mono',monospace;font-size:17px;
+  font-weight:700;color:var(--accent);
+}
+.wins-num{color:var(--green);font-weight:700;font-family:'IBM Plex Mono',monospace}
+.losses-num{color:var(--red);font-weight:600;font-family:'IBM Plex Mono',monospace;opacity:.85}
+.played-num{color:var(--soft);font-family:'IBM Plex Mono',monospace}
+
+/* ── Win-rate bar ── */
+.wr-wrap{display:flex;align-items:center;gap:6px}
+.wr-bar{height:4px;background:var(--input);border-radius:2px;width:54px;overflow:hidden;flex-shrink:0}
+.wr-fill{height:100%;border-radius:2px;background:var(--green)}
+.wr-txt{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--soft);white-space:nowrap}
+
+/* ── Result badge ── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:100px;
+  font-size:11px;font-weight:700;letter-spacing:.04em;
+  font-family:'IBM Plex Mono',monospace;
+}
+.badge.win{background:#16a34a;color:#fff}
+.badge.lose{background:#dc2626;color:#fff}
+
+/* ── Date ── */
+.date-txt{font-size:12px;color:var(--mute);white-space:nowrap}
+
+/* ── Delete btn ── */
+.del-btn{
+  appearance:none;background:transparent;border:1px solid var(--border);
+  color:var(--mute);padding:5px 10px;border-radius:6px;
+  font:inherit;font-size:12px;cursor:pointer;transition:all .15s;
+}
+.del-btn:hover{background:#ef444418;border-color:var(--red);color:var(--red)}
+
+/* ── Empty row ── */
+.empty-row td{text-align:center;color:var(--mute);padding:36px;font-style:italic}
 
 /* ── Add score form ── */
-.add-form{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-top:0}
-.add-form h3{font-size:15px;font-weight:700;margin-bottom:14px}
-.form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
-label.field{display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--soft);margin-bottom:6px}
-select,input[type=text],input[type=password]{width:100%;background:var(--input);border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none}
-select:focus,input:focus{border-color:var(--accent)}
+.add-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;
+}
+.form-row{display:grid;grid-template-columns:1fr 160px auto;gap:10px;align-items:end}
+label.field{
+  display:block;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--mute);margin-bottom:6px;
+}
+select,input[type=password]{
+  width:100%;background:var(--input);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);padding:10px 12px;font:inherit;font-size:14px;
+  color:var(--ink);outline:none;-webkit-appearance:none;appearance:none;
+}
+select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #c6f13515}
 select option{background:var(--card)}
 
+/* ── Pager ── */
+.pager{
+  display:flex;align-items:center;gap:10px;
+  margin-top:12px;font-size:12px;color:var(--soft);
+}
+
 /* ── Toast ── */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(40px);background:var(--accent);color:#111;padding:10px 20px;border-radius:100px;font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;letter-spacing:.1em;opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;z-index:200;pointer-events:none}
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(40px);
+  background:var(--accent);color:#0c0d10;
+  padding:10px 22px;border-radius:100px;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
+  letter-spacing:.08em;opacity:0;
+  transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
+  z-index:200;pointer-events:none;box-shadow:0 8px 24px -6px #0009;
+}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* ── Pagination ── */
-.pager{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--soft)}
-
-@media(max-width:600px){
+@media(max-width:640px){
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .form-row{grid-template-columns:1fr;gap:8px}
+  .wrap{padding:16px 14px 80px}
 }
 </style>
 </head>
 <body>
 
-<!-- ================================================================
-     PASSWORD GATE
-     ================================================================ -->
+<!-- ── Gate ── -->
 <div id="gate">
   <div class="gate-box">
-    <h2>🏸 Admin</h2>
-    <p>ก๊วนอยากตีแบด — จัดการข้อมูล</p>
-    <input type="password" id="pwd-input" placeholder="รหัสผ่าน" />
-    <div class="gate-err" id="gate-err">รหัสผ่านไม่ถูก</div>
-    <button class="btn primary" style="width:100%" id="pwd-btn">เข้าสู่ระบบ</button>
+    <div class="gate-logo">🏸</div>
+    <h2>Admin Panel</h2>
+    <p>ก๊วนอยากตีแบด · จัดการข้อมูล</p>
+    <input type="password" id="pwd-input" placeholder="รหัสผ่าน" autocomplete="current-password" />
+    <div class="gate-err" id="gate-err">รหัสผ่านไม่ถูกต้อง</div>
+    <button class="btn primary" style="width:100%;justify-content:center;padding:12px" id="pwd-btn">เข้าสู่ระบบ</button>
   </div>
 </div>
 
-<!-- ================================================================
-     MAIN CONTENT
-     ================================================================ -->
+<!-- ── Main ── -->
 <div class="wrap" id="main" style="display:none">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div>
-      <h1>🏸 Admin Panel</h1>
-      <div class="sub">ก๊วนอยากตีแบด · Firebase</div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">🏸</div>
+      <div>
+        <div class="topbar-title">Admin Panel</div>
+        <div class="topbar-sub">ก๊วนอยากตีแบด · Firebase</div>
+      </div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn" id="btn-refresh">🔄 Refresh</button>
-      <button class="btn danger btn-sm" id="btn-logout-admin">ออก</button>
+    <div class="topbar-actions">
+      <button class="btn" id="btn-refresh">↺ Refresh</button>
+      <button class="btn ghost-red" id="btn-logout-admin">ออก</button>
     </div>
   </div>
 
   <!-- Stats -->
   <div class="stats-grid">
-    <div class="stat-card"><div class="val" id="stat-players">—</div><div class="lbl">ผู้เล่น</div></div>
-    <div class="stat-card"><div class="val" id="stat-scores">—</div><div class="lbl">Score ทั้งหมด</div></div>
-    <div class="stat-card"><div class="val" id="stat-today">—</div><div class="lbl">วันนี้</div></div>
-    <div class="stat-card"><div class="val" id="stat-month">—</div><div class="lbl">เดือนนี้</div></div>
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-val" id="stat-players">—</div>
+      <div class="stat-lbl">ผู้เล่น</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🎯</div>
+      <div class="stat-val" id="stat-scores">—</div>
+      <div class="stat-lbl">Score ทั้งหมด</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-val" id="stat-today">—</div>
+      <div class="stat-lbl">วันนี้</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📆</div>
+      <div class="stat-val" id="stat-month">—</div>
+      <div class="stat-lbl">เดือนนี้</div>
+    </div>
   </div>
 
-  <!-- ── Import from Google Sheets ── -->
-  <div class="import-box">
-    <h3>📥 Import ข้อมูลเก่าจาก Google Sheets</h3>
-    <p>ดึงข้อมูลผู้เล่นและคะแนนสะสมจาก Google Apps Script มาไว้ใน Firebase<br>
-    (ทำครั้งเดียว · ข้อมูลที่มีอยู่แล้วใน Firebase จะไม่ถูกทับ)</p>
-    <button class="btn primary" id="btn-import">📥 เริ่ม Import จาก Sheets</button>
+  <!-- Import -->
+  <div class="import-card">
+    <div class="import-card-head">
+      <div>
+        <h3>📥 Import จาก Google Sheets</h3>
+        <p>ดึงข้อมูลผู้เล่นและคะแนนสะสมจาก Google Apps Script มาใส่ Firebase<br>ทำครั้งเดียว · ข้อมูลที่มีอยู่แล้วจะไม่ถูกทับ</p>
+      </div>
+      <button class="btn primary" id="btn-import" style="flex-shrink:0">📥 เริ่ม Import</button>
+    </div>
     <div class="progress" id="import-progress"><div class="progress-bar" id="import-bar"></div></div>
     <div class="import-log" id="import-log"></div>
   </div>
 
-  <!-- ── Players ── -->
+  <!-- Players -->
   <div class="section">
     <div class="section-head">
-      <h2>👥 ผู้เล่นทั้งหมด</h2>
+      <h2>ผู้เล่น <span class="section-count" id="players-count">0</span></h2>
     </div>
     <div class="tbl-wrap">
       <table>
         <thead>
           <tr>
-            <th>#</th><th>ผู้เล่น</th><th>คะแนนรวม</th>
-            <th>เกม</th><th>ชนะ</th><th>แพ้</th><th>จัดการ</th>
+            <th style="width:40px">#</th>
+            <th>ผู้เล่น</th>
+            <th>คะแนน</th>
+            <th>เกม</th>
+            <th>ชนะ</th>
+            <th>แพ้</th>
+            <th>อัตราชนะ</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="players-tbody">
-          <tr class="empty-row"><td colspan="7">กำลังโหลด...</td></tr>
+          <tr class="empty-row"><td colspan="8">กำลังโหลด...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- ── Add Score ── -->
+  <!-- Add Score -->
   <div class="section">
-    <div class="section-head"><h2>➕ เพิ่ม Score</h2></div>
-    <div class="add-form">
+    <div class="section-head"><h2>เพิ่ม Score</h2></div>
+    <div class="add-card">
       <div class="form-row">
         <div>
           <label class="field">ผู้เล่น</label>
-          <select id="add-player">
-            <option value="">— เลือกผู้เล่น —</option>
-          </select>
+          <select id="add-player"><option value="">— เลือกผู้เล่น —</option></select>
         </div>
         <div>
           <label class="field">ผลลัพธ์</label>
           <select id="add-result">
             <option value="win">🏆 ชนะ (+3)</option>
-            <option value="lose">✅ แพ้ (+1)</option>
+            <option value="lose">🎯 แพ้ (+1)</option>
           </select>
         </div>
-        <div style="padding-bottom:0">
-          <label class="field" style="opacity:0">add</label>
-          <button class="btn primary" id="btn-add-score">บันทึก</button>
+        <div>
+          <label class="field" style="opacity:0">·</label>
+          <button class="btn primary" id="btn-add-score" style="width:100%;justify-content:center">บันทึก</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ── Scores ── -->
+  <!-- Scores -->
   <div class="section">
     <div class="section-head">
-      <h2>📋 Scores ล่าสุด</h2>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="filter-player" style="padding:8px 12px;font-size:13px;width:auto">
-          <option value="">ทุกคน</option>
-        </select>
-      </div>
+      <h2>Scores <span class="section-count" id="scores-count">0</span></h2>
+      <select id="filter-player" style="width:auto;padding:8px 12px;font-size:13px">
+        <option value="">ทุกคน</option>
+      </select>
     </div>
     <div class="tbl-wrap">
       <table>
         <thead>
-          <tr><th>#</th><th>ผู้เล่น</th><th>ผล</th><th>คะแนน</th><th>วันที่</th><th>ลบ</th></tr>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>ผู้เล่น</th>
+            <th>ผล</th>
+            <th>+คะแนน</th>
+            <th>วันที่</th>
+            <th style="width:50px"></th>
+          </tr>
         </thead>
         <tbody id="scores-tbody">
           <tr class="empty-row"><td colspan="6">กำลังโหลด...</td></tr>
@@ -213,9 +394,9 @@ select option{background:var(--card)}
       </table>
     </div>
     <div class="pager">
-      <button class="btn btn-sm" id="btn-prev" disabled>← ก่อนหน้า</button>
-      <span id="page-info">หน้า 1</span>
-      <button class="btn btn-sm" id="btn-next">ถัดไป →</button>
+      <button class="btn" id="btn-prev" disabled>← ก่อน</button>
+      <span id="page-info" style="font-family:'IBM Plex Mono',monospace;font-size:11px">หน้า 1</span>
+      <button class="btn" id="btn-next">ถัดไป →</button>
     </div>
   </div>
 
@@ -227,7 +408,7 @@ select option{background:var(--card)}
 /* ================================================================
    CONFIG
    ================================================================ */
-const ADMIN_PASSWORD  = 'badmin888';   // ← เปลี่ยนรหัสผ่านได้ที่นี่
+const ADMIN_PASSWORD  = 'badmin888';
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyD6wYQsxvwuuEUo0sduA-QhcBY2KI1HbjDMWizf9_Q_GFFWKEo4t800ymRvBl6J6E_YA/exec';
 
 const FIREBASE_CONFIG = {
@@ -301,7 +482,6 @@ $('#btn-logout-admin').addEventListener('click', () => {
   location.reload();
 });
 
-// Auto-login if already authenticated
 if(localStorage.getItem('admin_auth') === ADMIN_PASSWORD){
   $('#gate').style.display = 'none';
   $('#main').style.display = 'block';
@@ -354,21 +534,36 @@ function updateStats(){
    ================================================================ */
 function renderPlayers(){
   const tbody = $('#players-tbody');
+  const countEl = $('#players-count');
+  if(countEl) countEl.textContent = allPlayers.length;
+
   if(!allPlayers.length){
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">ยังไม่มีผู้เล่น</td></tr>'; return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">ยังไม่มีผู้เล่น</td></tr>'; return;
   }
+  const medals = ['🥇','🥈','🥉'];
   tbody.innerHTML = allPlayers.map((p,i) => {
     const pic = p.pictureUrl
       ? `<img class="avatar" src="${escHtml(p.pictureUrl)}" alt="" />`
       : `<span class="no-avatar">👤</span>`;
+    const wins   = p.wins   || 0;
+    const losses = p.losses || 0;
+    const played = p.played || 0;
+    const wr     = played > 0 ? Math.round(wins/played*100) : 0;
+    const rank   = i < 3 ? `<span style="font-size:16px">${medals[i]}</span>` : `<span class="rank-num">${i+1}</span>`;
     return `<tr>
-      <td style="color:var(--mute)">${i+1}</td>
-      <td><div class="player-cell">${pic}<span>${escHtml(p.name)}</span></div></td>
-      <td><strong>${p.totalPoints||0}</strong></td>
-      <td>${p.played||0}</td>
-      <td style="color:var(--accent)">${p.wins||0}</td>
-      <td style="color:var(--soft)">${p.losses||0}</td>
-      <td><button class="btn danger btn-sm" onclick="deletePlayer('${escHtml(p.docId)}','${escHtml(p.name)}')">ลบ</button></td>
+      <td>${rank}</td>
+      <td><div class="player-cell">${pic}<span class="player-name">${escHtml(p.name)}</span></div></td>
+      <td><span class="pts-big">${p.totalPoints||0}</span></td>
+      <td><span class="played-num">${played}</span></td>
+      <td><span class="wins-num">${wins}</span></td>
+      <td><span class="losses-num">${losses}</span></td>
+      <td>
+        <div class="wr-wrap">
+          <div class="wr-bar"><div class="wr-fill" style="width:${wr}%"></div></div>
+          <span class="wr-txt">${wr}%</span>
+        </div>
+      </td>
+      <td><button class="del-btn" onclick="deletePlayer('${escHtml(p.docId)}','${escHtml(p.name)}')">ลบ</button></td>
     </tr>`;
   }).join('');
 }
@@ -380,7 +575,7 @@ function populatePlayerSelects(){
 }
 
 /* ================================================================
-   RENDER SCORES (paginated)
+   RENDER SCORES
    ================================================================ */
 function getFilteredScores(){
   const filter = $('#filter-player').value;
@@ -392,29 +587,32 @@ function renderScores(){
   const start = scoresPage * PAGE_SIZE;
   const page  = list.slice(start, start + PAGE_SIZE);
   const tbody = $('#scores-tbody');
+  const countEl = $('#scores-count');
+  if(countEl) countEl.textContent = list.length;
 
   if(!page.length){
     tbody.innerHTML = '<tr class="empty-row"><td colspan="6">ไม่มีข้อมูล</td></tr>';
   } else {
     tbody.innerHTML = page.map((s,i) => {
-      const p = playerMap[s.playerId];
-      const pic = p?.pictureUrl
-        ? `<img class="avatar" src="${escHtml(p.pictureUrl)}" alt="" style="width:22px;height:22px"/>`
-        : `<span class="no-avatar" style="width:22px;height:22px;font-size:11px">👤</span>`;
-      const name = p?.name || s.playerId || '?';
+      const p    = playerMap[s.playerId];
+      const pic  = p?.pictureUrl
+        ? `<img class="avatar" src="${escHtml(p.pictureUrl)}" alt="" style="width:26px;height:26px"/>`
+        : `<span class="no-avatar" style="width:26px;height:26px;font-size:12px">👤</span>`;
+      const name = p?.name || '?';
+      const isWin = s.result === 'win';
       return `<tr>
-        <td style="color:var(--mute)">${start+i+1}</td>
-        <td><div class="player-cell">${pic}<span>${escHtml(name)}</span></div></td>
-        <td><span class="badge ${s.result}">${s.result==='win'?'ชนะ':'แพ้'}</span></td>
-        <td><span class="pts" style="color:${s.result==='win'?'var(--accent)':'var(--soft)'}">${s.points||0}</span></td>
-        <td style="color:var(--mute);font-size:12px">${fmtDate(s.createdAt)}</td>
-        <td><button class="btn danger btn-sm" onclick="deleteScore('${escHtml(s.docId)}','${escHtml(s.playerId)}',${s.points||0},'${s.result}')">ลบ</button></td>
+        <td><span class="rank-num">${start+i+1}</span></td>
+        <td><div class="player-cell">${pic}<span class="player-name">${escHtml(name)}</span></div></td>
+        <td><span class="badge ${s.result}">${isWin ? '🏆 ชนะ' : '🎯 แพ้'}</span></td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:${isWin?'var(--green)':'var(--red)'}">+${s.points||0}</span></td>
+        <td><span class="date-txt">${fmtDate(s.createdAt)}</span></td>
+        <td><button class="del-btn" onclick="deleteScore('${escHtml(s.docId)}','${escHtml(s.playerId)}',${s.points||0},'${s.result}')">ลบ</button></td>
       </tr>`;
     }).join('');
   }
 
   const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
-  $('#page-info').textContent = `หน้า ${scoresPage+1} / ${totalPages} (${list.length} รายการ)`;
+  $('#page-info').textContent = `หน้า ${scoresPage+1} / ${totalPages}`;
   $('#btn-prev').disabled = scoresPage === 0;
   $('#btn-next').disabled = (scoresPage+1) * PAGE_SIZE >= list.length;
 }
@@ -498,25 +696,21 @@ async function importFromSheets(){
     log('📡 ดึงข้อมูลจาก Google Sheets...');
     setBar(10);
 
-    // ── ดึง players (มี id + lineUserId) ──
     const playersRes = await fetch(`${GAS_URL}?action=getPlayers`);
     const playersData = await playersRes.json();
     const gasPlayers = playersData.players || [];
     log(`✅ พบผู้เล่น ${gasPlayers.length} คน`);
     setBar(25);
 
-    // ── ดึง rankings (มี stats aggregated) ──
     const rankRes = await fetch(`${GAS_URL}?action=getRankings`);
     const rankData = await rankRes.json();
     const rankings = rankData.rankings || [];
     log(`✅ พบ rankings ${rankings.length} รายการ`);
     setBar(40);
 
-    // สร้าง map: gasPlayerId → stats
     const statsMap = {};
     rankings.forEach(r => { statsMap[r.id] = r; });
 
-    // ── เขียน players ลง Firestore ──
     log('💾 กำลัง import ผู้เล่น...');
     let imported = 0, skipped = 0;
     const BATCH_SIZE = 400;
@@ -527,15 +721,11 @@ async function importFromSheets(){
 
       for(const player of chunk){
         if(!player.lineUserId) { skipped++; continue; }
-
-        // เช็คว่ามีใน Firestore แล้วหรือยัง
         const ref = db.collection('players').doc(player.lineUserId);
         const existing = await ref.get();
-
         const stats = statsMap[player.id] || { played:0, wins:0, losses:0, points:0 };
 
         if(!existing.exists){
-          // ยังไม่มี → สร้างใหม่
           batch.set(ref, {
             id:          player.lineUserId,
             name:        player.name,
@@ -548,11 +738,7 @@ async function importFromSheets(){
           });
           imported++;
         } else {
-          // มีแล้ว → อัปเดตแค่ชื่อ/รูป ไม่แตะ stats (ป้องกันทับข้อมูลใหม่)
-          batch.update(ref, {
-            name:       player.name,
-            pictureUrl: player.pictureUrl || '',
-          });
+          batch.update(ref, { name: player.name, pictureUrl: player.pictureUrl || '' });
           skipped++;
         }
       }
@@ -561,10 +747,8 @@ async function importFromSheets(){
       setBar(40 + Math.round(50 * (i+chunk.length) / gasPlayers.length));
     }
 
-    log(`✅ Import ผู้เล่นเสร็จ: เพิ่มใหม่ ${imported} คน, มีอยู่แล้ว ${skipped} คน`);
+    log(`✅ เพิ่มใหม่ ${imported} คน · มีอยู่แล้ว ${skipped} คน`);
     setBar(95);
-
-    // ── โหลดข้อมูลใหม่ ──
     await loadAll();
     setBar(100);
     log('🎉 Import เสร็จสมบูรณ์!');
@@ -586,9 +770,7 @@ async function importFromSheets(){
 if(localStorage.getItem('admin_auth') === ADMIN_PASSWORD){
   document.addEventListener('DOMContentLoaded', loadAll);
 } else {
-  document.addEventListener('DOMContentLoaded', () => {
-    $('#pwd-input').focus();
-  });
+  document.addEventListener('DOMContentLoaded', () => { $('#pwd-input').focus(); });
 }
 </script>
 </body>
