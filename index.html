@@ -124,38 +124,51 @@ section.view.active{display:block}
 .my-pts-wrap{text-align:right;flex-shrink:0}
 .my-pts{font-family:'Instrument Serif',serif;font-size:42px;line-height:1;color:var(--accent);font-weight:400}
 .my-pts-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-mute);letter-spacing:.1em;margin-top:1px}
-.my-stats-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-.my-stat-w{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#4ade80}
-.my-stat-l{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#f87171}
-.my-stat-sep{color:var(--line)}
-.my-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.my-btn{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:16px 12px;border-radius:var(--radius-sm);border:2px solid transparent;
-  cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;
-  font-family:'DM Sans',sans-serif;
+.my-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.my-action-card{
+  display:flex;flex-direction:column;gap:10px;
+  padding:12px;border-radius:var(--radius-sm);
+  border:1.5px solid var(--line);background:var(--bg-input);
 }
-.my-btn.win{background:#16a34a22;border-color:#4ade8060;color:#4ade80}
-.my-btn.lose{background:#dc262622;border-color:#f8717160;color:#f87171}
-.my-btn:active{transform:scale(.96)}
-.my-btn-icon{font-size:22px;line-height:1}
-.my-btn-label{font-size:15px;font-weight:800;line-height:1}
-.my-btn-pts{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;opacity:.8}
-.my-undo-row{
-  display:flex;align-items:center;justify-content:flex-end;gap:6px;
-  margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);
+.my-action-card.win{border-color:#4ade8055;background:#16a34a14}
+.my-action-card.lose{border-color:#f8717155;background:#dc262614}
+.my-action-head{display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif}
+.my-action-icon{font-size:18px;line-height:1}
+.my-action-title{font-size:15px;font-weight:800;line-height:1}
+.my-action-card.win .my-action-title{color:#4ade80}
+.my-action-card.lose .my-action-title{color:#f87171}
+.my-action-pts{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+  letter-spacing:.06em;color:var(--ink-mute);margin-left:auto;
 }
-.my-undo-lbl{font-size:11px;color:var(--ink-mute);margin-right:auto}
-.my-undo-btn{
-  appearance:none;border:1px solid var(--line);background:transparent;
-  border-radius:8px;padding:6px 10px;cursor:pointer;
-  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;
-  color:var(--ink-soft);-webkit-tap-highlight-color:transparent;
+.my-stepper{
+  display:grid;grid-template-columns:44px 1fr 56px;
+  align-items:center;gap:8px;
 }
-.my-undo-btn.win{color:#4ade80;border-color:#4ade8040}
-.my-undo-btn.lose{color:#f87171;border-color:#f8717140}
-.my-undo-btn:active{transform:scale(.94)}
-.my-undo-pts{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;opacity:.75;margin-left:2px}
+.step-btn{
+  appearance:none;border:1.5px solid var(--line);background:var(--bg-card);
+  border-radius:var(--radius-sm);color:var(--ink);cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:800;line-height:1;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .08s,opacity .15s,background .15s;
+}
+.step-btn:active:not(:disabled){transform:scale(.94)}
+.step-btn:disabled{opacity:.22;cursor:not-allowed}
+.step-btn.minus{height:44px;font-size:22px}
+.step-btn.plus{height:52px;font-size:28px;border-width:2px}
+.my-action-card.win  .step-btn.minus{color:#4ade80;border-color:#4ade8040}
+.my-action-card.lose .step-btn.minus{color:#f87171;border-color:#f8717140}
+.my-action-card.win  .step-btn.plus{background:#4ade80;border-color:#4ade80;color:#0b1410}
+.my-action-card.lose .step-btn.plus{background:#f87171;border-color:#f87171;color:#2a0909}
+.step-count{
+  font-family:'Instrument Serif',serif;font-size:34px;line-height:1;
+  text-align:center;color:var(--ink);font-weight:400;
+}
+.my-hint{
+  margin:10px 0 0;font-size:11px;line-height:1.5;
+  color:var(--ink-mute);text-align:center;
+}
+.my-hint strong{color:var(--ink-soft);font-weight:700}
 
 /* ---- Ranking rows ---- */
 .rank-list{display:flex;flex-direction:column;gap:8px}
@@ -377,30 +390,33 @@ section.view.active{display:block}
             <div class="my-pts-lbl">pts วันนี้</div>
           </div>
         </div>
-        <div class="my-stats-row">
-          <span class="my-stat-w" id="my-wins">ชนะ 0</span>
-          <span class="my-stat-sep">·</span>
-          <span class="my-stat-l" id="my-losses">แพ้ 0</span>
+        <div class="my-actions">
+          <div class="my-action-card win">
+            <div class="my-action-head">
+              <span class="my-action-icon">🏆</span>
+              <span class="my-action-title">ชนะ</span>
+              <span class="my-action-pts">+3 pts</span>
+            </div>
+            <div class="my-stepper">
+              <button class="step-btn minus" id="my-minus-win" onclick="manualUndo('win')" aria-label="ลดชนะ" disabled>−</button>
+              <span class="step-count" id="my-wins">0</span>
+              <button class="step-btn plus" onclick="manualRecord('win')" aria-label="เพิ่มชนะ">+</button>
+            </div>
+          </div>
+          <div class="my-action-card lose">
+            <div class="my-action-head">
+              <span class="my-action-icon">🎯</span>
+              <span class="my-action-title">แพ้</span>
+              <span class="my-action-pts">+1 pt</span>
+            </div>
+            <div class="my-stepper">
+              <button class="step-btn minus" id="my-minus-lose" onclick="manualUndo('lose')" aria-label="ลดแพ้" disabled>−</button>
+              <span class="step-count" id="my-losses">0</span>
+              <button class="step-btn plus" onclick="manualRecord('lose')" aria-label="เพิ่มแพ้">+</button>
+            </div>
+          </div>
         </div>
-        <div class="my-btns">
-          <button class="my-btn win" onclick="manualRecord('win')">
-            <span class="my-btn-icon">🏆</span>
-            <span class="my-btn-label">ชนะ <span class="my-btn-pts">+3</span></span>
-          </button>
-          <button class="my-btn lose" onclick="manualRecord('lose')">
-            <span class="my-btn-icon">🎯</span>
-            <span class="my-btn-label">แพ้ <span class="my-btn-pts">+1</span></span>
-          </button>
-        </div>
-        <div class="my-undo-row">
-          <span class="my-undo-lbl">แก้ไข (กดใส่ผิด):</span>
-          <button class="my-undo-btn win" onclick="manualUndo('win')">
-            − ชนะ <span class="my-undo-pts">-3</span>
-          </button>
-          <button class="my-undo-btn lose" onclick="manualUndo('lose')">
-            − แพ้ <span class="my-undo-pts">-1</span>
-          </button>
-        </div>
+        <p class="my-hint">กด <strong>+</strong> เมื่อจบเกม · กด <strong>−</strong> เมื่อกดพลาด (กดได้เฉพาะเมื่อมีคะแนนให้ลด)</p>
       </div>
 
       <div class="rank-list" id="daily-list"></div>
@@ -958,8 +974,14 @@ function renderMyCard(){
   const loss = me?.losses  || 0;
 
   document.getElementById('my-pts').textContent    = pts;
-  document.getElementById('my-wins').textContent   = `ชนะ ${wins}`;
-  document.getElementById('my-losses').textContent = `แพ้ ${loss}`;
+  document.getElementById('my-wins').textContent   = wins;
+  document.getElementById('my-losses').textContent = loss;
+
+  // disable minus buttons when there's nothing to reduce (prevents negative scores)
+  const minusWin  = document.getElementById('my-minus-win');
+  const minusLose = document.getElementById('my-minus-lose');
+  if(minusWin)  minusWin.disabled  = wins <= 0;
+  if(minusLose) minusLose.disabled = loss <= 0;
 }
 
 async function manualRecord(result){
@@ -978,14 +1000,21 @@ async function manualRecord(result){
   }
 }
 
-/** ลดคะแนน (ใส่ผิด) — หัก -3 หรือ -1 */
+/** ลดคะแนน (ใส่ผิด) — หัก -3 หรือ -1 แต่ห้ามติดลบ */
 async function manualUndo(result){
   if(!currentUser){ toast('กรุณา login ก่อน'); return; }
-  const label = result === 'win' ? 'ชนะ −3' : 'แพ้ −1';
-  if(!confirm(`ยืนยันลดคะแนน "${label}"?\n(กดเมื่อบันทึกผิด)`)) return;
+
+  // Guard: ห้ามลดถ้าไม่มีสถิติวันนี้ให้ลด (ป้องกันติดลบ)
+  const me = allDailyRankings.find(r => r.id === currentUser.id);
+  const curCount = result === 'win' ? (me?.wins || 0) : (me?.losses || 0);
+  if(curCount <= 0){
+    toast(result === 'win' ? 'ยังไม่มีชนะวันนี้ให้ลด' : 'ยังไม่มีแพ้วันนี้ให้ลด');
+    return;
+  }
+
   const pts = result === 'win' ? -3 : -1;
   applyOptimisticUpdate(currentUser.id, result === 'win' ? 'undo-win' : 'undo-lose', pts);
-  toast(`✎ ลดคะแนนแล้ว ${label}`);
+  toast(result === 'win' ? '✎ ลดชนะ −3 คะแนน' : '✎ ลดแพ้ −1 คะแนน');
   try{
     await dbUndoResult(currentUser.id, result);
     await loadAllData();
