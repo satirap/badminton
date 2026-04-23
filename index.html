@@ -565,7 +565,14 @@ async function loginWithLIFF(resultParam){
 
   // ── Normal open (no QR scan) ──
   if(!isQRScan){
-    if(cached){ currentUser = JSON.parse(cached); showApp(); hideSplash(); loadCachedData(); }
+    if(cached){
+      currentUser = JSON.parse(cached);
+      showApp(); hideSplash(); loadCachedData();
+    } else {
+      // ไม่มี cache → แสดงหน้า login ก่อน (hideSplash ด้วย)
+      showLogin(); hideSplash();
+    }
+    // background refresh: อัปเดต profile + ถ้า LINE เพิ่ง auth redirect กลับมา → showApp
     _backgroundRefresh().catch(console.error);
     return;
   }
@@ -598,7 +605,8 @@ async function loginWithLIFF(resultParam){
   }
 }
 
-// Background refresh: update profile + reload data without blocking UI
+// Background refresh: update profile + reload data
+// ถ้า user เพิ่ง login ผ่าน LINE (redirect กลับมา) และยังไม่ได้ showApp → เรียก showApp ด้วย
 async function _backgroundRefresh(){
   try{
     if(!liff.isLoggedIn()) return;
@@ -607,9 +615,16 @@ async function _backgroundRefresh(){
     if(reg?.success){
       currentUser = reg.player;
       localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
-      const n = $('#display-name'); if(n) n.textContent = currentUser.name;
-      const p = $('#display-pic');
-      if(p && currentUser.pictureUrl){ p.src = currentUser.pictureUrl; p.style.display='block'; }
+      // ถ้า app-main ยังซ่อนอยู่ (first login after LINE auth) → แสดง app
+      const mainEl = $('#app-main');
+      if(mainEl && mainEl.style.display !== 'block'){
+        showApp(); hideSplash();
+        if(reg.isNew) toast('ยินดีต้อนรับ! 🏸');
+      } else {
+        const n = $('#display-name'); if(n) n.textContent = currentUser.name;
+        const p = $('#display-pic');
+        if(p && currentUser.pictureUrl){ p.src = currentUser.pictureUrl; p.style.display='block'; }
+      }
     }
     await loadAllData();
   }catch(e){ console.error('background refresh', e); }
