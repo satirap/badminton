@@ -12,262 +12,260 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 /* =================================================================
-   DESIGN SYSTEM
-   Sporty-editorial: dark ground, neon accent, confident type
+   DESIGN SYSTEM — High Contrast · Senior-Friendly · Modern Dark
    ================================================================= */
 :root {
-  --bg:       #0e0f11;
-  --bg-card:  #181a1e;
-  --bg-input: #1f2228;
-  --ink:      #e8e6e1;
-  --ink-soft: #9b9a95;
-  --ink-mute: #5c5b57;
-  --line:     #2a2c31;
-  --accent:   #c6f135;
-  --accent-dim:#c6f13530;
-  --danger:   #f14e4e;
-  --gold:     #ffd644;
-  --silver:   #b8c0cc;
-  --bronze:   #d4915e;
-  --radius:   16px;
-  --radius-sm:12px;
-  --shadow:   0 2px 20px -8px #000a;
+  --bg:        #0c0d10;
+  --bg-card:   #16181d;
+  --bg-card2:  #1c1e24;
+  --bg-input:  #1e2028;
+  --ink:       #f5f3ee;   /* near-white — max contrast */
+  --ink-soft:  #c9c7c0;   /* light gray — still very readable */
+  --ink-mute:  #8e8c85;   /* medium gray — for labels */
+  --line:      #2e3038;
+  --accent:    #c8f135;
+  --green:     #22c55e;
+  --green-bg:  #14532d;
+  --green-txt: #bbf7d0;
+  --red:       #ef4444;
+  --red-bg:    #7f1d1d;
+  --red-txt:   #fecaca;
+  --gold:      #fbbf24;
+  --silver:    #cbd5e1;
+  --bronze:    #fb923c;
+  --radius:    16px;
+  --radius-sm: 12px;
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{
-  background: var(--bg);
-  color: var(--ink);
-  font-family:'DM Sans', system-ui, sans-serif;
-  font-size:16px;
-  line-height:1.45;
-  min-height:100dvh;
-  -webkit-font-smoothing:antialiased;
+  background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif;
+  font-size:17px;line-height:1.5;
+  min-height:100dvh;-webkit-font-smoothing:antialiased;
 }
 
 /* ---- App shell ---- */
 .app{max-width:480px;margin:0 auto;padding:0 16px 100px;position:relative}
 
-/* ---- Loading / splash ---- */
+/* ---- Splash ---- */
 #splash{
-  position:fixed;inset:0;z-index:200;
-  background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;
+  position:fixed;inset:0;z-index:200;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
   transition:opacity .4s ease;
 }
 #splash.hide{opacity:0;pointer-events:none}
 #splash .logo{font-family:'Instrument Serif',serif;font-size:48px;letter-spacing:-.03em}
 #splash .dot{display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:50%;margin:0 1px 6px 2px}
-#splash .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
-@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+#splash .sub{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 #splash .loading{animation:pulse 1.2s ease infinite}
 
 /* ---- Header ---- */
 .header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:18px 0 14px;
-  border-bottom:1px solid var(--line);
-  margin-bottom:6px;
+  padding:18px 0 14px;border-bottom:1px solid var(--line);margin-bottom:6px;
 }
 .header .brand{
-  font-family:'Instrument Serif',serif;
-  font-size:28px;letter-spacing:-.02em;
+  font-family:'Instrument Serif',serif;font-size:26px;letter-spacing:-.02em;
   display:flex;align-items:center;gap:1px;
 }
 .header .brand .dot{display:inline-block;width:7px;height:7px;background:var(--accent);border-radius:50%;margin:0 1px 4px 1px}
 .header .user-info{display:flex;align-items:center;gap:10px}
-.header .user-info img{width:34px;height:34px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
-.header .user-info .uname{font-size:13px;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header .user-info img{width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);object-fit:cover}
+.header .user-info .uname{font-size:14px;font-weight:700;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
 .header .logout{
-  background:none;border:1px solid var(--line);color:var(--ink-mute);
-  font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer;
-  font-family:'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;
+  background:none;border:1.5px solid var(--line);color:var(--ink-soft);
+  font-size:12px;padding:7px 12px;border-radius:8px;cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;
 }
 
-/* ---- Tab bar — 3 columns ---- */
+/* ---- Tab bar ---- */
 .tabs{
-  position:sticky;top:0;z-index:20;
-  background:var(--bg);
-  border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:20;background:var(--bg);
+  border-bottom:2px solid var(--line);
   display:grid;grid-template-columns:repeat(3,1fr);
   margin:0 -16px;padding:0 4px;
 }
 .tab{
   appearance:none;border:0;background:transparent;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;
-  letter-spacing:.08em;text-transform:uppercase;
-  color:var(--ink-mute);padding:14px 2px 12px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  color:var(--ink-mute);padding:15px 4px 13px;cursor:pointer;
   position:relative;transition:color .2s;
 }
-.tab[aria-selected="true"]{color:var(--accent)}
+.tab[aria-selected="true"]{color:var(--ink)}
 .tab[aria-selected="true"]::after{
-  content:'';position:absolute;left:16%;right:16%;bottom:-1px;
+  content:'';position:absolute;left:12%;right:12%;bottom:-2px;
   height:3px;background:var(--accent);border-radius:2px 2px 0 0;
 }
 
 /* ---- Views ---- */
 section.view{display:none;animation:fadeUp .25s ease}
 section.view.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 .section-title{
-  font-family:'Instrument Serif',serif;font-size:32px;
-  letter-spacing:-.02em;margin:20px 0 16px;line-height:1.1;
+  font-family:'Instrument Serif',serif;font-size:30px;
+  letter-spacing:-.02em;margin:20px 0 14px;line-height:1.1;color:var(--ink);
 }
 .section-title em{font-style:italic;color:var(--ink-soft)}
 
 /* ---- Ranking rows ---- */
-.rank-list{display:flex;flex-direction:column;gap:6px}
+.rank-list{display:flex;flex-direction:column;gap:8px}
 .rank-row{
-  display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;
-  background:var(--bg-card);border:1px solid var(--line);
-  border-radius:var(--radius-sm);padding:12px 14px;
+  display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:12px;
+  background:var(--bg-card);border:1.5px solid var(--line);
+  border-radius:var(--radius-sm);padding:14px 16px;
   position:relative;overflow:hidden;
 }
-.rank-row .pos{
-  font-family:'Instrument Serif',serif;font-weight:400;
-  font-size:22px;text-align:center;color:var(--ink-soft);line-height:1;
-}
+
+/* Rank number / medal */
+.rank-row .pos{text-align:center;line-height:1}
+.rank-row .pos .medal{font-size:26px;display:block}
 .rank-row .pos .pos-num{
-  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;
-  color:var(--ink-soft);
+  font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700;
+  color:var(--ink-soft);display:block;
 }
-.rank-row .info{min-width:0;display:flex;flex-direction:column;gap:5px}
+
+/* Name row */
+.rank-row .info{min-width:0;display:flex;flex-direction:column;gap:7px}
 .rank-row .info .n{
-  font-weight:600;font-size:14px;display:flex;align-items:center;gap:7px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);
 }
-.rank-row .info .n img{width:24px;height:24px;border-radius:50%;object-fit:cover;flex-shrink:0}
-.rank-row .info .stat-badges{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.rank-row .info .n img{
+  width:30px;height:30px;border-radius:50%;object-fit:cover;
+  flex-shrink:0;border:1.5px solid var(--line);
+}
+
+/* Stat badges row */
+.rank-row .stat-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
 .rank-row .badge-w{
-  display:inline-flex;align-items:center;gap:3px;
-  background:#16a34a22;color:#4ade80;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
-  padding:2px 7px;border-radius:4px;border:1px solid #4ade8033;letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--green-bg);color:var(--green-txt);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  padding:4px 10px;border-radius:6px;border:1.5px solid var(--green);
+  white-space:nowrap;
 }
 .rank-row .badge-l{
-  display:inline-flex;align-items:center;gap:3px;
-  background:#dc262622;color:#f87171;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
-  padding:2px 7px;border-radius:4px;border:1px solid #f8717133;letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--red-bg);color:var(--red-txt);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  padding:4px 10px;border-radius:6px;border:1.5px solid var(--red);
+  white-space:nowrap;
 }
-.rank-row .wr-wrap{display:flex;align-items:center;gap:5px}
+
+/* Win-rate bar */
+.rank-row .wr-wrap{display:flex;align-items:center;gap:6px}
 .rank-row .wr-bar{
-  width:48px;height:4px;border-radius:2px;
+  width:52px;height:6px;border-radius:3px;
   background:var(--line);overflow:hidden;flex-shrink:0;
 }
-.rank-row .wr-fill{height:100%;border-radius:2px;background:var(--accent)}
+.rank-row .wr-fill{height:100%;border-radius:3px;background:var(--accent)}
 .rank-row .wr-txt{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
-  color:var(--ink-mute);letter-spacing:.04em;
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+  color:var(--ink-soft);letter-spacing:.04em;
 }
+
+/* Points */
 .rank-row .pts{
-  font-family:'Instrument Serif',serif;font-size:26px;text-align:right;
-  line-height:1;white-space:nowrap;
+  font-family:'Instrument Serif',serif;font-size:30px;
+  text-align:right;line-height:1;white-space:nowrap;color:var(--ink);
 }
 .rank-row .pts small{
-  font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:1px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink-mute);display:block;margin-top:2px;
 }
 
 /* Podium highlights */
-.rank-row.p1{background:linear-gradient(105deg,var(--bg-card) 50%,#c6f13520 100%);border-color:var(--accent)}
-.rank-row.p1 .pos{color:var(--accent)}
+.rank-row.p1{background:linear-gradient(110deg,var(--bg-card) 55%,#c8f13518 100%);border-color:var(--accent)}
+.rank-row.p1 .pos .medal{filter:drop-shadow(0 0 6px #c8f13580)}
+.rank-row.p1 .pts{color:var(--accent)}
 .rank-row.p2{border-color:var(--silver)}
-.rank-row.p2 .pos{color:var(--silver)}
 .rank-row.p3{border-color:var(--bronze)}
-.rank-row.p3 .pos{color:var(--bronze)}
 
 /* ---- Login screen ---- */
 #view-login{
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;min-height:70dvh;gap:24px;text-align:center;
 }
-#view-login .hero{
-  font-family:'Instrument Serif',serif;font-size:56px;
-  letter-spacing:-.03em;line-height:.95;
-}
+#view-login .hero{font-family:'Instrument Serif',serif;font-size:52px;letter-spacing:-.03em;line-height:.95}
 #view-login .hero .dot{display:inline-block;width:12px;height:12px;background:var(--accent);border-radius:50%;margin:0 1px 8px 2px}
-#view-login .tagline{color:var(--ink-soft);font-size:15px;max-width:260px;margin:0 auto}
+#view-login .tagline{color:var(--ink-soft);font-size:16px;max-width:280px;margin:0 auto;line-height:1.6}
 #view-login .login-wrap{width:100%;max-width:320px}
 
 /* ---- Buttons ---- */
 .btn{
   appearance:none;border:1.5px solid var(--line);
   background:var(--bg-input);color:var(--ink);
-  font-family:inherit;font-weight:600;font-size:16px;
+  font-family:inherit;font-weight:700;font-size:17px;
   padding:16px 18px;width:100%;border-radius:var(--radius-sm);
-  cursor:pointer;transition:transform .06s,background .15s;
-  min-height:54px;
+  cursor:pointer;transition:transform .06s,background .15s;min-height:56px;
 }
 .btn:active{transform:translateY(1px)}
 .btn.line-btn{
   background:#06c755;color:#fff;border-color:#06c755;
-  font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;
-  min-height:58px;border-radius:var(--radius);
+  font-size:18px;display:flex;align-items:center;justify-content:center;gap:10px;
+  min-height:60px;border-radius:var(--radius);
 }
 .btn.line-btn svg{flex-shrink:0}
 
 /* ---- Toast ---- */
 .toast{
-  position:fixed;bottom:24px;left:50%;
+  position:fixed;bottom:28px;left:50%;
   transform:translateX(-50%) translateY(40px);
   background:var(--accent);color:#111;
-  padding:12px 20px;border-radius:100px;
-  font-family:'IBM Plex Mono',monospace;font-size:12px;
-  letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+  padding:14px 24px;border-radius:100px;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
   opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
-  z-index:50;pointer-events:none;box-shadow:0 10px 30px -10px #000a;
+  z-index:50;pointer-events:none;box-shadow:0 10px 30px -8px #000c;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ---- Empty state ---- */
 .empty{
-  text-align:center;padding:40px 20px;
+  text-align:center;padding:48px 20px;
   color:var(--ink-mute);font-style:italic;
-  font-family:'Instrument Serif',serif;font-size:16px;
+  font-family:'Instrument Serif',serif;font-size:18px;
 }
 
 /* ---- Monthly winners grid ---- */
-.winners-grid{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px;
-}
+.winners-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
 .winner-card{
-  background:var(--bg-card);border:1px solid var(--line);
-  border-radius:var(--radius-sm);padding:12px 8px;text-align:center;
+  background:var(--bg-card);border:1.5px solid var(--line);
+  border-radius:var(--radius-sm);padding:14px 8px;text-align:center;
 }
 .winner-card.has-winner{border-color:var(--accent)}
-.winner-card.cur-month{background:linear-gradient(135deg,var(--bg-card) 50%,#c6f13512 100%)}
+.winner-card.cur-month{background:linear-gradient(135deg,var(--bg-card) 50%,#c8f13510 100%)}
 .winner-card .mo{
-  font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;
-  letter-spacing:.15em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:8px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px;
 }
 .winner-card img{
-  width:44px;height:44px;border-radius:50%;object-fit:cover;
+  width:46px;height:46px;border-radius:50%;object-fit:cover;
   border:2px solid var(--accent);margin:0 auto 6px;display:block;
 }
 .winner-card .no-pic{
-  width:44px;height:44px;border-radius:50%;background:var(--bg-input);
+  width:46px;height:46px;border-radius:50%;background:var(--bg-input);
   border:2px solid var(--line);margin:0 auto 6px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
 }
 .winner-card .wname{
-  font-size:11px;font-weight:600;
+  font-size:12px;font-weight:700;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.winner-card .wpts{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-mute);margin-top:2px}
+.winner-card .wpts{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);margin-top:3px}
 .winner-card.empty-slot .mo{color:var(--line)}
 
-/* ---- Utility ---- */
-.text-mute{color:var(--ink-mute)}
-.text-sm{font-size:13px}
+/* ---- Date label ---- */
+.text-mute{color:var(--ink-soft)}
+.text-sm{font-size:15px}
 
-/* Small screens */
 @media(max-width:360px){
   .section-title{font-size:26px}
+  .rank-row .badge-w,.rank-row .badge-l{font-size:12px;padding:3px 8px}
 }
 </style>
 </head>
@@ -714,7 +712,7 @@ function rankRowHtml(r){
   const podium  = rank === 1 ? 'p1' : rank === 2 ? 'p2' : rank === 3 ? 'p3' : '';
   const medal   = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
   const posHtml = medal
-    ? `<span style="font-size:22px">${medal}</span>`
+    ? `<span class="medal">${medal}</span>`
     : `<span class="pos-num">${rank}</span>`;
   const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
   const wins    = r.wins   || 0;
@@ -726,8 +724,8 @@ function rankRowHtml(r){
     <div class="info">
       <span class="n">${picHtml}${escHtml(r.name)}</span>
       <div class="stat-badges">
-        <span class="badge-w">W ${wins}</span>
-        <span class="badge-l">L ${losses}</span>
+        <span class="badge-w">🏆 ${wins} ชนะ</span>
+        <span class="badge-l">🎯 ${losses} แพ้</span>
         <div class="wr-wrap">
           <div class="wr-bar"><div class="wr-fill" style="width:${wr}%"></div></div>
           <span class="wr-txt">${wr}%</span>
