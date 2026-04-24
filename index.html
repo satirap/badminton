@@ -676,7 +676,18 @@ async function dbGetAllData(){
     else if(s.result === 'undo-lose')  { dailyAgg[s.playerId].losses--; dailyAgg[s.playerId].played--; }
   });
   const daily = Object.entries(dailyAgg)
-    .map(([id, stats]) => ({ ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...stats }))
+    .map(([id, stats]) => {
+      // clamp ไม่ให้ติดลบ (กรณีมี undo มากกว่าจริง)
+      const clamped = {
+        points: Math.max(0, stats.points),
+        wins:   Math.max(0, stats.wins),
+        losses: Math.max(0, stats.losses),
+        played: Math.max(0, stats.played),
+      };
+      return { ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...clamped };
+    })
+    // ถ้าลดจนเหลือ 0 เกม → เอาออก (เหมือนไม่ได้ลงแข่งวันนั้น)
+    .filter(p => p.played > 0 || p.points > 0)
     .sort(rankCmp);
 
   // ── Monthly rankings + yearly winners (single pass over year scores) ──
@@ -703,7 +714,16 @@ async function dbGetAllData(){
   });
 
   const monthly = Object.entries(monthAgg)
-    .map(([id, stats]) => ({ ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...stats }))
+    .map(([id, stats]) => {
+      const clamped = {
+        points: Math.max(0, stats.points),
+        wins:   Math.max(0, stats.wins),
+        losses: Math.max(0, stats.losses),
+        played: Math.max(0, stats.played),
+      };
+      return { ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...clamped };
+    })
+    .filter(p => p.played > 0 || p.points > 0)
     .sort(rankCmp);
 
   const winners = Array.from({ length:12 }, (_, i) => {
@@ -1123,16 +1143,24 @@ function applyOptimisticUpdate(playerId, result, pts){
   const deltaWins   = result === 'win' ? 1 : result === 'undo-win' ? -1 : 0;
   const deltaLoss   = result === 'lose' ? 1 : result === 'undo-lose' ? -1 : 0;
 
-  function updateList(list){
+  // dropZero: ถ้า played ลดลงเหลือ 0 → เอาออกจาก list (ใช้กับ daily/monthly)
+  //           allRankings (ทำเนียบสมาชิก) ไม่ตัดออก ให้เก็บทุกคน
+  function updateList(list, dropZero){
     const idx = list.findIndex(r => r.id === playerId);
     if(idx !== -1){
-      list[idx] = {
-        ...list[idx],
-        points: (list[idx].points || 0) + pts,
-        played: Math.max(0, (list[idx].played || 0) + deltaPlayed),
-        wins:   Math.max(0, (list[idx].wins   || 0) + deltaWins),
-        losses: Math.max(0, (list[idx].losses || 0) + deltaLoss),
-      };
+      const newPlayed = Math.max(0, (list[idx].played || 0) + deltaPlayed);
+      const newPoints = Math.max(0, (list[idx].points || 0) + pts);
+      if(dropZero && newPlayed <= 0 && newPoints <= 0){
+        list.splice(idx, 1); // เอาออกจาก list
+      } else {
+        list[idx] = {
+          ...list[idx],
+          points: newPoints,
+          played: newPlayed,
+          wins:   Math.max(0, (list[idx].wins   || 0) + deltaWins),
+          losses: Math.max(0, (list[idx].losses || 0) + deltaLoss),
+        };
+      }
     } else if(deltaPlayed > 0){
       // player ยังไม่มีในวันนี้/เดือนนี้ → เพิ่มใหม่ (เฉพาะตอนบวก)
       list.push({
@@ -1145,9 +1173,9 @@ function applyOptimisticUpdate(playerId, result, pts){
     list.sort(rankCmp);
   }
 
-  updateList(allDailyRankings);
-  updateList(allMonthlyRankings);
-  updateList(allRankings);
+  updateList(allDailyRankings,   true);   // drop ถ้าเป็น 0
+  updateList(allMonthlyRankings, true);   // drop ถ้าเป็น 0
+  updateList(allRankings,        false);  // เก็บทุกคน
   renderAll(); // แสดงผลทันที
 }
 
