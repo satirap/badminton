@@ -314,6 +314,7 @@ select option{background:var(--card)}
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap">
         <button class="btn" id="btn-diagnose">🔍 Diagnose</button>
+        <button class="btn" id="btn-recalc" title="คำนวณ wins/losses/played/totalPoints ของทุกคนใหม่จาก scores collection">🔧 Recalculate stats</button>
         <button class="btn primary" id="btn-import">📥 เริ่ม Import</button>
       </div>
     </div>
@@ -770,6 +771,95 @@ $('#btn-diagnose').addEventListener('click', async () => {
     }
 
   }catch(e){ log('❌ Error: '+e.message); console.error(e); }
+});
+
+/* ================================================================
+   RECALCULATE STATS — สร้าง totalPoints/wins/losses/played ใหม่จาก scores
+   แก้กรณีที่ข้อมูลเพี้ยน (เช่น wins/losses ติดลบจากการกด undo เกิน)
+   ================================================================ */
+$('#btn-recalc').addEventListener('click', async () => {
+  const btn = $('#btn-recalc');
+  const logEl = $('#import-log');
+  if(!confirm('คำนวณ wins/losses/played/totalPoints ของทุกคนใหม่จาก scores collection?\n(ปลอดภัย · ทำซ้ำได้ · ไม่แตะข้อมูล scores)')) return;
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '⏳ กำลังคำนวณ...';
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+  log('🔧 Recalculate stats เริ่ม...\n');
+
+  try{
+    const [playersSnap, scoresSnap] = await Promise.all([
+      db.collection('players').get(),
+      db.collection('scores').get(),
+    ]);
+
+    // Aggregate per-player จาก scores ทั้งหมด
+    const agg = {}; // {playerId: {pts, wins, losses, played}}
+    scoresSnap.docs.forEach(d => {
+      const s = d.data();
+      const pid = s.playerId;
+      if(!pid) return;
+      if(!agg[pid]) agg[pid] = { pts:0, wins:0, losses:0, played:0 };
+      agg[pid].pts += (s.points || 0);
+      if(s.result === 'win')            { agg[pid].wins++;   agg[pid].played++; }
+      else if(s.result === 'lose')      { agg[pid].losses++; agg[pid].played++; }
+      else if(s.result === 'undo-win')  { agg[pid].wins--;   agg[pid].played--; }
+      else if(s.result === 'undo-lose') { agg[pid].losses--; agg[pid].played--; }
+    });
+
+    log(`📊 scores: ${scoresSnap.size} รายการ · players: ${playersSnap.size} คน\n`);
+    log('──────────────────────────────────────────');
+
+    let updated = 0, same = 0;
+    const batches = [];
+    let batch = db.batch();
+    let opsInBatch = 0;
+
+    for(const pDoc of playersSnap.docs){
+      const p = pDoc.data();
+      const pid = pDoc.id;
+      const a = agg[pid] || { pts:0, wins:0, losses:0, played:0 };
+      // Clamp ไม่ให้ติดลบ
+      const newStats = {
+        totalPoints: Math.max(0, a.pts),
+        wins:        Math.max(0, a.wins),
+        losses:      Math.max(0, a.losses),
+        played:      Math.max(0, a.played),
+      };
+      const changed = (p.totalPoints !== newStats.totalPoints) ||
+                      (p.wins        !== newStats.wins) ||
+                      (p.losses      !== newStats.losses) ||
+                      (p.played      !== newStats.played);
+      if(changed){
+        log(`🔄 ${p.name||pid}`);
+        log(`    เดิม → pts:${p.totalPoints||0} W:${p.wins||0} L:${p.losses||0} P:${p.played||0}`);
+        log(`    ใหม่ → pts:${newStats.totalPoints} W:${newStats.wins} L:${newStats.losses} P:${newStats.played}`);
+        batch.update(pDoc.ref, newStats);
+        opsInBatch++;
+        updated++;
+        if(opsInBatch >= 400){ // Firestore batch limit 500
+          batches.push(batch); batch = db.batch(); opsInBatch = 0;
+        }
+      } else {
+        same++;
+      }
+    }
+    if(opsInBatch > 0) batches.push(batch);
+
+    for(let i=0; i<batches.length; i++){
+      await batches[i].commit();
+    }
+
+    log('\n──────────────────────────────────────────');
+    log(`✅ อัปเดตแล้ว ${updated} คน · ตรงอยู่แล้ว ${same} คน`);
+    log('💡 เปิดหน้าแอปใหม่ → ตัวเลขควรตรงกันทั้งรายเดือน/ตลอดกาลแล้ว');
+  }catch(e){
+    log('❌ Error: '+e.message);
+    console.error(e);
+  }
+  btn.disabled = false;
+  btn.textContent = orig;
 });
 
 /* ================================================================
