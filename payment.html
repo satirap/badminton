@@ -69,12 +69,35 @@ body{min-height:100dvh}
 .cost-card{
   background:var(--card);border:1.5px solid var(--border);
   border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+  transition:padding .2s ease;
 }
+.cost-card.collapsed{padding:12px 16px}
 .cost-card .cost-head{
   font-size:13px;font-weight:800;color:var(--mute);
   letter-spacing:.08em;text-transform:uppercase;
-  font-family:'IBM Plex Mono',monospace;margin-bottom:10px;
+  font-family:'IBM Plex Mono',monospace;
+  margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;user-select:none;
 }
+.cost-card.collapsed .cost-head{margin-bottom:0}
+.cost-head .c-toggle{
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  -webkit-tap-highlight-color:transparent;
+}
+.cost-head .c-toggle:active{transform:scale(.94)}
+.cost-head .c-toggle .chev{transition:transform .2s;display:inline-block}
+.cost-card.collapsed .c-toggle .chev{transform:rotate(-90deg)}
+.cost-card .c-summary{
+  display:none;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;
+  color:var(--soft);letter-spacing:.02em;margin-top:8px;
+}
+.cost-card .c-summary b{color:var(--accent);font-weight:800}
+.cost-card.collapsed .c-summary{display:block}
+.cost-card.collapsed .cost-row,
+.cost-card.collapsed .cost-total-row{display:none}
 .cost-row{
   display:grid;grid-template-columns:1fr 96px 36px;align-items:center;gap:10px;
   padding:8px 0;border-bottom:1px dashed var(--border);
@@ -365,8 +388,15 @@ body{min-height:100dvh}
   <div id="view-collect">
 
     <!-- Cost breakdown -->
-    <div class="cost-card">
-      <div class="cost-head">💰 รายละเอียดค่าใช้จ่าย</div>
+    <div class="cost-card" id="cost-card">
+      <div class="cost-head" onclick="toggleCostCard()">
+        <span>💰 รายละเอียดค่าใช้จ่าย</span>
+        <button class="c-toggle" type="button" onclick="event.stopPropagation();toggleCostCard()">
+          <span class="chev">▼</span>
+          <span id="c-toggle-label">ย่อ</span>
+        </button>
+      </div>
+      <div class="c-summary" id="c-summary">รวม <b id="c-sum-total">0฿</b> · เฉลี่ยต่อคน <b id="c-sum-per">0฿</b></div>
       <div class="cost-row">
         <div class="c-label">ค่าคอร์ทแบดฯ</div>
         <input type="number" class="c-input" id="court-fee" value="0" min="0" step="10" inputmode="numeric"/>
@@ -522,6 +552,17 @@ function newSession(){
     createdAt:   new Date().toISOString(),
     completedAt: null,
   };
+}
+
+/** เปิด/ปิดการ์ดรายละเอียดค่าใช้จ่าย — จำสถานะไว้ใน localStorage */
+function toggleCostCard(force){
+  const card = document.getElementById('cost-card');
+  if(!card) return;
+  const shouldCollapse = typeof force === 'boolean' ? force : !card.classList.contains('collapsed');
+  card.classList.toggle('collapsed', shouldCollapse);
+  const lbl = document.getElementById('c-toggle-label');
+  if(lbl) lbl.textContent = shouldCollapse ? 'แสดง' : 'ย่อ';
+  try{ localStorage.setItem('payment_cost_collapsed', shouldCollapse ? '1' : '0'); }catch(e){}
 }
 
 function getNumInput(id){
@@ -763,6 +804,11 @@ function renderSummary(){
   const costPerEl   = document.getElementById('cost-per-person');
   if(costTotalEl) costTotalEl.textContent = fmtBaht(totalCost);
   if(costPerEl)   costPerEl.textContent   = fmtBaht(pp);
+  // summary line ตอนย่อ
+  const sumT = document.getElementById('c-sum-total');
+  const sumP = document.getElementById('c-sum-per');
+  if(sumT) sumT.textContent = fmtBaht(totalCost) + '฿';
+  if(sumP) sumP.textContent = fmtBaht(pp) + '฿';
   // sync hidden per-person (สำหรับ legacy path)
   const ppInput = document.getElementById('per-person');
   if(ppInput) ppInput.value = pp;
@@ -1127,6 +1173,10 @@ document.getElementById('shuttle-count').addEventListener('input', onCostInputCh
   renderDate();
   renderTable();
   renderSummary();
+  // คืนสถานะย่อ/ขยายจาก localStorage
+  try{
+    if(localStorage.getItem('payment_cost_collapsed') === '1') toggleCostCard(true);
+  }catch(e){}
   if(loadedFromCloud) updateAutosaveLabel('cloud');
 })();
 </script>
