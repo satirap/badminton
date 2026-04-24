@@ -978,10 +978,27 @@ function winRatePct(r){
 }
 
 /** เปรียบเทียบอันดับ: คะแนนมากก่อน → ถ้าเท่า ใช้ % ชนะ */
+/** ดึง timestamp (ms) จาก createdAt ไม่ว่ารูปแบบไหน — สำหรับเรียงคนที่ 0 คะแนน */
+function createdMs(r){
+  const c = r.createdAt;
+  if(!c) return Number.MAX_SAFE_INTEGER;
+  if(typeof c.toDate === 'function'){ try{ return c.toDate().getTime(); }catch(e){} }
+  if(typeof c === 'string' || typeof c === 'number'){ const t = new Date(c).getTime(); return isNaN(t) ? Number.MAX_SAFE_INTEGER : t; }
+  if(c instanceof Date) return c.getTime();
+  if(c.seconds != null) return c.seconds * 1000;
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function rankCmp(a, b){
   const dp = (b.points||0) - (a.points||0);
   if(dp !== 0) return dp;
-  return winRatePct(b) - winRatePct(a);
+  const dw = winRatePct(b) - winRatePct(a);
+  if(dw !== 0) return dw;
+  // 3rd tiebreak: เข้าก่อน = อันดับดีกว่า (stable order + สะดวกคน 0 คะแนน)
+  const dt = createdMs(a) - createdMs(b);
+  if(dt !== 0) return dt;
+  // Final: ชื่อไทย/อังกฤษ
+  return (a.name||'').localeCompare(b.name||'', 'th');
 }
 
 function withRanks(list){
@@ -991,8 +1008,10 @@ function withRanks(list){
       out.push({ ...list[i], _rank: 1 });
     } else {
       const prev = out[i-1];
-      // อันดับเท่ากันเมื่อ: คะแนนเท่ากัน AND % ชนะเท่ากัน
-      const tied = list[i].points === prev.points
+      // tie เฉพาะคนที่มีคะแนน > 0 (คะแนน + WR เท่ากัน)
+      // คน 0 คะแนน → rank เรียงต่อเนื่องไม่ tie
+      const tied = (list[i].points || 0) > 0
+                && list[i].points === prev.points
                 && winRatePct(list[i]) === winRatePct(prev);
       out.push({ ...list[i], _rank: tied ? prev._rank : i + 1 });
     }
