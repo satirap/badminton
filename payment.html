@@ -249,7 +249,79 @@ body{min-height:100dvh}
   background:var(--input);color:var(--soft);
 }
 .hc-btn.edit{border-color:var(--accent)60;color:var(--accent)}
+.hc-btn.view{border-color:#3b82f680;color:#93c5fd}
 .hc-btn:active{opacity:.7}
+
+/* ===== View-session modal ===== */
+.vm-overlay{
+  position:fixed;inset:0;z-index:200;background:#000c;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0;animation:vmFade .2s ease;
+}
+@keyframes vmFade{from{opacity:0}to{opacity:1}}
+@keyframes vmSlide{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.vm-panel{
+  background:var(--card);width:100%;max-width:560px;max-height:92dvh;
+  border-radius:20px 20px 0 0;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 -8px 40px #000a;animation:vmSlide .25s cubic-bezier(.2,.9,.3,1.2);
+}
+.vm-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px;border-bottom:1.5px solid var(--border);gap:12px;
+  background:var(--card2);
+}
+.vm-title{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2}
+.vm-sub{font-size:12px;color:var(--mute);margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:600}
+.vm-close{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  font-size:16px;cursor:pointer;font-weight:700;
+}
+.vm-close:active{background:var(--border)}
+.vm-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.vm-block{margin-bottom:18px}
+.vm-block-head{
+  font-size:11px;font-weight:800;color:var(--mute);letter-spacing:.1em;
+  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;
+}
+.vm-cost-grid{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:15px}
+.vm-cost-grid .k{color:var(--soft)}
+.vm-cost-grid .v{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ink);text-align:right}
+.vm-cost-grid .total{border-top:1.5px dashed var(--border);padding-top:8px;margin-top:4px}
+.vm-cost-grid .total.k{font-weight:800}
+.vm-cost-grid .total.v{font-size:17px;color:var(--ink)}
+.vm-cost-grid .per.k{font-weight:800;color:var(--accent)}
+.vm-cost-grid .per.v{font-size:20px;color:var(--accent);font-weight:800}
+
+.vm-sum-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px}
+.vm-sum-item{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center}
+.vm-sum-item.cash{border-color:var(--green)50}
+.vm-sum-item.transfer{border-color:var(--blue)50}
+.vm-sum-item.unpaid{border-color:#fbbf2450}
+.vm-sum-num{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;color:var(--ink)}
+.vm-sum-item.cash .vm-sum-num{color:var(--gtxt)}
+.vm-sum-item.transfer .vm-sum-num{color:var(--btxt)}
+.vm-sum-item.unpaid .vm-sum-num{color:#fcd34d}
+.vm-sum-lbl{font-size:11px;color:var(--mute);margin-top:3px;font-weight:700}
+
+.vm-player-list{display:flex;flex-direction:column;gap:6px}
+.vm-player{
+  display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;
+}
+.vm-player.paid-cash{border-color:var(--green)50}
+.vm-player.paid-transfer{border-color:var(--blue)50}
+.vm-player.unpaid{border-color:#2e3038;opacity:.85}
+.vm-player .vp-num{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--mute);text-align:center;font-weight:700}
+.vm-player .vp-name{font-size:16px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vm-player .vp-status{
+  font-size:12px;font-weight:800;padding:5px 10px;border-radius:100px;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+.vm-player .vp-status.cash{background:var(--gbg);color:var(--gtxt);border:1px solid var(--green)80}
+.vm-player .vp-status.transfer{background:var(--bbg);color:var(--btxt);border:1px solid var(--blue)80}
+.vm-player .vp-status.unpaid{background:transparent;color:#fcd34d;border:1px solid #fbbf2460}
 
 /* ── Empty state ── */
 .empty{
@@ -373,6 +445,20 @@ body{min-height:100dvh}
     </div>
   </div>
 
+</div>
+
+<!-- ===== View-session modal ===== -->
+<div class="vm-overlay" id="view-modal" style="display:none" onclick="if(event.target===this)closeViewModal()">
+  <div class="vm-panel">
+    <div class="vm-head">
+      <div>
+        <div class="vm-title" id="vm-title">—</div>
+        <div class="vm-sub" id="vm-sub">—</div>
+      </div>
+      <button class="vm-close" onclick="closeViewModal()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="vm-body" id="vm-body"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -825,12 +911,111 @@ async function loadHistory(){
         <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน</div>`}
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
+          <button class="hc-btn view" onclick="viewSession('${doc.id}')">👁 เรียกดู</button>
           <button class="hc-btn edit" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
           <button class="hc-btn" onclick="deleteSession('${doc.id}',this)">🗑 ลบ</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){ el.innerHTML = `<div class="empty">โหลดไม่ได้: ${e.message}</div>`; }
+}
+
+async function viewSession(docId){
+  try{
+    const snap = await db.collection('payment_sessions').doc(docId).get();
+    if(!snap.exists){ toast('ไม่พบข้อมูล'); return; }
+    const d = snap.data();
+    renderViewModal(d);
+  }catch(e){ toast('โหลดไม่ได้: '+e.message); }
+}
+
+function renderViewModal(d){
+  const players = d.players || [];
+  const cashN   = d.cashCount || players.filter(p=>p.cash).length;
+  const transN  = d.transferCount || players.filter(p=>p.transfer).length;
+  const total   = d.totalCount || players.length;
+  const unpaid  = total - (cashN + transN);
+  const pp      = d.perPerson || 0;
+
+  document.getElementById('vm-title').textContent = d.dateDisplay || d.date || 'ประวัติการเก็บเงิน';
+  const statusTxt = d.status === 'complete'
+    ? `✅ จ่ายครบ · ${total} คน`
+    : `🕘 กำลังเก็บ · ${cashN + transN}/${total} คน`;
+  document.getElementById('vm-sub').textContent = statusTxt;
+
+  // Cost block (ถ้ามี breakdown ใหม่)
+  const hasBreakdown = d.courtFee || d.shuttlePrice || d.shuttleCount || d.totalCost;
+  const costHtml = hasBreakdown ? `
+    <div class="vm-block">
+      <div class="vm-block-head">💰 รายละเอียดค่าใช้จ่าย</div>
+      <div class="vm-cost-grid">
+        <div class="k">🏟 ค่าคอร์ทแบดฯ</div>
+        <div class="v">${fmtBaht(d.courtFee||0)} ฿</div>
+        <div class="k">🏸 ลูกแบดฯ ลูกละ</div>
+        <div class="v">${fmtBaht(d.shuttlePrice||0)} ฿</div>
+        <div class="k">จำนวนลูกที่ใช้</div>
+        <div class="v">${d.shuttleCount||0} ลูก</div>
+        <div class="k total">รวมทั้งสิ้น</div>
+        <div class="v total">${fmtBaht(d.totalCost||0)} ฿</div>
+        <div class="k per">เฉลี่ยต่อคน</div>
+        <div class="v per">${fmtBaht(pp)} ฿</div>
+      </div>
+    </div>` : `
+    <div class="vm-block">
+      <div class="vm-block-head">💰 ยอดเก็บ</div>
+      <div class="vm-cost-grid">
+        <div class="k per">เฉลี่ยต่อคน</div>
+        <div class="v per">${fmtBaht(pp)} ฿</div>
+      </div>
+    </div>`;
+
+  // Summary
+  const summaryHtml = `
+    <div class="vm-block">
+      <div class="vm-block-head">📊 สรุปการจ่าย</div>
+      <div class="vm-sum-row">
+        <div class="vm-sum-item cash">
+          <div class="vm-sum-num">${fmtBaht(d.cashAmount||cashN*pp)}฿</div>
+          <div class="vm-sum-lbl">💵 เงินสด (${cashN})</div>
+        </div>
+        <div class="vm-sum-item transfer">
+          <div class="vm-sum-num">${fmtBaht(d.transferAmount||transN*pp)}฿</div>
+          <div class="vm-sum-lbl">📲 โอน (${transN})</div>
+        </div>
+        <div class="vm-sum-item unpaid">
+          <div class="vm-sum-num">${fmtBaht(unpaid*pp)}฿</div>
+          <div class="vm-sum-lbl">⬜ ค้าง (${unpaid})</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Player list
+  const playerRows = players.map((p, i) => {
+    let statusHtml, cls;
+    if(p.cash){ statusHtml = '<span class="vp-status cash">💵 เงินสด</span>'; cls = 'paid-cash'; }
+    else if(p.transfer){ statusHtml = '<span class="vp-status transfer">📲 โอน</span>'; cls = 'paid-transfer'; }
+    else { statusHtml = '<span class="vp-status unpaid">ยังไม่จ่าย</span>'; cls = 'unpaid'; }
+    return `<div class="vm-player ${cls}">
+      <div class="vp-num">${i+1}</div>
+      <div class="vp-name">${escHtml(p.name)}</div>
+      ${statusHtml}
+    </div>`;
+  }).join('');
+
+  const playersHtml = `
+    <div class="vm-block">
+      <div class="vm-block-head">👥 รายชื่อสมาชิก (${total} คน)</div>
+      <div class="vm-player-list">${playerRows || '<div class="empty">ไม่มีรายชื่อ</div>'}</div>
+    </div>`;
+
+  document.getElementById('vm-body').innerHTML = costHtml + summaryHtml + playersHtml;
+  document.getElementById('view-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeViewModal(){
+  document.getElementById('view-modal').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 async function editSession(docId){
