@@ -155,7 +155,46 @@ section.view.active{display:block}
 .counter-card.win .counter-num{color:#4ade80}
 .counter-card.lose .counter-num{color:#f87171}
 
-/* ---- Ranking rows ---- */
+/* ---- Admin-style ranks table (ทำเนียบสมาชิก) ---- */
+.rk-tbl-wrap{
+  background:var(--bg-card);border:1.5px solid var(--line);
+  border-radius:var(--radius-sm);overflow:hidden;margin:0 -8px;
+}
+.rk-tbl{width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;table-layout:fixed}
+.rk-tbl thead th{
+  background:var(--bg-card2);font-family:'IBM Plex Mono',monospace;font-size:9px;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);
+  padding:8px 2px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;
+}
+.rk-tbl thead th:nth-child(2){text-align:left;padding-left:6px}
+.rk-tbl tbody td{
+  padding:8px 2px;border-bottom:1px solid var(--line);
+  vertical-align:middle;white-space:nowrap;
+}
+.rk-tbl tbody tr:last-child td{border-bottom:none}
+.rk-tbl .rk-pos{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-mute);text-align:center;font-weight:700}
+.rk-tbl .rk-pos .medal{font-size:18px}
+.rk-tbl .rk-player{display:flex;align-items:center;gap:7px;min-width:0;padding-left:4px}
+.rk-tbl .rk-player img{
+  width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;
+  border:1.5px solid var(--accent);
+}
+.rk-tbl .rk-player .no-pic{
+  width:26px;height:26px;border-radius:50%;background:var(--bg-input);
+  border:1.5px solid var(--line);display:inline-flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+}
+.rk-tbl .rk-name{font-weight:700;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rk-tbl .rk-pts{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--accent);text-align:center}
+.rk-tbl .rk-played{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);text-align:center;font-weight:600}
+.rk-tbl .rk-wins{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#4ade80;text-align:center;font-weight:700}
+.rk-tbl .rk-losses{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f87171;text-align:center;font-weight:700}
+.rk-tbl .rk-wr{display:flex;align-items:center;gap:4px;white-space:nowrap;padding-right:4px}
+.rk-tbl .rk-wr-bar{height:5px;background:#3a3d48;border-radius:3px;flex:1;overflow:hidden;min-width:18px}
+.rk-tbl .rk-wr-fill{height:100%;border-radius:3px}
+.rk-tbl .rk-wr-txt{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);font-weight:700}
+
+/* ---- Ranking rows (daily/monthly card style) ---- */
 .rank-list{display:flex;flex-direction:column;gap:8px}
 .rank-row{
   display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:12px;
@@ -410,7 +449,24 @@ section.view.active{display:block}
     <!-- ---- VIEW: ALL-TIME RANKINGS ---- -->
     <section class="view" id="view-ranks">
       <h2 class="section-title">ทำเนียบ<em>สมาชิก</em></h2>
-      <div class="rank-list" id="rank-list"></div>
+      <div class="rk-tbl-wrap">
+        <table class="rk-tbl">
+          <thead>
+            <tr>
+              <th style="width:22px">#</th>
+              <th>ผู้เล่น</th>
+              <th style="width:42px">คะแนน</th>
+              <th style="width:28px">เกม</th>
+              <th style="width:28px">ชนะ</th>
+              <th style="width:28px">แพ้</th>
+              <th style="width:72px">อัตราชนะ</th>
+            </tr>
+          </thead>
+          <tbody id="rank-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:36px;color:var(--ink-mute);font-style:italic">กำลังโหลด...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
   </div><!-- /app-main -->
@@ -931,12 +987,42 @@ function renderMonthlyWinners(){
   }).join('') + '</div>';
 }
 
+function rkTblRowHtml(r){
+  const rank = r._rank;
+  const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+  const posHtml = medal
+    ? `<span class="medal">${medal}</span>`
+    : rank;
+  const picHtml = r.pictureUrl
+    ? `<img src="${escHtml(r.pictureUrl)}" alt="" />`
+    : `<span class="no-pic">👤</span>`;
+  const wins    = r.wins   || 0;
+  const losses  = r.losses || 0;
+  const played  = r.played || 0;
+  const wr      = played > 0 ? Math.round(wins/played*100) : 0;
+  const wrColor = wr>=70?'#4ade80':wr>=40?'#fbbf24':wr>0?'#ef4444':'#3a3d48';
+  return `<tr>
+    <td><div class="rk-pos">${posHtml}</div></td>
+    <td><div class="rk-player">${picHtml}<span class="rk-name">${escHtml(r.name)}</span></div></td>
+    <td><div class="rk-pts">${r.points||0}</div></td>
+    <td><div class="rk-played">${played}</div></td>
+    <td><div class="rk-wins">${wins}</div></td>
+    <td><div class="rk-losses">${losses}</div></td>
+    <td>
+      <div class="rk-wr">
+        <div class="rk-wr-bar"><div class="rk-wr-fill" style="width:${wr}%;background:${wrColor}"></div></div>
+        <span class="rk-wr-txt">${wr}%</span>
+      </div>
+    </td>
+  </tr>`;
+}
+
 function renderRanks(){
-  const c = $('#rank-list');
-  if(!c) return;
-  c.innerHTML = allRankings.length === 0
-    ? '<div class="empty">ยังไม่มีข้อมูลคะแนน<br>สแกน QR ที่สนามเพื่อเริ่มเล่น!</div>'
-    : withRanks(allRankings).map(rankRowHtml).join('');
+  const tbody = $('#rank-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = allRankings.length === 0
+    ? '<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--ink-mute);font-style:italic">ยังไม่มีข้อมูลคะแนน<br>สแกน QR ที่สนามเพื่อเริ่มเล่น!</td></tr>'
+    : withRanks(allRankings).map(rkTblRowHtml).join('');
 }
 
 // =================================================================
