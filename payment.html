@@ -65,21 +65,45 @@ body{min-height:100dvh}
 }
 .back-btn:active{background:var(--card)}
 
-/* ── Amount-per-person bar ── */
-.amount-bar{
-  display:flex;align-items:center;gap:12px;
-  background:var(--card);border:1.5px solid var(--accent);
-  border-radius:var(--radius);padding:14px 18px;margin-bottom:12px;
+/* ── Cost breakdown card ── */
+.cost-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
 }
-.amount-bar .amt-lbl{font-size:15px;font-weight:700;color:var(--ink);flex-shrink:0}
-.amount-bar input{
-  flex:1;width:100%;padding:10px 14px;border-radius:var(--rsm);
+.cost-card .cost-head{
+  font-size:13px;font-weight:800;color:var(--mute);
+  letter-spacing:.08em;text-transform:uppercase;
+  font-family:'IBM Plex Mono',monospace;margin-bottom:10px;
+}
+.cost-row{
+  display:grid;grid-template-columns:1fr 96px 36px;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px dashed var(--border);
+}
+.cost-row:last-of-type{border-bottom:none;margin-bottom:2px}
+.cost-row .c-label{font-size:15px;font-weight:700;color:var(--ink)}
+.cost-row .c-input{
+  padding:10px 12px;border-radius:var(--rsm);
   border:1.5px solid var(--border);background:var(--input);color:var(--ink);
-  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
-  text-align:center;outline:none;min-width:0;
+  font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;
+  text-align:right;outline:none;width:100%;
 }
-.amount-bar input:focus{border-color:var(--accent)}
-.amount-bar .amt-unit{font-size:15px;font-weight:800;color:var(--accent);flex-shrink:0}
+.cost-row .c-input:focus{border-color:var(--accent)}
+.cost-row .c-unit{font-size:13px;font-weight:700;color:var(--mute);text-align:left}
+
+.cost-total-row{
+  display:grid;grid-template-columns:1fr auto 36px;align-items:baseline;gap:10px;
+  padding:10px 0 6px;
+}
+.cost-total-row.divider-top{border-top:1.5px solid var(--border);margin-top:4px;padding-top:12px;}
+.cost-total-row .t-label{font-size:14px;font-weight:700;color:var(--soft)}
+.cost-total-row .t-num{
+  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
+  color:var(--ink);text-align:right;
+}
+.cost-total-row .t-unit{font-size:12px;font-weight:700;color:var(--mute);text-align:left}
+.cost-total-row.accent .t-label{color:var(--accent);font-size:15px;font-weight:800}
+.cost-total-row.accent .t-num{color:var(--accent);font-size:28px}
+.cost-total-row.accent .t-unit{color:var(--accent)}
 
 /* ── Summary bar ── */
 .summary-bar{
@@ -268,12 +292,38 @@ body{min-height:100dvh}
   <!-- ============ TAB: COLLECT ============ -->
   <div id="view-collect">
 
-    <!-- Amount per person -->
-    <div class="amount-bar">
-      <span class="amt-lbl">ยอดต่อคน</span>
-      <input type="number" id="per-person" value="0" min="0" step="10" inputmode="numeric"/>
-      <span class="amt-unit">บาท</span>
+    <!-- Cost breakdown -->
+    <div class="cost-card">
+      <div class="cost-head">💰 รายละเอียดค่าใช้จ่าย</div>
+      <div class="cost-row">
+        <div class="c-label">ค่าคอร์ทแบดฯ</div>
+        <input type="number" class="c-input" id="court-fee" value="0" min="0" step="10" inputmode="numeric"/>
+        <div class="c-unit">บาท</div>
+      </div>
+      <div class="cost-row">
+        <div class="c-label">ลูกแบดฯ ลูกละ</div>
+        <input type="number" class="c-input" id="shuttle-price" value="0" min="0" step="5" inputmode="numeric"/>
+        <div class="c-unit">บาท</div>
+      </div>
+      <div class="cost-row">
+        <div class="c-label">ใช้ไปจำนวน</div>
+        <input type="number" class="c-input" id="shuttle-count" value="0" min="0" step="1" inputmode="numeric"/>
+        <div class="c-unit">ลูก</div>
+      </div>
+      <div class="cost-total-row divider-top">
+        <div class="t-label">รวมทั้งสิ้น</div>
+        <div class="t-num" id="cost-total">0</div>
+        <div class="t-unit">บาท</div>
+      </div>
+      <div class="cost-total-row accent">
+        <div class="t-label">เฉลี่ยต่อคน</div>
+        <div class="t-num" id="cost-per-person">0</div>
+        <div class="t-unit">บาท</div>
+      </div>
     </div>
+
+    <!-- Hidden fallback for legacy code (ยอดต่อคน ใช้ค่าคำนวณ) -->
+    <input type="hidden" id="per-person" value="0"/>
 
     <!-- Summary (in baht) -->
     <div class="summary-bar">
@@ -379,16 +429,33 @@ function newSession(){
     date:        iso,
     dateDisplay: thaiDate(iso),
     status:      'open',
-    perPerson:   0,
+    courtFee:     0,
+    shuttlePrice: 0,
+    shuttleCount: 0,
     players:     [],
     createdAt:   new Date().toISOString(),
     completedAt: null,
   };
 }
 
-function getPerPerson(){
-  const v = parseInt(document.getElementById('per-person').value, 10);
+function getNumInput(id){
+  const v = parseInt(document.getElementById(id)?.value, 10);
   return isNaN(v) || v < 0 ? 0 : v;
+}
+
+function getCostBreakdown(){
+  const courtFee     = getNumInput('court-fee');
+  const shuttlePrice = getNumInput('shuttle-price');
+  const shuttleCount = getNumInput('shuttle-count');
+  const totalCost    = courtFee + (shuttlePrice * shuttleCount);
+  return { courtFee, shuttlePrice, shuttleCount, totalCost };
+}
+
+/** ยอดต่อคน = รวมทั้งสิ้น / จำนวนคน (ปัดขึ้น) */
+function getPerPerson(){
+  const { totalCost } = getCostBreakdown();
+  const n = session?.players?.length || 0;
+  return n > 0 ? Math.ceil(totalCost / n) : 0;
 }
 
 function fmtBaht(n){
@@ -445,12 +512,19 @@ async function cloudSync(){
   try{
     const cashN   = session.players.filter(p => p.cash).length;
     const transN  = session.players.filter(p => p.transfer).length;
+    const breakdown = getCostBreakdown();
     const pp      = getPerPerson();
     const payload = {
       date:           session.date,
       dateDisplay:    session.dateDisplay,
       status:         session.status || 'open',
       players:        session.players,
+      // Cost breakdown (ใหม่)
+      courtFee:       breakdown.courtFee,
+      shuttlePrice:   breakdown.shuttlePrice,
+      shuttleCount:   breakdown.shuttleCount,
+      totalCost:      breakdown.totalCost,
+      // Legacy fields (คำนวณจาก breakdown)
       perPerson:      pp,
       cashCount:      cashN,
       transferCount:  transN,
@@ -494,7 +568,10 @@ async function loadTodayOpenSession(){
       date:        d.date || iso,
       dateDisplay: d.dateDisplay || thaiDate(iso),
       status:      'open',
-      perPerson:   d.perPerson || 0,
+      courtFee:     d.courtFee     || 0,
+      shuttlePrice: d.shuttlePrice || 0,
+      shuttleCount: d.shuttleCount || 0,
+      perPerson:    d.perPerson    || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       completedAt: null,
@@ -589,10 +666,20 @@ function renderSummary(){
   const cashN    = session.players.filter(p => p.cash).length;
   const transN   = session.players.filter(p => p.transfer).length;
   const paidN    = cashN + transN;
+  const { totalCost } = getCostBreakdown();
   const pp       = getPerPerson();
   const totalB   = total * pp;
   const cashB    = cashN * pp;
   const transB   = transN * pp;
+
+  // อัปเดต cost breakdown totals
+  const costTotalEl = document.getElementById('cost-total');
+  const costPerEl   = document.getElementById('cost-per-person');
+  if(costTotalEl) costTotalEl.textContent = fmtBaht(totalCost);
+  if(costPerEl)   costPerEl.textContent   = fmtBaht(pp);
+  // sync hidden per-person (สำหรับ legacy path)
+  const ppInput = document.getElementById('per-person');
+  if(ppInput) ppInput.value = pp;
 
   document.getElementById('sum-total-baht').innerHTML    = `${fmtBaht(totalB)}<span class="baht">฿</span>`;
   document.getElementById('sum-cash-baht').innerHTML     = `${fmtBaht(cashB)}<span class="baht">฿</span>`;
@@ -639,12 +726,17 @@ async function completeSession(){
 
   try{
     session.status = 'complete';
+    const breakdown = getCostBreakdown();
     const pp = getPerPerson();
     const payload = {
       date:        session.date,
       dateDisplay: session.dateDisplay,
       status:      'complete',
       players:     session.players,
+      courtFee:     breakdown.courtFee,
+      shuttlePrice: breakdown.shuttlePrice,
+      shuttleCount: breakdown.shuttleCount,
+      totalCost:    breakdown.totalCost,
       perPerson:   pp,
       cashCount:   cashN,
       transferCount: transN,
@@ -669,7 +761,9 @@ async function completeSession(){
       editingId = null;
       session = newSession();
       try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-      document.getElementById('per-person').value = 0;
+      document.getElementById('court-fee')    .value = 0;
+      document.getElementById('shuttle-price').value = 0;
+      document.getElementById('shuttle-count').value = 0;
       renderTable();
       renderSummary();
       renderDate();
@@ -723,7 +817,12 @@ async function loadHistory(){
           <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(d.cashAmount||0)}฿</strong> (${d.cashCount||0})</span>
           <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(d.transferAmount||0)}฿</strong> (${d.transferCount||0})</span>
         </div>
-        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน</div>
+        ${(d.courtFee||d.shuttlePrice||d.shuttleCount) ? `
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px;line-height:1.6">
+          🏟 คอร์ท ${fmtBaht(d.courtFee||0)}฿ · 🏸 ${fmtBaht(d.shuttlePrice||0)}฿×${d.shuttleCount||0}ลูก = <strong style="color:var(--soft)">${fmtBaht(d.totalCost||0)}฿</strong><br>
+          เฉลี่ย ${fmtBaht(d.perPerson||0)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
+        </div>` : `
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน</div>`}
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
           <button class="hc-btn edit" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
@@ -745,7 +844,10 @@ async function editSession(docId){
       date:        d.date,
       dateDisplay: d.dateDisplay || thaiDate(d.date),
       status:      'open',
-      perPerson:   d.perPerson || 0,
+      courtFee:     d.courtFee     || 0,
+      shuttlePrice: d.shuttlePrice || 0,
+      shuttleCount: d.shuttleCount || 0,
+      perPerson:    d.perPerson    || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       completedAt: null,
@@ -753,7 +855,9 @@ async function editSession(docId){
     saveDraft();
     switchTab('collect');
     renderDate();
-    document.getElementById('per-person').value = session.perPerson || 0;
+    document.getElementById('court-fee').value     = session.courtFee     || 0;
+    document.getElementById('shuttle-price').value = session.shuttlePrice || 0;
+    document.getElementById('shuttle-count').value = session.shuttleCount || 0;
     renderTable();
     renderSummary();
     toast('โหลดข้อมูลแล้ว ✏️ แก้ไขได้เลย');
@@ -800,11 +904,18 @@ document.getElementById('name-input').addEventListener('keydown', e => {
   if(e.key==='Enter') addPlayer();
 });
 
-document.getElementById('per-person').addEventListener('input', () => {
-  session.perPerson = getPerPerson();
+// Any cost breakdown input change → recompute summary + save
+function onCostInputChange(){
+  const b = getCostBreakdown();
+  session.courtFee     = b.courtFee;
+  session.shuttlePrice = b.shuttlePrice;
+  session.shuttleCount = b.shuttleCount;
   saveDraft();
   renderSummary();
-});
+}
+document.getElementById('court-fee')    .addEventListener('input', onCostInputChange);
+document.getElementById('shuttle-price').addEventListener('input', onCostInputChange);
+document.getElementById('shuttle-count').addEventListener('input', onCostInputChange);
 
 /* ================================================================
    BOOT
@@ -825,7 +936,9 @@ document.getElementById('per-person').addEventListener('input', () => {
     }
   }
 
-  document.getElementById('per-person').value = session.perPerson || 0;
+  document.getElementById('court-fee')    .value = session.courtFee     || 0;
+  document.getElementById('shuttle-price').value = session.shuttlePrice || 0;
+  document.getElementById('shuttle-count').value = session.shuttleCount || 0;
   renderDate();
   renderTable();
   renderSummary();
