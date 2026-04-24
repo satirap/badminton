@@ -632,22 +632,44 @@ async function dbRecordResult(playerId, result, points){
   return { success: true };
 }
 
-/** ลบผลเดิม (ใส่ผิด) — ใช้ transaction กัน stats ติดลบ */
+/** ลบผลเดิม (ใส่ผิด) — ใช้ transaction กัน stats ติดลบ
+ *  Double guard: (1) ตรวจ daily count จาก scores วันนี้, (2) transaction ที่ player doc
+ */
 async function dbUndoResult(playerId, result){
   const pts       = result === 'win' ? -3 : -1;
   const field     = result === 'win' ? 'wins' : 'losses';
   const playerRef = db.collection('players').doc(playerId);
 
+  // Guard #1: นับ today's net count จาก scores — กันลดเกินที่กดในวันนี้
+  const now      = new Date();
+  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todaySnap = await db.collection('scores')
+    .where('playerId', '==', playerId)
+    .where('createdAt', '>=', dayStart)
+    .get();
+  let todayWins = 0, todayLosses = 0;
+  todaySnap.docs.forEach(d => {
+    const s = d.data();
+    if(s.result === 'win')            todayWins++;
+    else if(s.result === 'lose')      todayLosses++;
+    else if(s.result === 'undo-win')  todayWins--;
+    else if(s.result === 'undo-lose') todayLosses--;
+  });
+  const todayCur = result === 'win' ? todayWins : todayLosses;
+  if(todayCur <= 0){
+    throw new Error(result==='win' ? 'ไม่มีชนะในวันนี้ให้ลด' : 'ไม่มีแพ้ในวันนี้ให้ลด');
+  }
+
+  // Guard #2: atomic update + clamp
   await db.runTransaction(async tx => {
     const snap = await tx.get(playerRef);
     if(!snap.exists) throw new Error('ไม่พบข้อมูลผู้เล่น');
     const d = snap.data();
-    const curVal  = Math.max(0, d[field]   || 0);
-    const curPlayed = Math.max(0, d.played || 0);
-    const curPts  = Math.max(0, d.totalPoints || 0);
+    const curVal    = Math.max(0, d[field]        || 0);
+    const curPlayed = Math.max(0, d.played        || 0);
+    const curPts    = Math.max(0, d.totalPoints   || 0);
     if(curVal <= 0) throw new Error(result==='win' ? 'ไม่มีชนะให้ลด' : 'ไม่มีแพ้ให้ลด');
 
-    // log score record (audit trail)
     const scoreRef = db.collection('scores').doc();
     tx.set(scoreRef, {
       playerId,
@@ -656,7 +678,6 @@ async function dbUndoResult(playerId, result){
       createdAt: new Date(),
     });
 
-    // clamp ที่ 0 — ไม่ให้ติดลบ
     tx.update(playerRef, {
       totalPoints: Math.max(0, curPts + pts),
       played:      Math.max(0, curPlayed - 1),
@@ -693,10 +714,11 @@ async function dbGetAllData(){
   const rankings = players
     .map(p => ({
       ...p,
-      points:  p.totalPoints || 0,
-      played:  p.played  || 0,
-      wins:    p.wins    || 0,
-      losses:  p.losses  || 0,
+      // clamp ที่ 0 ทุกค่า — กัน player doc ที่มีค่าติดลบค้างอยู่
+      points:  Math.max(0, p.totalPoints || 0),
+      played:  Math.max(0, p.played  || 0),
+      wins:    Math.max(0, p.wins    || 0),
+      losses:  Math.max(0, p.losses  || 0),
     }))
     .sort(rankCmp);
 
@@ -943,9 +965,10 @@ const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์'
    Same points but more wins → better rank */
 /** ค่า % ชนะแบบปัดเศษ (ใช้เปรียบเทียบ tie) */
 function winRatePct(r){
-  const played = r.played || 0;
+  const played = Math.max(0, r.played || 0);
   if(played <= 0) return 0;
-  return Math.round((r.wins || 0) / played * 100);
+  const wins = Math.max(0, r.wins || 0);
+  return Math.round(wins / played * 100);
 }
 
 /** เปรียบเทียบอันดับ: คะแนนมากก่อน → ถ้าเท่า ใช้ % ชนะ */
@@ -979,9 +1002,10 @@ function rankRowHtml(r){
     ? `<span class="medal">${medal}</span>`
     : `<span class="pos-num">${rank}</span>`;
   const picHtml = r.pictureUrl ? `<img src="${escHtml(r.pictureUrl)}" alt="" />` : '';
-  const wins    = r.wins   || 0;
-  const losses  = r.losses || 0;
-  const played  = r.played || 0;
+  const wins    = Math.max(0, r.wins   || 0);
+  const losses  = Math.max(0, r.losses || 0);
+  const played  = Math.max(0, r.played || 0);
+  const pts     = Math.max(0, r.points || 0);
   const wr      = played > 0 ? Math.round(wins / played * 100) : 0;
   return `<div class="rank-row ${podium}">
     <div class="pos">${posHtml}</div>
@@ -999,7 +1023,7 @@ function rankRowHtml(r){
         </div>
       </div>
     </div>
-    <div class="pts">${r.points}<small>pts</small></div>
+    <div class="pts">${pts}<small>pts</small></div>
   </div>`;
 }
 
@@ -1055,7 +1079,7 @@ function renderMonthlyWinners(){
       <div class="mo">${mo}</div>
       ${pic}
       <div class="wname">${escHtml(w.winner.name)}</div>
-      <div class="wpts">${w.winner.points} pts</div>
+      <div class="wpts">${Math.max(0, w.winner.points||0)} pts</div>
     </div>`;
   }).join('') + '</div>';
 }
@@ -1069,15 +1093,16 @@ function rkTblRowHtml(r){
   const picHtml = r.pictureUrl
     ? `<img src="${escHtml(r.pictureUrl)}" alt="" />`
     : `<span class="no-pic">👤</span>`;
-  const wins    = r.wins   || 0;
-  const losses  = r.losses || 0;
-  const played  = r.played || 0;
+  const wins    = Math.max(0, r.wins   || 0);
+  const losses  = Math.max(0, r.losses || 0);
+  const played  = Math.max(0, r.played || 0);
+  const pts     = Math.max(0, r.points || 0);
   const wr      = played > 0 ? Math.round(wins/played*100) : 0;
   const wrColor = wr>=70?'#4ade80':wr>=40?'#fbbf24':wr>0?'#ef4444':'#3a3d48';
   return `<tr>
     <td><div class="rk-pos">${posHtml}</div></td>
     <td><div class="rk-player">${picHtml}<span class="rk-name">${escHtml(r.name)}</span></div></td>
-    <td><div class="rk-pts">${r.points||0}</div></td>
+    <td><div class="rk-pts">${pts}</div></td>
     <td><div class="rk-played">${played}</div></td>
     <td><div class="rk-wins">${wins}</div></td>
     <td><div class="rk-losses">${losses}</div></td>
