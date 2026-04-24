@@ -661,7 +661,8 @@ async function dbGetAllData(){
       played:  p.played  || 0,
       wins:    p.wins    || 0,
       losses:  p.losses  || 0,
-    }));
+    }))
+    .sort(rankCmp);
 
   // ── Daily rankings ──
   const dailyAgg = {};
@@ -676,7 +677,7 @@ async function dbGetAllData(){
   });
   const daily = Object.entries(dailyAgg)
     .map(([id, stats]) => ({ ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...stats }))
-    .sort((a,b) => b.points - a.points || b.wins - a.wins);
+    .sort(rankCmp);
 
   // ── Monthly rankings + yearly winners (single pass over year scores) ──
   const monthAgg  = {};
@@ -703,7 +704,7 @@ async function dbGetAllData(){
 
   const monthly = Object.entries(monthAgg)
     .map(([id, stats]) => ({ ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...stats }))
-    .sort((a,b) => b.points - a.points || b.wins - a.wins);
+    .sort(rankCmp);
 
   const winners = Array.from({ length:12 }, (_, i) => {
     const map = yearlyAgg[i];
@@ -884,6 +885,20 @@ const THAI_MONTHS_FULL  = ['มกราคม','กุมภาพันธ์'
 /* --- Tie-aware ranking: standard competition ranking (1,1,3,4...) ---
    Same points + same wins → same rank number
    Same points but more wins → better rank */
+/** ค่า % ชนะแบบปัดเศษ (ใช้เปรียบเทียบ tie) */
+function winRatePct(r){
+  const played = r.played || 0;
+  if(played <= 0) return 0;
+  return Math.round((r.wins || 0) / played * 100);
+}
+
+/** เปรียบเทียบอันดับ: คะแนนมากก่อน → ถ้าเท่า ใช้ % ชนะ */
+function rankCmp(a, b){
+  const dp = (b.points||0) - (a.points||0);
+  if(dp !== 0) return dp;
+  return winRatePct(b) - winRatePct(a);
+}
+
 function withRanks(list){
   const out = [];
   for(let i = 0; i < list.length; i++){
@@ -891,7 +906,9 @@ function withRanks(list){
       out.push({ ...list[i], _rank: 1 });
     } else {
       const prev = out[i-1];
-      const tied = list[i].points === prev.points && (list[i].wins||0) === (prev.wins||0);
+      // อันดับเท่ากันเมื่อ: คะแนนเท่ากัน AND % ชนะเท่ากัน
+      const tied = list[i].points === prev.points
+                && winRatePct(list[i]) === winRatePct(prev);
       out.push({ ...list[i], _rank: tied ? prev._rank : i + 1 });
     }
   }
@@ -1125,7 +1142,7 @@ function applyOptimisticUpdate(playerId, result, pts){
         losses: deltaLoss > 0 ? 1 : 0,
       });
     }
-    list.sort((a, b) => b.points - a.points || b.wins - a.wins);
+    list.sort(rankCmp);
   }
 
   updateList(allDailyRankings);
