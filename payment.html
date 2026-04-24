@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
@@ -319,7 +320,20 @@ body{min-height:100dvh}
   font-size:16px;cursor:pointer;font-weight:700;
 }
 .vm-close:active{background:var(--border)}
-.vm-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.vm-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
+.vm-foot{
+  padding:14px 20px 20px;border-top:1.5px solid var(--border);
+  background:var(--card);
+}
+.vm-share-btn{
+  width:100%;padding:15px;border-radius:var(--radius);border:none;
+  background:#06c755;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity .15s;-webkit-tap-highlight-color:transparent;
+}
+.vm-share-btn:active{opacity:.75}
+.vm-share-btn:disabled{opacity:.5;cursor:not-allowed}
 
 .vm-block{margin-bottom:18px}
 .vm-block-head{
@@ -513,6 +527,11 @@ body{min-height:100dvh}
       <button class="vm-close" onclick="closeViewModal()" aria-label="ปิด">✕</button>
     </div>
     <div class="vm-body" id="vm-body"></div>
+    <div class="vm-foot">
+      <button class="vm-share-btn" id="vm-share-btn" onclick="shareCurrentSession()">
+        📲 แชร์สรุปเข้าไลน์
+      </button>
+    </div>
   </div>
 </div>
 
@@ -530,6 +549,8 @@ const FIREBASE_CONFIG = {
   messagingSenderId: '65806979876',
   appId:             '1:65806979876:web:3ee9d17c6f0ede5b2819b1',
 };
+
+const LIFF_ID = '2009832825-of9TI64X';
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
@@ -1003,7 +1024,10 @@ async function viewSession(docId){
   }catch(e){ toast('โหลดไม่ได้: '+e.message); }
 }
 
+let _viewingSession = null; // เก็บข้อมูล session ที่กำลังดู (ใช้แชร์)
+
 function renderViewModal(d){
+  _viewingSession = d;
   const players = d.players || [];
   const cashN   = d.cashCount || players.filter(p=>p.cash).length;
   const transN  = d.transferCount || players.filter(p=>p.transfer).length;
@@ -1090,6 +1114,195 @@ function renderViewModal(d){
 function closeViewModal(){
   document.getElementById('view-modal').style.display = 'none';
   document.body.style.overflow = '';
+  _viewingSession = null;
+}
+
+/* ================================================================
+   LINE FLEX MESSAGE — สรุปค่าใช้จ่ายสำหรับแชร์เข้ากลุ่ม
+   ================================================================ */
+
+/** สร้าง Flex bubble จากข้อมูล session */
+function buildPaymentFlex(d){
+  const players = d.players || [];
+  const total   = d.totalCount    || players.length;
+  const cashN   = d.cashCount     || players.filter(p=>p.cash).length;
+  const transN  = d.transferCount || players.filter(p=>p.transfer).length;
+  const unpaid  = total - (cashN + transN);
+  const pp      = d.perPerson     || 0;
+  const courtFee     = d.courtFee     || 0;
+  const shuttlePrice = d.shuttlePrice || 0;
+  const shuttleCount = d.shuttleCount || 0;
+  const shuttleTotal = shuttlePrice * shuttleCount;
+  const totalCost    = d.totalCost || (courtFee + shuttleTotal);
+  const dateStr      = d.dateDisplay || d.date || '';
+
+  // ─── Cost breakdown rows ───
+  const costRows = [];
+  if(courtFee > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:'🏟 ค่าคอร์ท', size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(courtFee)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  if(shuttleCount > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:`🏸 ลูกแบด ${shuttleCount}×${fmtBaht(shuttlePrice)}฿`, size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(shuttleTotal)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  costRows.push({ type:'separator', margin:'md' });
+  costRows.push({
+    type:'box', layout:'horizontal', margin:'md',
+    contents:[
+      { type:'text', text:'รวมทั้งสิ้น', size:'md', weight:'bold', color:'#111111', flex:5 },
+      { type:'text', text:fmtBaht(totalCost)+' ฿', size:'md', weight:'bold', color:'#111111', align:'end', flex:4 },
+    ]
+  });
+
+  // ─── Member list (ตัด 20 คนเพื่อกัน flex เกิน limit) ───
+  const memberRows = players.slice(0, 20).map((p, i) => {
+    const status = p.cash     ? { t:'💵 เงินสด', c:'#16a34a' }
+                 : p.transfer ? { t:'📲 โอน',    c:'#3b82f6' }
+                 :              { t:'⬜ ค้าง',   c:'#d97706' };
+    return {
+      type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
+      contents:[
+        { type:'text', text:String(i+1)+'.', size:'sm', color:'#8e8c85', flex:1 },
+        { type:'text', text:p.name||'—',     size:'sm', color:'#111111', weight:'bold', flex:6, wrap:true },
+        { type:'text', text:status.t,        size:'xs', color:status.c, weight:'bold', align:'end', flex:4 },
+      ]
+    };
+  });
+  const extraMembers = players.length > 20 ? [{
+    type:'text', text:`…และอีก ${players.length-20} คน`, size:'xs',
+    color:'#8e8c85', align:'center', margin:'sm'
+  }] : [];
+
+  return {
+    type:'bubble',
+    size:'mega',
+    header:{
+      type:'box', layout:'vertical', paddingAll:'16px',
+      backgroundColor:'#16181d',
+      contents:[
+        { type:'text', text:'🏸 สรุปค่าคอร์ทแบด', color:'#c8f135', weight:'bold', size:'md' },
+        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
+      ]
+    },
+    body:{
+      type:'box', layout:'vertical', paddingAll:'16px', spacing:'md',
+      contents:[
+        // Cost breakdown
+        {
+          type:'box', layout:'vertical', spacing:'none',
+          contents:[
+            { type:'text', text:'💰 ค่าใช้จ่าย', size:'xs', color:'#8e8c85', weight:'bold' },
+            ...costRows,
+          ]
+        },
+        // Per-person highlight
+        {
+          type:'box', layout:'vertical',
+          backgroundColor:'#c8f135', cornerRadius:'10px', paddingAll:'14px',
+          margin:'md',
+          contents:[
+            { type:'text', text:`💸 เฉลี่ยต่อคน (${total} คน)`, color:'#1a1a1a', size:'xs', weight:'bold', align:'center' },
+            { type:'text', text:fmtBaht(pp)+' บาท', color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'xs' },
+          ]
+        },
+        // Payment status
+        {
+          type:'box', layout:'horizontal', margin:'md', spacing:'sm',
+          contents:[
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#f0fdf4', paddingAll:'10px', contents:[
+              { type:'text', text:String(cashN), size:'xl', weight:'bold', color:'#16a34a', align:'center' },
+              { type:'text', text:'💵 เงินสด', size:'xxs', color:'#166534', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#eff6ff', paddingAll:'10px', contents:[
+              { type:'text', text:String(transN), size:'xl', weight:'bold', color:'#3b82f6', align:'center' },
+              { type:'text', text:'📲 โอน', size:'xxs', color:'#1e40af', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#fffbeb', paddingAll:'10px', contents:[
+              { type:'text', text:String(unpaid), size:'xl', weight:'bold', color:'#d97706', align:'center' },
+              { type:'text', text:'⬜ ค้าง', size:'xxs', color:'#92400e', align:'center' },
+            ]},
+          ]
+        },
+        // Members
+        {
+          type:'box', layout:'vertical', margin:'lg',
+          contents:[
+            { type:'text', text:`👥 รายชื่อสมาชิก (${total} คน)`, size:'xs', color:'#8e8c85', weight:'bold', margin:'none' },
+            { type:'separator', margin:'sm' },
+            ...memberRows,
+            ...extraMembers,
+          ]
+        },
+      ]
+    },
+    footer:{
+      type:'box', layout:'vertical', paddingAll:'12px',
+      backgroundColor:'#f5f3ee',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตีแบด · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
+      ]
+    }
+  };
+}
+
+/** Init LIFF ครั้งเดียว · cache promise */
+let _liffInitPromise = null;
+function ensureLiff(){
+  if(!_liffInitPromise) _liffInitPromise = liff.init({ liffId: LIFF_ID });
+  return _liffInitPromise;
+}
+
+/** แชร์ session ที่เปิดดูอยู่ไปยัง LINE (group/friend) ผ่าน share target picker */
+async function shareCurrentSession(){
+  if(!_viewingSession){ toast('ไม่พบข้อมูลที่จะแชร์'); return; }
+  const btn = document.getElementById('vm-share-btn');
+  btn.disabled = true;
+  const orig = btn.textContent;
+
+  try{
+    btn.textContent = '⏳ กำลังเตรียม...';
+    await ensureLiff();
+
+    if(!liff.isLoggedIn()){
+      if(confirm('ต้อง login LINE ก่อน · ไปหน้า login?')){
+        liff.login({ redirectUri: window.location.href });
+      }
+      btn.disabled = false; btn.textContent = orig;
+      return;
+    }
+
+    if(!liff.isApiAvailable('shareTargetPicker')){
+      toast('เบราว์เซอร์นี้แชร์ไม่ได้ · ต้องเปิดจาก LINE');
+      btn.disabled = false; btn.textContent = orig;
+      return;
+    }
+
+    const flex = buildPaymentFlex(_viewingSession);
+    const altText = `สรุปค่าคอร์ทแบด ${_viewingSession.dateDisplay||''} · เฉลี่ย ${fmtBaht(_viewingSession.perPerson||0)} บาท/คน`;
+
+    btn.textContent = '⏳ เลือกผู้รับ...';
+    const res = await liff.shareTargetPicker([
+      { type:'flex', altText, contents: flex }
+    ], { isMultiple: true });
+
+    if(res){ toast('✅ ส่งเรียบร้อย'); }
+    else   { toast('ยกเลิกการแชร์'); }
+  }catch(e){
+    console.error('share error', e);
+    toast('แชร์ไม่ได้: ' + (e.message||'ลองใหม่'));
+  }
+  btn.disabled = false; btn.textContent = orig;
 }
 
 /** รหัสผ่าน admin สำหรับแก้/ลบประวัติ — cache ในเซสชันเพื่อไม่ต้องถามซ้ำ */
