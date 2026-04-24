@@ -585,7 +585,10 @@ function renderPlayers(){
           <span class="wr-txt">${wr}%</span>
         </div>
       </td>
-      <td><button class="del-btn" onclick="deletePlayer('${escHtml(p.docId)}','${escHtml(p.name)}')">ลบ</button></td>
+      <td style="white-space:nowrap">
+        <button class="del-btn" style="border-color:var(--accent)60;color:var(--accent)" onclick="viewAsUser('${escHtml(p.docId)}','${escHtml(p.name)}')" title="ทดลองใช้งานเป็น user คนนี้">👁 View as</button>
+        <button class="del-btn" onclick="deletePlayer('${escHtml(p.docId)}','${escHtml(p.name)}')">ลบ</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -671,6 +674,20 @@ async function deletePlayer(docId, name){
     toast(`ลบ ${name} แล้ว`);
     await loadAll();
   }catch(e){ toast('Error: '+e.message); }
+}
+
+/* ================================================================
+   VIEW AS USER — ทดลองใช้งานเป็นผู้ใช้คนอื่น (debug)
+   ================================================================ */
+function viewAsUser(playerId, name){
+  const msg = `เปิดแอปในโหมดทดลองเป็น "${name}"?\n\n`
+            + `⚠️ การกดปุ่ม + / − จะ บันทึกจริง เข้าบัญชีของ user นี้\n`
+            + `ใช้สำหรับหา bug เท่านั้น`;
+  if(!confirm(msg)) return;
+  // เปิด tab ใหม่พร้อม URL param
+  const base = window.location.pathname.replace(/admin\.html$/, '') + 'index.html';
+  const url  = `${base}?admin_view_as=${encodeURIComponent(playerId)}&admin_name=${encodeURIComponent(name)}`;
+  window.open(url, '_blank');
 }
 
 /* ================================================================

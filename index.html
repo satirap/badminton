@@ -885,6 +885,11 @@ async function _backgroundRefresh(){
 }
 
 function logout(){
+  // View-as mode: ห้าม clobber admin's session — แค่ปิด tab
+  if(window.__VIEW_AS_MODE__){
+    window.close();
+    return;
+  }
   localStorage.removeItem('shuttle_player');
   localStorage.setItem('shuttle_logout','1');
   currentUser = null;
@@ -1318,6 +1323,40 @@ async function boot(){
   _resultHandled = false;
   wireEvents();
 
+  // Admin View-as mode: bypass LIFF, use provided playerId as currentUser
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewAsId  = urlParams.get('admin_view_as');
+  if(viewAsId){
+    const adminName = urlParams.get('admin_name') || viewAsId;
+    try{
+      const snap = await db.collection('players').doc(viewAsId).get();
+      if(!snap.exists){
+        alert('ไม่พบผู้เล่น: ' + viewAsId);
+        return;
+      }
+      const p = snap.data();
+      currentUser = {
+        id:          viewAsId,
+        name:        p.name || adminName,
+        pictureUrl:  p.pictureUrl || '',
+        totalPoints: p.totalPoints || 0,
+        wins:        p.wins   || 0,
+        losses:      p.losses || 0,
+        played:      p.played || 0,
+      };
+      // ธง session — ไม่เขียน localStorage เพื่อไม่ clobber session ของ admin
+      window.__VIEW_AS_MODE__ = true;
+      showAdminViewBanner(currentUser.name);
+      showApp(); hideSplash();
+      await loadAllData();
+      return;
+    }catch(e){
+      alert('Admin view-as failed: ' + e.message);
+      console.error(e);
+      return;
+    }
+  }
+
   // Capture result param BEFORE liff.init can redirect
   const preSearch = window.location.search;
   const preResult = extractResult(preSearch);
@@ -1367,6 +1406,21 @@ async function boot(){
   }
 
   await loginWithLIFF(resultParam);
+}
+
+// =================================================================
+// Admin View-as banner
+// =================================================================
+function showAdminViewBanner(name){
+  const b = document.createElement('div');
+  b.id = 'admin-view-banner';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:300;background:#fb923c;color:#1a0f04;padding:10px 14px;font-family:sans-serif;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:0 2px 8px #000a;';
+  b.innerHTML = `<span>👁 Admin: ทดลองเป็น "${escHtml(name)}" · การกดจะบันทึกจริง</span>
+                 <button onclick="window.close()" style="background:#1a0f04;color:#fb923c;border:none;border-radius:8px;padding:6px 12px;font-weight:800;cursor:pointer;font-family:sans-serif;font-size:12px">ปิด</button>`;
+  document.body.appendChild(b);
+  // เว้นพื้นที่ด้านบนของ app
+  const app = document.querySelector('.app');
+  if(app) app.style.paddingTop = '52px';
 }
 
 document.addEventListener('DOMContentLoaded', boot);
