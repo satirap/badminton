@@ -1071,7 +1071,24 @@ function closeViewModal(){
   document.body.style.overflow = '';
 }
 
+/** รหัสผ่าน admin สำหรับแก้/ลบประวัติ — cache ในเซสชันเพื่อไม่ต้องถามซ้ำ */
+const ADMIN_PIN = '888';
+function requireAdminPin(action){
+  try{
+    if(sessionStorage.getItem('payment_admin_ok') === '1') return true;
+  }catch(e){}
+  const v = prompt(`🔒 ใส่รหัสผ่าน admin เพื่อ${action}\n(รหัสจะถูกจำไว้ชั่วคราวจนกว่าจะปิดแท็บ)`);
+  if(v === null) return false;
+  if(v.trim() !== ADMIN_PIN){
+    toast('รหัสไม่ถูกต้อง');
+    return false;
+  }
+  try{ sessionStorage.setItem('payment_admin_ok', '1'); }catch(e){}
+  return true;
+}
+
 async function editSession(docId){
+  if(!requireAdminPin('แก้ไข')) return;
   try{
     const snap = await db.collection('payment_sessions').doc(docId).get();
     if(!snap.exists){ toast('ไม่พบข้อมูล'); return; }
@@ -1103,6 +1120,7 @@ async function editSession(docId){
 }
 
 async function deleteSession(docId, btn){
+  if(!requireAdminPin('ลบ')) return;
   if(!confirm('ลบประวัตินี้?')) return;
   btn.disabled = true;
   try{
