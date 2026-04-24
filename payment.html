@@ -550,7 +550,11 @@ const FIREBASE_CONFIG = {
   appId:             '1:65806979876:web:3ee9d17c6f0ede5b2819b1',
 };
 
-const LIFF_ID = '2009832825-of9TI64X';
+// ⚠️ LIFF ID สำหรับ payment.html — ต้องเปิด "Share target picker"
+// สร้างใหม่ที่ https://developers.line.biz/console/ → Channel → LIFF tab
+// Endpoint URL: https://satirap.github.io/badminton/payment.html
+// ** แก้ตรงนี้หลังสร้าง LIFF app ใหม่ **
+const LIFF_ID = '2009832825-of9TI64X'; // TODO: แทนที่ด้วย Payment LIFF ID ใหม่
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
