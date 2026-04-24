@@ -175,6 +175,15 @@ body{min-height:100dvh}
 }
 .btn-complete:active{opacity:.8}
 .btn-complete:disabled{opacity:.4;cursor:not-allowed}
+.btn-save{
+  width:100%;padding:16px;border-radius:var(--radius);
+  border:1.5px solid var(--accent);background:transparent;color:var(--accent);
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-save:active{background:#c8f13510}
+.btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-clear{
   width:100%;padding:14px;border-radius:var(--radius);
   border:1.5px solid var(--border);background:transparent;color:var(--soft);
@@ -262,7 +271,7 @@ body{min-height:100dvh}
     <!-- Amount per person -->
     <div class="amount-bar">
       <span class="amt-lbl">ยอดต่อคน</span>
-      <input type="number" id="per-person" value="120" min="0" step="10" inputmode="numeric"/>
+      <input type="number" id="per-person" value="0" min="0" step="10" inputmode="numeric"/>
       <span class="amt-unit">บาท</span>
     </div>
 
@@ -293,8 +302,11 @@ body{min-height:100dvh}
 
     <!-- Actions -->
     <div class="action-row">
-      <button class="btn-complete" id="btn-complete" onclick="completeSession()">
-        ✅ จ่ายครบแล้ว — บันทึก
+      <button class="btn-save" id="btn-save" onclick="saveSessionNow()">
+        💾 บันทึกรายการ
+      </button>
+      <button class="btn-complete" id="btn-complete" onclick="completeSession()" style="display:none">
+        🎉 จบรอบ (จ่ายครบแล้ว)
       </button>
       <button class="btn-clear" onclick="clearSession()">🗑 ล้างรายชื่อทั้งหมด</button>
     </div>
@@ -367,7 +379,7 @@ function newSession(){
     date:        iso,
     dateDisplay: thaiDate(iso),
     status:      'open',
-    perPerson:   120,
+    perPerson:   0,
     players:     [],
     createdAt:   new Date().toISOString(),
     completedAt: null,
@@ -398,18 +410,114 @@ function loadDraft(){
 
 function saveDraft(){
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-  updateAutosaveLabel();
+  updateAutosaveLabel('local');
+  scheduleCloudSync();
 }
 
 function clearDraft(){
   localStorage.removeItem(DRAFT_KEY);
 }
 
-function updateAutosaveLabel(){
+function updateAutosaveLabel(mode){
   const el = document.getElementById('autosave-label');
   if(!el) return;
   const now = new Date();
-  el.textContent = `บันทึกชั่วคราวแล้ว ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(mode==='cloud') el.textContent = `☁️ บันทึกขึ้น cloud แล้ว ${hhmm}`;
+  else if(mode==='syncing') el.textContent = `⏳ กำลังบันทึก...`;
+  else if(mode==='error') el.textContent = `⚠️ บันทึก cloud ไม่สำเร็จ (local ok)`;
+  else el.textContent = `💾 บันทึก local แล้ว ${hhmm}`;
+}
+
+/* ── Debounced auto-save to Firestore (กันกดเร็วเขียนบ่อย) ── */
+let _syncTimer = null;
+function scheduleCloudSync(){
+  if(_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => { cloudSync().catch(e => console.warn('sync', e)); }, 800);
+}
+
+async function cloudSync(){
+  if(!session || !session.players) return;
+  // ไม่ sync session เปล่า (ยังไม่มีคน)
+  if(session.players.length === 0 && !editingId) return;
+
+  updateAutosaveLabel('syncing');
+  try{
+    const cashN   = session.players.filter(p => p.cash).length;
+    const transN  = session.players.filter(p => p.transfer).length;
+    const pp      = getPerPerson();
+    const payload = {
+      date:           session.date,
+      dateDisplay:    session.dateDisplay,
+      status:         session.status || 'open',
+      players:        session.players,
+      perPerson:      pp,
+      cashCount:      cashN,
+      transferCount:  transN,
+      totalCount:     session.players.length,
+      paidCount:      cashN + transN,
+      cashAmount:     cashN * pp,
+      transferAmount: transN * pp,
+      totalAmount:    session.players.length * pp,
+      createdAt:      session.createdAt ? new Date(session.createdAt) : new Date(),
+      updatedAt:      new Date(),
+    };
+    if(editingId){
+      await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
+    } else {
+      const ref = await db.collection('payment_sessions').add(payload);
+      editingId = ref.id;
+      session.id = ref.id;
+      try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+    }
+    updateAutosaveLabel('cloud');
+  }catch(e){
+    updateAutosaveLabel('error');
+    console.error('cloud sync', e);
+  }
+}
+
+/** ค้นหา open session ของวันนี้ — ให้อีกคนที่เตรียมไว้ ใช้ต่อได้ */
+async function loadTodayOpenSession(){
+  try{
+    const iso = todayISO();
+    const snap = await db.collection('payment_sessions')
+      .where('date','==',iso)
+      .where('status','==','open')
+      .limit(1).get();
+    if(snap.empty) return false;
+    const doc = snap.docs[0];
+    const d = doc.data();
+    editingId = doc.id;
+    session = {
+      id:          doc.id,
+      date:        d.date || iso,
+      dateDisplay: d.dateDisplay || thaiDate(iso),
+      status:      'open',
+      perPerson:   d.perPerson || 0,
+      players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
+      createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      completedAt: null,
+    };
+    try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+    return true;
+  }catch(e){ console.warn('loadTodayOpenSession', e); return false; }
+}
+
+/** Save ทันทีโดยไม่รอ debounce */
+async function saveSessionNow(){
+  if(!session.players.length){ toast('ยังไม่มีรายชื่อ'); return; }
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '⏳ กำลังบันทึก...';
+  if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+  try{
+    await cloudSync();
+    toast('บันทึกแล้ว ☁️');
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  btn.disabled = false;
+  renderSummary(); // restore text
 }
 
 /* ================================================================
@@ -490,11 +598,22 @@ function renderSummary(){
   document.getElementById('sum-cash-baht').innerHTML     = `${fmtBaht(cashB)}<span class="baht">฿</span>`;
   document.getElementById('sum-transfer-baht').innerHTML = `${fmtBaht(transB)}<span class="baht">฿</span>`;
 
-  const btn = document.getElementById('btn-complete');
-  btn.disabled = total === 0;
-  btn.textContent = paidN >= total && total > 0
-    ? `✅ ครบแล้ว ${total} คน (${fmtBaht(totalB)}฿) — บันทึก`
-    : `💾 บันทึก · ${paidN}/${total} คน จ่ายแล้ว ${fmtBaht(cashB + transB)}฿`;
+  // Save button: disable when no players
+  const saveBtn = document.getElementById('btn-save');
+  if(saveBtn){
+    saveBtn.disabled = total === 0;
+    saveBtn.textContent = total === 0
+      ? '💾 บันทึกรายการ'
+      : `💾 บันทึกรายการ (${paidN}/${total} จ่าย · ${fmtBaht(cashB+transB)}฿)`;
+  }
+
+  // Finish button: only show when everyone paid
+  const finBtn = document.getElementById('btn-complete');
+  if(finBtn){
+    const allPaid = total > 0 && paidN >= total;
+    finBtn.style.display = allPaid ? 'flex' : 'none';
+    finBtn.textContent   = `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
+  }
 }
 
 function renderDate(){
@@ -507,14 +626,20 @@ function renderDate(){
    ================================================================ */
 async function completeSession(){
   if(!session.players.length){ toast('ยังไม่มีรายชื่อ'); return; }
+  const cashN  = session.players.filter(p => p.cash).length;
+  const transN = session.players.filter(p => p.transfer).length;
+  const paidN  = cashN + transN;
+  if(paidN < session.players.length){ toast('ยังไม่จ่ายครบ'); return; }
+  if(!confirm('จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?')) return;
+
   const btn = document.getElementById('btn-complete');
   btn.disabled = true;
-  btn.textContent = '⏳ กำลังบันทึก...';
+  btn.textContent = '⏳ กำลังจบรอบ...';
+  if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
 
   try{
-    const cashN   = session.players.filter(p => p.cash).length;
-    const transN  = session.players.filter(p => p.transfer).length;
-    const pp      = getPerPerson();
+    session.status = 'complete';
+    const pp = getPerPerson();
     const payload = {
       date:        session.date,
       dateDisplay: session.dateDisplay,
@@ -524,38 +649,35 @@ async function completeSession(){
       cashCount:   cashN,
       transferCount: transN,
       totalCount:  session.players.length,
-      paidCount:   cashN + transN,
+      paidCount:   paidN,
       cashAmount:     cashN * pp,
       transferAmount: transN * pp,
       totalAmount:    session.players.length * pp,
       createdAt:   session.createdAt ? new Date(session.createdAt) : new Date(),
       completedAt: new Date(),
+      updatedAt:   new Date(),
     };
-
     if(editingId){
-      await db.collection('payment_sessions').doc(editingId).set(payload);
+      await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
     } else {
       const ref = await db.collection('payment_sessions').add(payload);
       editingId = ref.id;
     }
-
-    session.status = 'complete';
     clearDraft();
-    toast('บันทึกเรียบร้อย ✅');
-    // reset for next session
+    toast('🎉 จบรอบเรียบร้อย');
     setTimeout(() => {
       editingId = null;
       session = newSession();
-      saveDraft();
+      try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+      document.getElementById('per-person').value = 0;
       renderTable();
       renderSummary();
       renderDate();
       document.getElementById('autosave-label').textContent = '';
     }, 1500);
-
   }catch(e){
     console.error(e);
-    toast('บันทึกไม่สำเร็จ: ' + e.message);
+    toast('จบรอบไม่สำเร็จ: ' + e.message);
     btn.disabled = false;
     renderSummary();
   }
@@ -623,7 +745,7 @@ async function editSession(docId){
       date:        d.date,
       dateDisplay: d.dateDisplay || thaiDate(d.date),
       status:      'open',
-      perPerson:   d.perPerson || 120,
+      perPerson:   d.perPerson || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       completedAt: null,
@@ -631,7 +753,7 @@ async function editSession(docId){
     saveDraft();
     switchTab('collect');
     renderDate();
-    document.getElementById('per-person').value = session.perPerson || 120;
+    document.getElementById('per-person').value = session.perPerson || 0;
     renderTable();
     renderSummary();
     toast('โหลดข้อมูลแล้ว ✏️ แก้ไขได้เลย');
@@ -687,15 +809,27 @@ document.getElementById('per-person').addEventListener('input', () => {
 /* ================================================================
    BOOT
    ================================================================ */
-(function boot(){
-  if(!loadDraft()){
-    session = newSession();
-    saveDraft();
+(async function boot(){
+  // 1) พยายามโหลด open session ของวันนี้จาก cloud ก่อน (คนเตรียมอาจเป็นคนละคน)
+  const loadedFromCloud = await loadTodayOpenSession();
+
+  if(!loadedFromCloud){
+    // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี (เฉพาะของวันนี้)
+    if(loadDraft()){
+      if(session.date !== todayISO()){
+        // draft ของวันอื่น (ค้างอยู่) → เริ่มใหม่
+        session = newSession();
+      }
+    } else {
+      session = newSession();
+    }
   }
-  document.getElementById('per-person').value = session.perPerson || 120;
+
+  document.getElementById('per-person').value = session.perPerson || 0;
   renderDate();
   renderTable();
   renderSummary();
+  if(loadedFromCloud) updateAutosaveLabel('cloud');
 })();
 </script>
 </body>
