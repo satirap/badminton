@@ -44,8 +44,12 @@ body{min-height:100dvh}
   border-radius:var(--radius);padding:18px 20px;margin:16px 0 12px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2}
+.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15;white-space:nowrap}
 .header-card .brand span{color:var(--accent)}
+.header-card .brand-sub{
+  font-size:11px;font-weight:600;color:var(--mute);margin-top:2px;
+  letter-spacing:.02em;white-space:nowrap;
+}
 .header-card .date-box{text-align:right;flex:1;margin-right:8px}
 .header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--ink)}
 .header-card .date-box .date-sub{font-size:11px;color:var(--mute);margin-top:1px}
@@ -376,7 +380,10 @@ body{min-height:100dvh}
 
   <!-- Header -->
   <div class="header-card">
-    <div class="brand">ก๊วนอยาก<br><span>ตีแบด</span></div>
+    <div>
+      <div class="brand">ก๊วนอยาก<span>ตีแบด</span></div>
+      <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
+    </div>
     <div class="date-box">
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
