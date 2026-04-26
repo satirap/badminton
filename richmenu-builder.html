@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<title>🎨 Rich Menu Builder — ก๊วนอยากตีแบด</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#0c0d10;color:#f5f3ee;font-family:'Prompt',sans-serif;padding:30px;text-align:center}
+  h1{margin:0 0 6px;font-size:24px}
+  .sub{color:#8e8c85;font-size:13px;margin-bottom:20px}
+  canvas{max-width:100%;height:auto;border:1.5px solid #2e3038;border-radius:8px;box-shadow:0 8px 32px #0008}
+  button{margin-top:20px;padding:14px 36px;font-size:17px;font-weight:800;background:#06c755;color:#fff;border:0;border-radius:10px;cursor:pointer;font-family:inherit;letter-spacing:.02em}
+  button:active{transform:scale(.96)}
+  .info{margin-top:24px;color:#8e8c85;font-size:12px;line-height:1.7}
+  .info code{background:#1c1e24;padding:2px 6px;border-radius:4px;color:#c8f135;font-family:'IBM Plex Mono',monospace;font-size:11px}
+</style>
+</head>
+<body>
+
+<h1>🎨 Rich Menu — ก๊วนอยากตีแบด</h1>
+<div class="sub">Compact 3 ปุ่ม · 2500×843 px</div>
+
+<canvas id="cv" width="2500" height="843"></canvas>
+<br>
+<button onclick="dl()">📥 Download PNG (rich-menu.png)</button>
+
+<div class="info">
+  ขนาด: <code>2500 × 843 px</code> · format: <code>PNG</code><br>
+  อัปโหลดได้เลยที่ LINE OA Manager → ริชเมนู → ช่อง "รูป"<br>
+  ถ้าอยากแก้สี/ข้อความ/emoji → แก้ตัวแปรใน <code>&lt;script&gt;</code> ด้านล่างของไฟล์
+</div>
+
+<script>
+const cv  = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W   = 2500, H = 843;
+
+// ─── ตั้งค่าได้ตรงนี้ ────────────────────────────────────────
+const TILES = [
+  { emoji:'🏸', title:'เก็บคะแนน',   sub:'บันทึกชนะ-แพ้',  color:'#c8f135' },
+  { emoji:'💰', title:'ช่วยคิดเงิน', sub:'หารค่าคอร์ท',   color:'#c8f135' },
+  { emoji:'🏆', title:'ทำเนียบสมาชิก',sub:'ดูอันดับ',      color:'#c8f135' },
+];
+const BRAND = '🏸  ก๊วนอยากตีแบด';
+// ────────────────────────────────────────────────────────────
+
+function draw(){
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#0c0d10');
+  bg.addColorStop(.5, '#16181d');
+  bg.addColorStop(1, '#1c1e24');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle accent stripe at top
+  const stripe = ctx.createLinearGradient(0, 0, W, 0);
+  stripe.addColorStop(0,    '#c8f13500');
+  stripe.addColorStop(.5,   '#c8f13540');
+  stripe.addColorStop(1,    '#c8f13500');
+  ctx.fillStyle = stripe;
+  ctx.fillRect(0, 0, W, 4);
+
+  // Brand label top center
+  ctx.fillStyle = '#c9c7c0';
+  ctx.font = '700 36px Prompt, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(BRAND, W/2, 36);
+
+  // Dividers
+  ctx.strokeStyle = '#2e3038';
+  ctx.lineWidth = 3;
+  for(let i = 1; i < 3; i++){
+    const x = i * (W / 3);
+    ctx.beginPath();
+    ctx.moveTo(x, 130);
+    ctx.lineTo(x, H - 70);
+    ctx.stroke();
+  }
+
+  // Tiles
+  const tileW = W / 3;
+  TILES.forEach((t, i) => {
+    const cx = tileW * i + tileW / 2;
+    const cy = 380;
+
+    // Hover-style background tint per tile (very subtle)
+    ctx.fillStyle = i === 1 ? '#c8f1350a' : '#ffffff04';
+    ctx.fillRect(tileW * i + 30, 130, tileW - 60, H - 200);
+
+    // Emoji circle bg
+    ctx.beginPath();
+    ctx.arc(cx, cy - 30, 110, 0, Math.PI * 2);
+    ctx.fillStyle = '#1c1e24';
+    ctx.fill();
+    ctx.strokeStyle = t.color + '50';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Emoji
+    ctx.font = '160px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t.emoji, cx, cy - 30);
+
+    // Title
+    ctx.fillStyle = t.color;
+    ctx.font = '800 76px Prompt, sans-serif';
+    ctx.fillText(t.title, cx, cy + 175);
+
+    // Subtitle
+    ctx.fillStyle = '#c9c7c0';
+    ctx.font = '500 38px Prompt, sans-serif';
+    ctx.fillText(t.sub, cx, cy + 250);
+  });
+
+  // Subtle bottom hint
+  ctx.fillStyle = '#3a3d48';
+  ctx.font = '500 22px Prompt, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('แตะปุ่มเพื่อเปิดแอป', W/2, H - 32);
+}
+
+// Wait for fonts to load before drawing
+document.fonts.ready.then(draw);
+
+function dl(){
+  const link = document.createElement('a');
+  link.download = 'rich-menu.png';
+  link.href = cv.toDataURL('image/png');
+  link.click();
+}
+</script>
+</body>
+</html>
