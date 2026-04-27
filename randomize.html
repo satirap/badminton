@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>🎲 สุ่มทีม — ก๊วนอยากตีแบด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0c0d10;--card:#16181d;--card2:#1c1e24;--input:#1e2028;--border:#2e3038;
+  --ink:#f5f3ee;--soft:#c9c7c0;--mute:#8e8c85;--accent:#c8f135;
+  --radius:14px;--rsm:10px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh}
+
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 100px}
+
+/* ── Header ── */
+.header-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:18px 20px;margin:16px 0 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15;white-space:nowrap}
+.brand span{color:var(--accent)}
+.brand-sub{font-size:11px;font-weight:600;color:var(--mute);margin-top:2px;letter-spacing:.02em}
+
+/* ── Section ── */
+.section{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:16px;margin-bottom:14px;
+}
+.section-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:12px;
+}
+.section-title{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.01em}
+.section-sub{font-size:11px;color:var(--mute);font-weight:600;font-family:'IBM Plex Mono',monospace}
+
+/* ── Team count picker ── */
+.tc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tc-btn{
+  appearance:none;border:2px solid var(--border);background:var(--input);color:var(--soft);
+  border-radius:var(--rsm);padding:14px 8px;cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:800;
+  -webkit-tap-highlight-color:transparent;transition:all .15s;
+}
+.tc-btn:active{transform:scale(.96)}
+.tc-btn.on{background:#c8f13518;border-color:var(--accent);color:var(--accent)}
+.tc-btn small{display:block;font-size:11px;font-weight:600;opacity:.75;margin-top:2px}
+
+/* ── Team chips ── */
+.team-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.team-chip{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;
+  border:1.5px solid var(--border);border-radius:100px;
+  background:var(--card2);font-size:14px;font-weight:700;
+}
+.team-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+
+/* ── Player picker ── */
+.player-tools{display:flex;gap:8px;margin-bottom:10px}
+.player-tools input{
+  flex:1;padding:10px 14px;border-radius:var(--rsm);
+  border:1.5px solid var(--border);background:var(--input);color:var(--ink);
+  font-family:inherit;font-size:15px;outline:none;
+}
+.player-tools input:focus{border-color:var(--accent)}
+.player-tools button{
+  padding:10px 14px;border-radius:var(--rsm);border:1.5px solid var(--border);
+  background:transparent;color:var(--soft);font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;
+}
+.player-tools button:active{background:var(--card2)}
+
+.player-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:340px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.p-card{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border:1.5px solid var(--border);border-radius:var(--rsm);background:var(--card2);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .12s;user-select:none;
+  min-width:0;
+}
+.p-card:active{transform:scale(.97)}
+.p-card.on{border-color:var(--accent);background:#c8f13512}
+.p-card .p-pic{width:28px;height:28px;border-radius:50%;background:var(--input);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden}
+.p-card .p-pic img{width:100%;height:100%;object-fit:cover}
+.p-card .p-name{font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.p-card .p-tick{margin-left:auto;font-size:14px;color:var(--accent);opacity:0;flex-shrink:0}
+.p-card.on .p-tick{opacity:1}
+
+.empty-msg{text-align:center;padding:24px;color:var(--mute);font-size:13px;grid-column:1/-1}
+
+/* ── Action buttons ── */
+.action-bar{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.btn-primary{
+  width:100%;padding:18px;border:none;border-radius:var(--radius);
+  background:var(--accent);color:#0c0d10;
+  font-family:inherit;font-size:17px;font-weight:800;letter-spacing:.02em;
+  cursor:pointer;transition:opacity .15s;-webkit-tap-highlight-color:transparent;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary:active{opacity:.85}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-secondary{
+  width:100%;padding:14px;border-radius:var(--radius);
+  border:1.5px solid var(--border);background:transparent;color:var(--soft);
+  font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.btn-secondary:active{background:var(--card)}
+
+/* ── Teams display (after random) ── */
+.team-card{
+  border:2px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:10px;
+}
+.team-card-head{
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
+}
+.team-card-dot{width:24px;height:24px;border-radius:50%;flex-shrink:0;border:2px solid #fff3}
+.team-card-name{font-size:18px;font-weight:800;color:var(--ink)}
+.team-card-count{font-size:12px;color:var(--mute);font-weight:600;margin-left:auto}
+.team-card-members{display:flex;flex-wrap:wrap;gap:6px}
+.team-member{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 10px;
+  background:var(--card2);border:1px solid var(--border);border-radius:100px;
+  font-size:13px;font-weight:700;
+}
+.team-member .tm-pic{width:22px;height:22px;border-radius:50%;background:var(--input);overflow:hidden;display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.team-member .tm-pic img{width:100%;height:100%;object-fit:cover}
+
+/* ── Match play ── */
+.score-bar{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;
+  margin-bottom:14px;
+}
+.score-card{
+  border:2px solid var(--border);border-radius:var(--rsm);padding:10px 8px;text-align:center;
+}
+.score-card .sc-num{font-family:'Instrument Serif',serif;font-size:34px;line-height:1;color:var(--ink)}
+.score-card .sc-name{font-size:12px;font-weight:800;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:4px}
+.score-card .sc-dot{width:10px;height:10px;border-radius:50%}
+
+.match-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:18px;text-align:center;
+}
+.match-no{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--mute);letter-spacing:.08em;text-transform:uppercase}
+.match-side{margin:14px 0}
+.match-side-team{
+  font-size:14px;font-weight:800;letter-spacing:.02em;margin-bottom:6px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.match-side-team .ms-dot{width:14px;height:14px;border-radius:50%}
+.match-players{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.match-player{
+  padding:8px 14px;background:var(--card2);border:1.5px solid var(--border);
+  border-radius:100px;font-size:14px;font-weight:700;
+}
+.vs-divider{
+  font-family:'Instrument Serif',serif;font-size:36px;color:var(--accent);
+  margin:8px 0;line-height:1;
+}
+
+.match-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.match-btn{
+  padding:18px 12px;border:none;border-radius:var(--radius);cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:800;color:#fff;
+  -webkit-tap-highlight-color:transparent;transition:transform .12s;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+.match-btn:active{transform:scale(.96)}
+.match-btn small{font-size:11px;opacity:.85;font-weight:600}
+
+/* ── History ── */
+.history-list{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.history-item{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:var(--card2);border:1px solid var(--border);border-radius:8px;
+  font-size:12px;
+}
+.history-item.cur{border-color:var(--accent);background:#c8f13510}
+.history-no{font-family:'IBM Plex Mono',monospace;color:var(--mute);font-weight:700;flex-shrink:0;width:28px}
+.history-text{flex:1;color:var(--soft)}
+.history-text b{color:var(--ink);font-weight:800}
+.history-mark{font-size:14px;flex-shrink:0}
+
+/* ── Final result ── */
+.podium{margin-bottom:16px}
+.podium-card{
+  display:flex;align-items:center;gap:14px;padding:16px;
+  border:2px solid var(--border);border-radius:var(--radius);margin-bottom:8px;
+}
+.podium-card.first{
+  border-color:#fbbf24;background:linear-gradient(110deg,var(--card) 50%,#fbbf2418);
+}
+.podium-card.first .pd-medal{font-size:42px}
+.pd-medal{font-size:32px;flex-shrink:0;line-height:1}
+.pd-info{flex:1;min-width:0}
+.pd-team{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px}
+.pd-stats{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mute);margin-top:2px;font-weight:700}
+.pd-pts{font-family:'Instrument Serif',serif;font-size:36px;line-height:1;flex-shrink:0}
+.podium-card.first .pd-pts{color:#fbbf24;font-size:48px}
+
+.icecream-banner{
+  text-align:center;padding:24px 16px;background:linear-gradient(135deg,#fbbf2420,#c8f13520);
+  border:2px solid #fbbf24;border-radius:var(--radius);margin-bottom:16px;
+}
+.icecream-banner .ic-emoji{font-size:64px;line-height:1}
+.icecream-banner .ic-text{font-size:17px;font-weight:800;margin-top:8px;color:#fcd34d}
+.icecream-banner .ic-team{font-size:22px;font-weight:800;margin-top:4px;color:var(--accent)}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--accent);color:#0c0d10;padding:13px 24px;border-radius:100px;
+  font-size:14px;font-weight:800;opacity:0;
+  transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
+  z-index:99;pointer-events:none;box-shadow:0 8px 24px #000a;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.spin{animation:spin .6s linear}
+
+/* ── View transitions ── */
+.view{display:none}
+.view.active{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header-card">
+    <div>
+      <div class="brand">ก๊วนอยาก<span>ตีแบด</span></div>
+      <div class="brand-sub">🎲 สุ่มทีม + จัดแข่ง</div>
+    </div>
+    <div style="font-size:48px;line-height:1">🎲</div>
+  </div>
+
+  <!-- ===== VIEW 1: SETUP ===== -->
+  <div id="view-setup" class="view active">
+
+    <!-- Step 1: Team count -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">1️⃣ จำนวนทีม</div>
+        <div class="section-sub" id="team-sub">2 TEAMS</div>
+      </div>
+      <div class="tc-row">
+        <button class="tc-btn" data-n="2">2 ทีม<small>ส้ม · แดง</small></button>
+        <button class="tc-btn" data-n="3">3 ทีม<small>+ เขียว</small></button>
+        <button class="tc-btn" data-n="4">4 ทีม<small>+ ฟ้า</small></button>
+      </div>
+      <div class="team-chips" id="team-chips"></div>
+    </div>
+
+    <!-- Step 2: Player picker -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">2️⃣ เลือกผู้เล่น</div>
+        <div class="section-sub" id="picked-sub">0/0</div>
+      </div>
+      <div class="player-tools">
+        <input id="player-search" type="text" placeholder="ค้นหาชื่อ..." autocomplete="off"/>
+        <button onclick="selectAllPlayers()">เลือกทั้งหมด</button>
+        <button onclick="clearAllPlayers()">ล้าง</button>
+      </div>
+      <div class="player-grid" id="player-grid">
+        <div class="empty-msg">⏳ กำลังโหลด...</div>
+      </div>
+    </div>
+
+    <!-- Match settings -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">3️⃣ กี่ตาต่อคู่</div>
+        <div class="section-sub" id="games-sub">3 GAMES</div>
+      </div>
+      <div class="tc-row">
+        <button class="gp-btn" data-g="1">1 ตา</button>
+        <button class="gp-btn" data-g="3">3 ตา</button>
+        <button class="gp-btn" data-g="5">5 ตา</button>
+      </div>
+      <div style="font-size:11px;color:var(--mute);margin-top:8px;line-height:1.6">
+        💡 จำนวนเกมที่แต่ละคู่ทีมจะแข่งกัน — มากขึ้นทุกคนได้เล่นมากขึ้น
+      </div>
+    </div>
+
+    <!-- Action -->
+    <div class="action-bar">
+      <button class="btn-primary" id="btn-shuffle" onclick="doShuffle()">
+        🎲 สุ่มแบ่งทีม
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ===== VIEW 2: TEAMS DISPLAY (before match) ===== -->
+  <div id="view-teams" class="view">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🎉 ผลการสุ่ม</div>
+        <div class="section-sub" id="teams-sub">—</div>
+      </div>
+      <div id="teams-display"></div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn-primary" onclick="startMatches()">⚔️ เริ่มแข่ง</button>
+      <button class="btn-secondary" onclick="doShuffle()">🔄 สุ่มใหม่</button>
+      <button class="btn-secondary" onclick="goToSetup()">← แก้ไขผู้เล่น</button>
+    </div>
+
+  </div>
+
+  <!-- ===== VIEW 3: MATCH PLAY ===== -->
+  <div id="view-play" class="view">
+
+    <div class="score-bar" id="score-bar"></div>
+
+    <div class="match-card" id="match-card"></div>
+
+    <div class="action-bar" style="margin-top:12px">
+      <button class="btn-secondary" onclick="undoLastMatch()" id="btn-undo">↩️ ย้อนกลับตาที่แล้ว</button>
+    </div>
+
+    <div class="section" style="margin-top:14px">
+      <div class="section-head">
+        <div class="section-title">📋 ตารางแข่ง</div>
+        <div class="section-sub" id="matches-sub">—</div>
+      </div>
+      <div class="history-list" id="matches-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ===== VIEW 4: FINAL RESULT ===== -->
+  <div id="view-result" class="view">
+
+    <div class="icecream-banner" id="ice-banner"></div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">🏆 ผลการแข่งขัน</div>
+      </div>
+      <div class="podium" id="podium"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">📋 ผลทุกตา</div>
+      </div>
+      <div class="history-list" id="result-history"></div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn-primary" onclick="resetAll()">🔄 เล่นรอบใหม่</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const FIREBASE_CONFIG = {
+  apiKey:'AIzaSyCi2kIvaA9zk_2whDe-SlHW9ngnVWuIhEQ',
+  authDomain:'badminton-642a3.firebaseapp.com',
+  projectId:'badminton-642a3',
+  storageBucket:'badminton-642a3.firebasestorage.app',
+  messagingSenderId:'65806979876',
+  appId:'1:65806979876:web:3ee9d17c6f0ede5b2819b1',
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const TEAM_COLORS = [
+  { key:'orange', label:'ส้ม',    hex:'#f97316', emoji:'🟠' },
+  { key:'red',    label:'แดง',    hex:'#ef4444', emoji:'🔴' },
+  { key:'green',  label:'เขียว',  hex:'#22c55e', emoji:'🟢' },
+  { key:'blue',   label:'ฟ้า',    hex:'#3b82f6', emoji:'🔵' },
+  { key:'yellow', label:'เหลือง', hex:'#eab308', emoji:'🟡' },
+  { key:'purple', label:'ม่วง',   hex:'#a855f7', emoji:'🟣' },
+];
+
+const STATE = {
+  view:           'setup',
+  numTeams:       2,
+  gamesPerPair:   3,
+  allPlayers:     [],         // จาก Firestore
+  selectedIds:    new Set(),  // ที่เลือก
+  searchQuery:    '',
+  teams:          [],         // [{idx, color, name, players:[player]}]
+  matches:        [],         // [{idx, teamA, teamB, playersA:[], playersB:[], winner:'A'|'B'|null}]
+  currentMatch:   0,
+};
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function escHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(m,d=2000){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),d)}
+
+/** Fisher-Yates shuffle (in-place) */
+function shuffle(arr){
+  for(let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/* ================================================================
+   LOAD PLAYERS FROM FIRESTORE
+   ================================================================ */
+async function loadAllPlayers(){
+  try{
+    const snap = await db.collection('players').orderBy('name').get();
+    STATE.allPlayers = snap.docs.map(d => d.data())
+      .filter(p => p.name)
+      .map(p => ({ id: p.id, name: p.name, pictureUrl: p.pictureUrl || '' }));
+    renderPlayerGrid();
+    updatePickedSub();
+  }catch(e){
+    console.error(e);
+    $('#player-grid').innerHTML = `<div class="empty-msg" style="color:#f87171">โหลดสมาชิกไม่ได้: ${e.message}</div>`;
+  }
+}
+
+/* ================================================================
+   VIEW 1: SETUP — Team count
+   ================================================================ */
+function selectTeamCount(n){
+  STATE.numTeams = n;
+  $$('.tc-btn').forEach(b => b.classList.toggle('on', +b.dataset.n === n));
+  $('#team-sub').textContent = `${n} TEAMS`;
+  renderTeamChips();
+}
+
+function renderTeamChips(){
+  const colors = TEAM_COLORS.slice(0, STATE.numTeams);
+  $('#team-chips').innerHTML = colors.map(c =>
+    `<div class="team-chip">
+      <span class="team-dot" style="background:${c.hex}"></span>
+      <span>ทีม${c.label}</span>
+    </div>`
+  ).join('');
+}
+
+/* Games per pair */
+function selectGamesPerPair(g){
+  STATE.gamesPerPair = g;
+  $$('.gp-btn').forEach(b => b.classList.toggle('on', +b.dataset.g === g));
+  $('#games-sub').textContent = `${g} GAMES`;
+}
+
+/* ================================================================
+   VIEW 1: SETUP — Player picker
+   ================================================================ */
+function renderPlayerGrid(){
+  const q = STATE.searchQuery.toLowerCase().trim();
+  const filtered = q ? STATE.allPlayers.filter(p => (p.name||'').toLowerCase().includes(q)) : STATE.allPlayers;
+  const grid = $('#player-grid');
+  if(!filtered.length){
+    grid.innerHTML = `<div class="empty-msg">${STATE.allPlayers.length === 0 ? 'ไม่มีสมาชิกในระบบ' : 'ไม่พบชื่อนี้'}</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(p => {
+    const on = STATE.selectedIds.has(p.id);
+    const pic = p.pictureUrl
+      ? `<img src="${escHtml(p.pictureUrl)}" alt=""/>`
+      : '👤';
+    return `<div class="p-card ${on?'on':''}" data-id="${escHtml(p.id)}" onclick="togglePlayer('${escHtml(p.id)}')">
+      <span class="p-pic">${pic}</span>
+      <span class="p-name">${escHtml(p.name)}</span>
+      <span class="p-tick">✓</span>
+    </div>`;
+  }).join('');
+}
+
+function togglePlayer(id){
+  if(STATE.selectedIds.has(id)) STATE.selectedIds.delete(id);
+  else STATE.selectedIds.add(id);
+  renderPlayerGrid();
+  updatePickedSub();
+}
+
+function selectAllPlayers(){
+  const q = STATE.searchQuery.toLowerCase().trim();
+  const list = q ? STATE.allPlayers.filter(p => (p.name||'').toLowerCase().includes(q)) : STATE.allPlayers;
+  list.forEach(p => STATE.selectedIds.add(p.id));
+  renderPlayerGrid();
+  updatePickedSub();
+}
+
+function clearAllPlayers(){
+  STATE.selectedIds.clear();
+  renderPlayerGrid();
+  updatePickedSub();
+}
+
+function updatePickedSub(){
+  $('#picked-sub').textContent = `${STATE.selectedIds.size}/${STATE.allPlayers.length}`;
+}
+
+/* ================================================================
+   SHUFFLE — แบ่งผู้เล่นเป็น N ทีม
+   ================================================================ */
+function doShuffle(){
+  const sel = STATE.allPlayers.filter(p => STATE.selectedIds.has(p.id));
+  if(sel.length < STATE.numTeams * 2){
+    toast(`ต้องมีอย่างน้อย ${STATE.numTeams * 2} คน (ทีมละ 2)`);
+    return;
+  }
+
+  // Shuffle players randomly
+  const pool = shuffle([...sel]);
+  // Snake-distribute เพื่อให้ทีมขนาดต่างกันไม่เกิน 1
+  const buckets = Array.from({length: STATE.numTeams}, () => []);
+  pool.forEach((p, i) => {
+    const round = Math.floor(i / STATE.numTeams);
+    const idxInRound = i % STATE.numTeams;
+    const teamIdx = round % 2 === 0 ? idxInRound : (STATE.numTeams - 1 - idxInRound);
+    buckets[teamIdx].push(p);
+  });
+
+  STATE.teams = buckets.map((players, i) => ({
+    idx:    i,
+    color:  TEAM_COLORS[i],
+    name:   `ทีม${TEAM_COLORS[i].label}`,
+    players,
+    wins:   0,
+  }));
+  STATE.matches = [];
+  STATE.currentMatch = 0;
+
+  showView('teams');
+  renderTeamsDisplay();
+
+  // Visual feedback
+  const btn = $('#btn-shuffle');
+  if(btn){ btn.classList.add('spin'); setTimeout(()=>btn.classList.remove('spin'), 600); }
+}
+
+function renderTeamsDisplay(){
+  $('#teams-sub').textContent = `${STATE.teams.length} ทีม · ${STATE.teams.reduce((s,t)=>s+t.players.length,0)} คน`;
+  $('#teams-display').innerHTML = STATE.teams.map(t => `
+    <div class="team-card" style="border-color:${t.color.hex}50">
+      <div class="team-card-head">
+        <span class="team-card-dot" style="background:${t.color.hex}"></span>
+        <span class="team-card-name">${escHtml(t.name)}</span>
+        <span class="team-card-count">${t.players.length} คน</span>
+      </div>
+      <div class="team-card-members">
+        ${t.players.map(p => `
+          <span class="team-member">
+            <span class="tm-pic">${p.pictureUrl ? `<img src="${escHtml(p.pictureUrl)}"/>` : '👤'}</span>
+            ${escHtml(p.name)}
+          </span>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ================================================================
+   GENERATE MATCHES — round-robin ระหว่างทีม
+   ================================================================ */
+function startMatches(){
+  // generate matches: round-robin pairs of teams; for each pair, 1 game by default (or user setting)
+  const matches = [];
+  let mIdx = 0;
+  // playCount tracker per player (for fair rotation)
+  const pc = {};
+  STATE.teams.forEach(t => t.players.forEach(p => pc[p.id] = 0));
+
+  for(let i = 0; i < STATE.teams.length; i++){
+    for(let j = i + 1; j < STATE.teams.length; j++){
+      const tA = STATE.teams[i];
+      const tB = STATE.teams[j];
+      for(let g = 0; g < STATE.gamesPerPair; g++){
+        const playersA = pickFair(tA.players, pc);
+        const playersB = pickFair(tB.players, pc);
+        playersA.forEach(p => pc[p.id]++);
+        playersB.forEach(p => pc[p.id]++);
+        matches.push({
+          idx: mIdx++,
+          teamA: tA.idx,
+          teamB: tB.idx,
+          playersA, playersB,
+          winner: null,
+        });
+      }
+    }
+  }
+  STATE.matches = shuffle(matches).map((m,i)=>({...m,idx:i})); // randomize order
+  STATE.currentMatch = 0;
+
+  showView('play');
+  renderMatchPlay();
+}
+
+/** เลือก 2 คนจากทีม โดยให้ playCount ต่ำสุดก่อน */
+function pickFair(players, pc){
+  if(players.length === 1) return [players[0]];
+  if(players.length === 2) return [players[0], players[1]];
+  // sort by playCount asc + random tiebreak
+  const sorted = [...players].sort((a,b) => {
+    const d = (pc[a.id]||0) - (pc[b.id]||0);
+    if(d !== 0) return d;
+    return Math.random() - 0.5;
+  });
+  return sorted.slice(0, 2);
+}
+
+/* ================================================================
+   VIEW 3: MATCH PLAY
+   ================================================================ */
+function renderMatchPlay(){
+  renderScoreBar();
+  renderCurrentMatch();
+  renderMatchesList();
+  $('#btn-undo').style.display = STATE.matches.some(m => m.winner) ? 'block' : 'none';
+}
+
+function renderScoreBar(){
+  $('#score-bar').innerHTML = STATE.teams.map(t => `
+    <div class="score-card" style="border-color:${t.color.hex}80">
+      <div class="sc-num" style="color:${t.color.hex}">${t.wins}</div>
+      <div class="sc-name"><span class="sc-dot" style="background:${t.color.hex}"></span>${escHtml(t.name)}</div>
+    </div>
+  `).join('');
+}
+
+function renderCurrentMatch(){
+  const m = STATE.matches[STATE.currentMatch];
+  if(!m){
+    // all done
+    finishMatches();
+    return;
+  }
+  const tA = STATE.teams[m.teamA];
+  const tB = STATE.teams[m.teamB];
+  $('#match-card').innerHTML = `
+    <div class="match-no">ตา ${STATE.currentMatch + 1} / ${STATE.matches.length}</div>
+    <div class="match-side">
+      <div class="match-side-team" style="color:${tA.color.hex}">
+        <span class="ms-dot" style="background:${tA.color.hex}"></span>${escHtml(tA.name)}
+      </div>
+      <div class="match-players">
+        ${m.playersA.map(p => `<span class="match-player" style="border-color:${tA.color.hex}50">${escHtml(p.name)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="match-side">
+      <div class="match-side-team" style="color:${tB.color.hex}">
+        <span class="ms-dot" style="background:${tB.color.hex}"></span>${escHtml(tB.name)}
+      </div>
+      <div class="match-players">
+        ${m.playersB.map(p => `<span class="match-player" style="border-color:${tB.color.hex}50">${escHtml(p.name)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="match-buttons">
+      <button class="match-btn" style="background:${tA.color.hex}" onclick="recordWin('A')">
+        🏆 ${escHtml(tA.name)} ชนะ
+      </button>
+      <button class="match-btn" style="background:${tB.color.hex}" onclick="recordWin('B')">
+        🏆 ${escHtml(tB.name)} ชนะ
+      </button>
+    </div>
+  `;
+}
+
+function recordWin(side){
+  const m = STATE.matches[STATE.currentMatch];
+  if(!m) return;
+  m.winner = side;
+  STATE.teams[side === 'A' ? m.teamA : m.teamB].wins++;
+  STATE.currentMatch++;
+  renderMatchPlay();
+}
+
+function undoLastMatch(){
+  if(STATE.currentMatch === 0) return;
+  STATE.currentMatch--;
+  const m = STATE.matches[STATE.currentMatch];
+  if(m.winner){
+    STATE.teams[m.winner === 'A' ? m.teamA : m.teamB].wins--;
+    m.winner = null;
+  }
+  renderMatchPlay();
+}
+
+function renderMatchesList(){
+  $('#matches-sub').textContent = `${STATE.matches.filter(m=>m.winner).length}/${STATE.matches.length}`;
+  $('#matches-list').innerHTML = STATE.matches.map((m, i) => {
+    const tA = STATE.teams[m.teamA], tB = STATE.teams[m.teamB];
+    let mark = '⏳';
+    let extra = '';
+    if(m.winner){
+      const w = m.winner === 'A' ? tA : tB;
+      mark = '✅';
+      extra = ` → <b style="color:${w.color.hex}">${escHtml(w.name)}</b>`;
+    }
+    const cls = i === STATE.currentMatch && !m.winner ? 'cur' : '';
+    return `<div class="history-item ${cls}">
+      <div class="history-no">${i+1}</div>
+      <div class="history-text">
+        <b style="color:${tA.color.hex}">${escHtml(tA.name)}</b> vs
+        <b style="color:${tB.color.hex}">${escHtml(tB.name)}</b>
+        ${extra}
+      </div>
+      <div class="history-mark">${mark}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   VIEW 4: FINAL RESULT
+   ================================================================ */
+function finishMatches(){
+  showView('result');
+  renderResult();
+}
+
+function renderResult(){
+  const ranked = [...STATE.teams].sort((a,b)=>b.wins-a.wins);
+  const top = ranked[0];
+  const tied = ranked.filter(t => t.wins === top.wins);
+
+  // Ice cream banner
+  if(tied.length === 1){
+    $('#ice-banner').innerHTML = `
+      <div class="ic-emoji">🍦</div>
+      <div class="ic-text">ไอติมจากท่านประธาน</div>
+      <div class="ic-team" style="color:${top.color.hex}">🏆 ${escHtml(top.name)}</div>
+    `;
+  } else {
+    $('#ice-banner').innerHTML = `
+      <div class="ic-emoji">🤝</div>
+      <div class="ic-text">เสมอ! แบ่งไอติมเท่ากัน</div>
+      <div class="ic-team">${tied.map(t => `<span style="color:${t.color.hex}">${escHtml(t.name)}</span>`).join(' · ')}</div>
+    `;
+  }
+
+  // Podium
+  $('#podium').innerHTML = ranked.map((t, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+    return `<div class="podium-card ${i===0?'first':''}">
+      <div class="pd-medal">${medal}</div>
+      <div class="pd-info">
+        <div class="pd-team"><span class="team-card-dot" style="background:${t.color.hex};width:18px;height:18px"></span>${escHtml(t.name)}</div>
+        <div class="pd-stats">${t.players.length} คน · ${t.players.map(p=>p.name).join(', ')}</div>
+      </div>
+      <div class="pd-pts" style="color:${t.color.hex}">${t.wins}</div>
+    </div>`;
+  }).join('');
+
+  // History
+  $('#result-history').innerHTML = STATE.matches.map((m, i) => {
+    const tA = STATE.teams[m.teamA], tB = STATE.teams[m.teamB];
+    const w = m.winner === 'A' ? tA : tB;
+    return `<div class="history-item">
+      <div class="history-no">${i+1}</div>
+      <div class="history-text">
+        <b style="color:${tA.color.hex}">${escHtml(tA.name)}</b> vs
+        <b style="color:${tB.color.hex}">${escHtml(tB.name)}</b>
+        → <b style="color:${w.color.hex}">${escHtml(w.name)} ชนะ</b>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ================================================================
+   VIEW NAVIGATION
+   ================================================================ */
+function showView(name){
+  STATE.view = name;
+  $$('.view').forEach(v => v.classList.remove('active'));
+  $(`#view-${name}`).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function goToSetup(){ showView('setup'); }
+
+function resetAll(){
+  STATE.teams = [];
+  STATE.matches = [];
+  STATE.currentMatch = 0;
+  showView('setup');
+}
+
+/* ================================================================
+   EVENT WIRING
+   ================================================================ */
+$$('.tc-btn').forEach(b => b.addEventListener('click', () => selectTeamCount(+b.dataset.n)));
+$$('.gp-btn').forEach(b => b.addEventListener('click', () => selectGamesPerPair(+b.dataset.g)));
+$('#player-search').addEventListener('input', e => {
+  STATE.searchQuery = e.target.value;
+  renderPlayerGrid();
+});
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+selectTeamCount(2);
+selectGamesPerPair(3);
+loadAllPlayers();
+</script>
+</body>
+</html>
