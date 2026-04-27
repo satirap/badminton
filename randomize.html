@@ -89,6 +89,13 @@ body{min-height:100dvh}
 }
 .p-card:active{transform:scale(.97)}
 .p-card.on{border-color:var(--accent);background:#c8f13512}
+.p-card.guest{border-style:dashed}
+.p-card.guest .p-pic{background:#fbbf2422;border:1.5px solid #fbbf2460}
+.p-card.guest .p-name::after{content:' ✨';font-size:11px;opacity:.85}
+.btn-add-guest{
+  background:#fbbf2422!important;border-color:#fbbf2460!important;
+  color:#fcd34d!important;font-weight:800!important;
+}
 .p-card .p-pic{width:28px;height:28px;border-radius:50%;background:var(--input);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden}
 .p-card .p-pic img{width:100%;height:100%;object-fit:cover}
 .p-card .p-name{font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -275,6 +282,10 @@ body{min-height:100dvh}
         <input id="player-search" type="text" placeholder="ค้นหาชื่อ..." autocomplete="off"/>
         <button onclick="selectAllPlayers()">เลือกทั้งหมด</button>
         <button onclick="clearAllPlayers()">ล้าง</button>
+      </div>
+      <div class="player-tools" style="margin-top:8px">
+        <input id="guest-name" type="text" placeholder="+ เพิ่มชื่อเอง (ผู้เล่นรับเชิญ)..." autocomplete="off" maxlength="30"/>
+        <button class="btn-add-guest" onclick="addGuestPlayer()">+ เพิ่ม</button>
       </div>
       <div class="player-grid" id="player-grid">
         <div class="empty-msg">⏳ กำลังโหลด...</div>
@@ -488,15 +499,48 @@ function renderPlayerGrid(){
   }
   grid.innerHTML = filtered.map(p => {
     const on = STATE.selectedIds.has(p.id);
+    const isGuest = !!p._guest;
     const pic = p.pictureUrl
       ? `<img src="${escHtml(p.pictureUrl)}" alt=""/>`
-      : '👤';
-    return `<div class="p-card ${on?'on':''}" data-id="${escHtml(p.id)}" onclick="togglePlayer('${escHtml(p.id)}')">
+      : (isGuest ? '👥' : '👤');
+    return `<div class="p-card ${on?'on':''} ${isGuest?'guest':''}" data-id="${escHtml(p.id)}" onclick="togglePlayer('${escHtml(p.id)}')">
       <span class="p-pic">${pic}</span>
       <span class="p-name">${escHtml(p.name)}</span>
       <span class="p-tick">✓</span>
     </div>`;
   }).join('');
+}
+
+/** เพิ่มผู้เล่นรับเชิญ (guest) ลงในรายการ + auto-select */
+function addGuestPlayer(){
+  const inp = document.getElementById('guest-name');
+  const name = (inp.value || '').trim();
+  if(!name){ inp.focus(); return; }
+  // ห้ามชื่อซ้ำกับที่มีอยู่
+  if(STATE.allPlayers.some(p => p.name === name)){
+    toast('มีชื่อนี้อยู่แล้ว');
+    return;
+  }
+  const guest = {
+    id:         'guest-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6),
+    name:       name,
+    pictureUrl: '',
+    _guest:     true,
+  };
+  STATE.allPlayers.push(guest);
+  // sort ใหม่ตาม name
+  STATE.allPlayers.sort((a,b) => (a.name||'').localeCompare(b.name||'', 'th'));
+  // auto-select
+  STATE.selectedIds.add(guest.id);
+  inp.value = '';
+  // ล้าง search ด้วย เพื่อให้เห็นชื่อที่เพิ่งเพิ่ม
+  STATE.searchQuery = '';
+  $('#player-search').value = '';
+  renderPlayerGrid();
+  updatePickedSub();
+  toast(`เพิ่ม "${name}" แล้ว ✨`);
+  // scroll ไปที่ input
+  inp.focus();
 }
 
 function togglePlayer(id){
@@ -819,6 +863,9 @@ $$('.gp-btn').forEach(b => b.addEventListener('click', () => selectGamesPerPair(
 $('#player-search').addEventListener('input', e => {
   STATE.searchQuery = e.target.value;
   renderPlayerGrid();
+});
+$('#guest-name').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); addGuestPlayer(); }
 });
 
 /* ================================================================
