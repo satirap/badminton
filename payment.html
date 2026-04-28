@@ -1230,7 +1230,7 @@ function buildPaymentFlex(d){
       type:'box', layout:'vertical', paddingAll:'16px',
       backgroundColor:'#16181d',
       contents:[
-        { type:'text', text:'🏸 สรุปค่าคอร์ทแบด', color:'#c8f135', weight:'bold', size:'md' },
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#c8f135', weight:'bold', size:'md' },
         { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
       ]
     },
@@ -1359,7 +1359,7 @@ function buildPriceFlex(s){
     header:{
       type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
       contents:[
-        { type:'text', text:'🏸 ก๊วนแบดวันนี้', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#c8f135', weight:'bold', size:'lg' },
         { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
       ]
     },
@@ -1522,7 +1522,7 @@ async function sharePriceCurrent(){
     return;
   }
   const pp = Math.ceil(totalCost / total);
-  const altText = `🏸 ก๊วนแบดวันนี้ · ${total} คน · เฉลี่ย ${fmtBaht(pp)} บาท/คน`;
+  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${total} คน · เฉลี่ย ${fmtBaht(pp)} บาท/คน`;
   const btn = document.querySelector('.btn-share-line.price');
   await shareLineFlex(buildPriceFlex(session), altText, btn);
 }
@@ -1566,7 +1566,7 @@ async function shareCurrentSession(){
     }
 
     const flex = buildPaymentFlex(_viewingSession);
-    const altText = `สรุปค่าคอร์ทแบด ${_viewingSession.dateDisplay||''} · เฉลี่ย ${fmtBaht(_viewingSession.perPerson||0)} บาท/คน`;
+    const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${_viewingSession.dateDisplay||''} · เฉลี่ย ${fmtBaht(_viewingSession.perPerson||0)} บาท/คน`;
 
     btn.textContent = '⏳ เลือกผู้รับ...';
     const res = await liff.shareTargetPicker([
