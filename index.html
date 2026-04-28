@@ -52,11 +52,17 @@ body{
 /* ---- Splash ---- */
 #splash{
   position:fixed;inset:0;z-index:200;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
   transition:opacity .4s ease;
 }
 #splash.hide{opacity:0;pointer-events:none}
-#splash .logo{font-family:'Instrument Serif',serif;font-size:48px;letter-spacing:-.03em}
+#splash .logo-img{
+  width:min(72vw,300px);height:auto;display:block;
+  filter:drop-shadow(0 8px 28px #c8f13530);
+  animation:logoIn .6s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes logoIn{from{opacity:0;transform:scale(.85) translateY(10px)}to{opacity:1;transform:none}}
+#splash .logo{font-family:'Instrument Serif',serif;font-size:36px;letter-spacing:-.02em;text-align:center;line-height:1.1;margin-top:4px}
 #splash .dot{display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:50%;margin:0 1px 6px 2px}
 #splash .sub{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
 @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
@@ -372,7 +378,7 @@ section.view.active{display:block}
      SPLASH SCREEN
      ================================================================ -->
 <div id="splash">
-  <div class="logo">ก๊วนอยากตี ต้องได้ตี</div>
+  <img class="logo-img" src="logo.png" alt="ก๊วนอยากตี ต้องได้ตี"/>
   <div class="sub loading">กำลังโหลด...</div>
 </div>
 
@@ -382,7 +388,7 @@ section.view.active{display:block}
        LOGIN SCREEN
        ================================================================ -->
   <section id="view-login" class="view">
-    <div class="hero">ก๊วนอยากตี ต้องได้ตี</div>
+    <img src="logo.png" alt="ก๊วนอยากตี ต้องได้ตี" style="display:block;width:min(78vw,320px);height:auto;margin:24px auto 8px;filter:drop-shadow(0 12px 32px #c8f13540)"/>
     <p class="tagline">สแกน QR ที่สนาม → เข้าสู่ระบบด้วย LINE → เก็บคะแนนแบดมินตัน</p>
     <div class="login-wrap">
       <button class="btn line-btn" id="btn-line-login">
@@ -398,7 +404,7 @@ section.view.active{display:block}
   <div id="app-main" style="display:none">
 
     <header class="header">
-      <div class="brand">ก๊วนอยากตี ต้องได้ตี</div>
+      <div class="brand" style="display:flex;align-items:center;gap:10px"><img src="logo-small.png" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:contain;flex-shrink:0"/><span style="font-size:18px;font-weight:800;font-family:'DM Sans',sans-serif;letter-spacing:0;line-height:1.1">ก๊วนอยากตี<br/><span style="color:var(--accent)">ต้องได้ตี</span></span></div>
       <div class="user-info">
         <span class="uname" id="display-name">—</span>
         <img id="display-pic" src="" alt="profile" style="display:none" />
