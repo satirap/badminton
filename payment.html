@@ -230,6 +230,28 @@ body{min-height:100dvh}
 }
 .add-form .add-btn:active{opacity:.8}
 
+/* ── Share-to-LINE card ── */
+.share-card{
+  background:var(--card);border:1.5px solid #06c75550;
+  border-radius:var(--radius);padding:14px 16px;margin-top:14px;
+}
+.share-card-head{
+  font-size:12px;font-weight:800;color:#06c755;letter-spacing:.08em;
+  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;
+}
+.btn-share-line{
+  width:100%;padding:14px 16px;border:none;border-radius:var(--rsm);
+  background:#06c755;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  -webkit-tap-highlight-color:transparent;transition:opacity .15s;margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.btn-share-line:last-child{margin-bottom:0}
+.btn-share-line:active{opacity:.8}
+.btn-share-line.status{background:#3b82f6}
+.btn-share-line small{font-size:11px;font-weight:600;opacity:.85}
+
 /* ── Action buttons ── */
 .action-row{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .btn-complete{
@@ -492,6 +514,17 @@ body{min-height:100dvh}
     <div class="add-form">
       <input type="text" id="name-input" placeholder="ชื่อสมาชิก..." maxlength="30" autocomplete="off"/>
       <button class="add-btn" onclick="addPlayer()">+ เพิ่ม</button>
+    </div>
+
+    <!-- Share to LINE -->
+    <div class="share-card">
+      <div class="share-card-head">📲 ส่งเข้าไลน์</div>
+      <button class="btn-share-line price" onclick="sharePriceCurrent()">
+        📢 แจ้งราคาก๊วน <small>(ค่าใช้จ่าย + QR โอน)</small>
+      </button>
+      <button class="btn-share-line status" onclick="shareStatusCurrent()">
+        📊 สรุปการจ่ายเงิน <small>(ใครจ่ายแล้ว / ยังไม่จ่าย)</small>
+      </button>
     </div>
 
     <!-- Actions -->
@@ -1267,6 +1300,244 @@ let _liffInitPromise = null;
 function ensureLiff(){
   if(!_liffInitPromise) _liffInitPromise = liff.init({ liffId: LIFF_ID });
   return _liffInitPromise;
+}
+
+/* ================================================================
+   FLEX: PRICE ANNOUNCEMENT — บอกราคาก๊วน + QR โอน
+   ================================================================ */
+const QR_PAYMENT_URL = 'https://satirap.github.io/badminton/qr-payment.png';
+
+function buildPriceFlex(s){
+  const players      = s.players || [];
+  const total        = players.length;
+  const courtFee     = s.courtFee     || 0;
+  const shuttlePrice = s.shuttlePrice || 0;
+  const shuttleCount = s.shuttleCount || 0;
+  const shuttleTotal = shuttlePrice * shuttleCount;
+  const totalCost    = courtFee + shuttleTotal;
+  const pp           = total > 0 ? Math.ceil(totalCost / total) : 0;
+  const dateStr      = s.dateDisplay || s.date || '';
+
+  const costRows = [];
+  if(courtFee > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:'🏟 ค่าคอร์ท', size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(courtFee)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  if(shuttleCount > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:`🏸 ลูกแบด ${shuttleCount}×${fmtBaht(shuttlePrice)}฿`, size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(shuttleTotal)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  costRows.push({
+    type:'box', layout:'horizontal', margin:'sm',
+    contents:[
+      { type:'text', text:'👥 สมาชิกวันนี้', size:'sm', color:'#555555', flex:5 },
+      { type:'text', text:`${total} คน`, size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+    ]
+  });
+  costRows.push({ type:'separator', margin:'md' });
+  costRows.push({
+    type:'box', layout:'horizontal', margin:'md',
+    contents:[
+      { type:'text', text:'รวมทั้งสิ้น', size:'md', weight:'bold', color:'#111111', flex:5 },
+      { type:'text', text:fmtBaht(totalCost)+' ฿', size:'md', weight:'bold', color:'#111111', align:'end', flex:4 },
+    ]
+  });
+
+  return {
+    type:'bubble',
+    size:'mega',
+    header:{
+      type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนแบดวันนี้', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
+      ]
+    },
+    body:{
+      type:'box', layout:'vertical', paddingAll:'16px', spacing:'none',
+      contents:[
+        { type:'text', text:'💰 ค่าใช้จ่าย', size:'xs', color:'#8e8c85', weight:'bold' },
+        ...costRows,
+        // Per-person highlight
+        {
+          type:'box', layout:'vertical', backgroundColor:'#c8f135',
+          cornerRadius:'12px', paddingAll:'16px', margin:'lg',
+          contents:[
+            { type:'text', text:'💸 เฉลี่ยต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
+            { type:'text', text:`${fmtBaht(pp)} บาท`, color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'sm' },
+          ]
+        },
+        // QR section
+        { type:'separator', margin:'xl' },
+        { type:'text', text:'📲 โอนได้ที่ QR Code ด้านล่าง', size:'sm', weight:'bold', color:'#3b82f6', align:'center', margin:'lg' },
+        { type:'image', url:QR_PAYMENT_URL, size:'full', aspectRatio:'1:1', aspectMode:'fit', margin:'md' },
+      ]
+    },
+    footer:{
+      type:'box', layout:'vertical', paddingAll:'12px', backgroundColor:'#f5f3ee',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
+      ]
+    }
+  };
+}
+
+/* ================================================================
+   FLEX: PAYMENT STATUS — ใครจ่ายแล้ว/ยังไม่จ่าย
+   ================================================================ */
+function buildStatusFlex(s){
+  const players  = s.players || [];
+  const cashList = players.filter(p => p.cash);
+  const tranList = players.filter(p => p.transfer);
+  const unpaid   = players.filter(p => !p.cash && !p.transfer);
+  const total    = players.length;
+  const paidN    = cashList.length + tranList.length;
+  const dateStr  = s.dateDisplay || s.date || '';
+  const pp       = s.perPerson || (total > 0 ? Math.ceil(((s.courtFee||0) + (s.shuttlePrice||0)*(s.shuttleCount||0)) / total) : 0);
+
+  const playerRow = (p, status) => ({
+    type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
+    contents:[
+      { type:'text', text:status.icon, size:'sm', flex:1, color:status.color },
+      { type:'text', text:p.name||'—', size:'sm', color:'#111111', weight:'bold', flex:6, wrap:true },
+      { type:'text', text:status.label, size:'xs', weight:'bold', color:status.color, align:'end', flex:4 },
+    ]
+  });
+
+  const sections = [];
+
+  // Cash + Transfer = paid
+  if(paidN > 0){
+    sections.push({ type:'text', text:`✅ จ่ายแล้ว (${paidN} คน)`, size:'sm', color:'#16a34a', weight:'bold', margin:'md' });
+    cashList.forEach(p => sections.push(playerRow(p, {icon:'💵', label:'เงินสด', color:'#16a34a'})));
+    tranList.forEach(p => sections.push(playerRow(p, {icon:'📲', label:'โอน',    color:'#3b82f6'})));
+  }
+  // Unpaid
+  if(unpaid.length > 0){
+    sections.push({ type:'separator', margin:'lg' });
+    sections.push({ type:'text', text:`⏳ ยังไม่จ่าย (${unpaid.length} คน)`, size:'sm', color:'#d97706', weight:'bold', margin:'md' });
+    unpaid.forEach(p => sections.push(playerRow(p, {icon:'⬜', label:'ค้างจ่าย', color:'#d97706'})));
+  }
+  if(!paidN && !unpaid.length){
+    sections.push({ type:'text', text:'ยังไม่มีรายชื่อ', size:'sm', color:'#888', align:'center', margin:'md' });
+  }
+
+  return {
+    type:'bubble',
+    size:'mega',
+    header:{
+      type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
+      contents:[
+        { type:'text', text:'📊 สรุปการจ่ายเงิน', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
+      ]
+    },
+    body:{
+      type:'box', layout:'vertical', paddingAll:'16px', spacing:'none',
+      contents:[
+        // Stats top
+        {
+          type:'box', layout:'horizontal', spacing:'sm',
+          contents:[
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#f0fdf4', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(cashList.length), size:'xl', weight:'bold', color:'#16a34a', align:'center' },
+              { type:'text', text:'💵 เงินสด', size:'xxs', color:'#166534', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#eff6ff', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(tranList.length), size:'xl', weight:'bold', color:'#3b82f6', align:'center' },
+              { type:'text', text:'📲 โอน', size:'xxs', color:'#1e40af', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#fffbeb', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(unpaid.length), size:'xl', weight:'bold', color:'#d97706', align:'center' },
+              { type:'text', text:'⬜ ค้าง', size:'xxs', color:'#92400e', align:'center' },
+            ]},
+          ]
+        },
+        { type:'box', layout:'horizontal', margin:'lg', contents:[
+          { type:'text', text:`💸 คนละ ${fmtBaht(pp)} บาท`, size:'sm', color:'#16181d', weight:'bold', align:'center' },
+        ]},
+        { type:'separator', margin:'md' },
+        ...sections,
+      ]
+    },
+    footer:{
+      type:'box', layout:'vertical', paddingAll:'12px', backgroundColor:'#f5f3ee',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
+      ]
+    }
+  };
+}
+
+/* ================================================================
+   SHARE: ปุ่มแจ้งราคา / สรุปการจ่ายเงิน — สำหรับ session ปัจจุบัน
+   ================================================================ */
+async function shareLineFlex(flex, altText, btnElem){
+  const orig = btnElem ? btnElem.innerHTML : '';
+  if(btnElem){ btnElem.disabled = true; btnElem.innerHTML = '⏳ กำลังเตรียม...'; }
+  try{
+    await ensureLiff();
+    if(!liff.isLoggedIn()){
+      if(confirm('ต้อง login LINE ก่อน · ไปหน้า login?')){
+        liff.login({ redirectUri: window.location.href });
+      }
+      return;
+    }
+    if(!liff.isApiAvailable('shareTargetPicker')){
+      toast('เบราว์เซอร์นี้แชร์ไม่ได้ · ต้องเปิดจาก LINE');
+      return;
+    }
+    if(btnElem) btnElem.innerHTML = '⏳ เลือกผู้รับ...';
+    const res = await liff.shareTargetPicker([
+      { type:'flex', altText, contents: flex }
+    ], { isMultiple: true });
+    toast(res ? '✅ ส่งเรียบร้อย' : 'ยกเลิกการแชร์');
+  }catch(e){
+    console.error('share error', e);
+    toast('แชร์ไม่ได้: ' + (e.message||'ลองใหม่'));
+  }finally{
+    if(btnElem){ btnElem.disabled = false; btnElem.innerHTML = orig; }
+  }
+}
+
+async function sharePriceCurrent(){
+  if(!session || !session.players || !session.players.length){
+    toast('ยังไม่มีรายชื่อสมาชิก');
+    return;
+  }
+  const total = session.players.length;
+  const totalCost = (session.courtFee||0) + (session.shuttlePrice||0)*(session.shuttleCount||0);
+  if(totalCost <= 0){
+    toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
+    return;
+  }
+  const pp = Math.ceil(totalCost / total);
+  const altText = `🏸 ก๊วนแบดวันนี้ · ${total} คน · เฉลี่ย ${fmtBaht(pp)} บาท/คน`;
+  const btn = document.querySelector('.btn-share-line.price');
+  await shareLineFlex(buildPriceFlex(session), altText, btn);
+}
+
+async function shareStatusCurrent(){
+  if(!session || !session.players || !session.players.length){
+    toast('ยังไม่มีรายชื่อสมาชิก');
+    return;
+  }
+  const cashN = session.players.filter(p=>p.cash).length;
+  const tranN = session.players.filter(p=>p.transfer).length;
+  const total = session.players.length;
+  const altText = `📊 สรุปการจ่าย · ${cashN+tranN}/${total} คน จ่ายแล้ว`;
+  const btn = document.querySelector('.btn-share-line.status');
+  await shareLineFlex(buildStatusFlex(session), altText, btn);
 }
 
 /** แชร์ session ที่เปิดดูอยู่ไปยัง LINE (group/friend) ผ่าน share target picker */
