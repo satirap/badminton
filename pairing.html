@@ -98,21 +98,26 @@ body{min-height:100dvh}
 }
 .player-row .del-btn:active{background:#ef444420;color:var(--red)}
 
-/* Suggestions dropdown */
-.suggest-box{
-  background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);
-  margin-bottom:10px;max-height:200px;overflow-y:auto;
+/* Member picker grid */
+.subtitle-line{font-size:12px;font-weight:700;color:var(--mute);margin:10px 0 6px;letter-spacing:.02em}
+.member-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;
+  max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:2px;
 }
-.suggest-row{
-  display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;
-  border-bottom:1px solid var(--border);
+.m-card{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;min-width:0;
+  border:1.5px solid var(--border);border-radius:var(--rsm);background:var(--card2);
+  cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:all .12s;
 }
-.suggest-row:last-child{border-bottom:none}
-.suggest-row:active,.suggest-row:hover{background:#c8f13510}
-.suggest-row .pic{width:24px;height:24px;border-radius:50%;background:var(--input);overflow:hidden}
-.suggest-row .pic img{width:100%;height:100%;object-fit:cover}
-.suggest-row .nm{flex:1;font-size:13px;font-weight:700}
-.suggest-row .hint{font-size:10px;color:var(--mute);font-family:'IBM Plex Mono',monospace}
+.m-card:active{transform:scale(.97)}
+.m-card.on{border-color:var(--accent);background:#c8f13512}
+.m-card .pic{width:26px;height:26px;border-radius:50%;background:var(--input);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:13px}
+.m-card .pic img{width:100%;height:100%;object-fit:cover}
+.m-card .nm{flex:1;font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.m-card .check{margin-left:auto;color:var(--accent);font-size:14px;opacity:0;flex-shrink:0;font-weight:800}
+.m-card.on .check{opacity:1}
 
 /* Action buttons */
 .action-bar{display:flex;flex-direction:column;gap:8px;margin-top:14px}
@@ -303,13 +308,27 @@ body{min-height:100dvh}
         <div class="section-title">2️⃣ ผู้เล่น</div>
         <div class="section-sub" id="players-sub">0 คน</div>
       </div>
+
+      <!-- Step 2A: Pick from members -->
+      <div class="subtitle-line">📋 เลือกจากสมาชิก (คลิก = เพิ่ม / คลิกซ้ำ = เอาออก)</div>
       <div class="player-tools">
-        <input id="player-input" type="text" placeholder="พิมพ์ชื่อสมาชิก/รับเชิญ..." autocomplete="off" maxlength="30"/>
-        <button class="btn-add" onclick="addPlayer()">+ เพิ่ม</button>
+        <input id="member-search" type="text" placeholder="🔍 ค้นหาสมาชิก..." autocomplete="off"/>
       </div>
-      <div id="suggest-wrap"></div>
+      <div class="member-grid" id="member-grid">
+        <div class="empty-msg" style="grid-column:1/-1">⏳ กำลังโหลดสมาชิก...</div>
+      </div>
+
+      <!-- Step 2B: Add guest (non-member) -->
+      <div class="subtitle-line">✨ หรือเพิ่มผู้เล่นรับเชิญ (ไม่เป็นสมาชิก)</div>
+      <div class="player-tools">
+        <input id="guest-input" type="text" placeholder="พิมพ์ชื่อ..." autocomplete="off" maxlength="30"/>
+        <button class="btn-add" onclick="addGuest()" style="background:#fbbf2422;color:#fcd34d;border:1.5px solid #fbbf2460">+ รับเชิญ</button>
+      </div>
+
+      <!-- Selected list -->
+      <div class="subtitle-line">👥 ผู้เล่นที่เลือก (<span id="picked-count">0</span> คน)</div>
       <div class="player-list" id="player-list">
-        <div class="empty-msg">ยังไม่มีผู้เล่น · เพิ่มได้เลย</div>
+        <div class="empty-msg">ยังไม่มีผู้เล่น · เลือกหรือเพิ่มได้เลย</div>
       </div>
     </div>
 
@@ -495,8 +514,11 @@ async function loadMembersIndex(){
     STATE.membersByName.forEach(m => {
       STATE.membersIndex[m.name.toLowerCase().trim()] = m;
     });
+    renderMemberGrid();
   }catch(e){
     console.error('load members', e);
+    const grid = $('#member-grid');
+    if(grid) grid.innerHTML = `<div class="empty-msg" style="grid-column:1/-1;color:#f87171">โหลดสมาชิกไม่ได้: ${e.message}</div>`;
   }
 }
 
@@ -527,61 +549,81 @@ function onCourtNumberChange(i, val){
 }
 
 /* ================================================================
-   SETUP: Player picker — auto-detect member from registered list
+   SETUP: Member picker (click to toggle)
    ================================================================ */
-function renderSuggestions(){
-  const q = ($('#player-input').value||'').trim().toLowerCase();
-  const wrap = $('#suggest-wrap');
-  if(!q){ wrap.innerHTML = ''; return; }
-  const matches = STATE.membersByName
-    .filter(m => m.name.toLowerCase().includes(q))
-    .filter(m => !STATE.players.some(p => p.lineUserId === m.id))
-    .slice(0, 5);
-  if(!matches.length){ wrap.innerHTML = ''; return; }
-  wrap.innerHTML = `<div class="suggest-box">${matches.map(m => `
-    <div class="suggest-row" onclick="addMemberById('${escHtml(m.id)}')">
-      <span class="pic">${m.pictureUrl ? `<img src="${escHtml(m.pictureUrl)}"/>` : '👤'}</span>
+function renderMemberGrid(){
+  const q = ($('#member-search')?.value||'').trim().toLowerCase();
+  const grid = $('#member-grid');
+  if(!grid) return;
+  if(!STATE.membersByName.length){
+    grid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1">ไม่มีสมาชิกในระบบ</div>';
+    return;
+  }
+  const list = q ? STATE.membersByName.filter(m => (m.name||'').toLowerCase().includes(q)) : STATE.membersByName;
+  if(!list.length){
+    grid.innerHTML = '<div class="empty-msg" style="grid-column:1/-1">ไม่พบ</div>';
+    return;
+  }
+  grid.innerHTML = list.map(m => {
+    const on = STATE.players.some(p => p.lineUserId === m.id);
+    const pic = m.pictureUrl ? `<img src="${escHtml(m.pictureUrl)}"/>` : '👤';
+    return `<div class="m-card ${on?'on':''}" onclick="toggleMember('${escHtml(m.id)}')">
+      <span class="pic">${pic}</span>
       <span class="nm">${escHtml(m.name)}</span>
-      <span class="hint">สมาชิก</span>
-    </div>
-  `).join('')}</div>`;
+      <span class="check">✓</span>
+    </div>`;
+  }).join('');
 }
 
-function addMemberById(memberId){
+function toggleMember(memberId){
   const m = STATE.membersByName.find(x => x.id === memberId);
-  if(!m){ toast('ไม่พบสมาชิก'); return; }
-  if(STATE.players.some(p => p.lineUserId === m.id)){ toast('มีอยู่แล้ว'); return; }
-  STATE.players.push({
-    id:           genId(),
-    name:         m.name,
-    pictureUrl:   m.pictureUrl,
-    isMember:     true,
-    lineUserId:   m.id,
-    matchCount:   0,
-    winCount:     0,
-    status:       'pool',
-  });
-  $('#player-input').value = '';
-  renderSuggestions();
+  if(!m) return;
+  const idx = STATE.players.findIndex(p => p.lineUserId === memberId);
+  if(idx !== -1){
+    // Remove (only if not playing)
+    if(STATE.players[idx].status === 'playing'){
+      toast('กำลังเล่นอยู่ ลบไม่ได้');
+      return;
+    }
+    STATE.players.splice(idx, 1);
+  } else {
+    // Add as member
+    STATE.players.push({
+      id:           genId(),
+      name:         m.name,
+      pictureUrl:   m.pictureUrl,
+      isMember:     true,
+      lineUserId:   m.id,
+      matchCount:   0,
+      winCount:     0,
+      status:       'pool',
+    });
+  }
+  renderMemberGrid();
   renderPlayerList();
   saveSession();
 }
 
-function addPlayer(){
-  const inp = $('#player-input');
+/* ================================================================
+   SETUP: Add guest (non-member)
+   ================================================================ */
+function addGuest(){
+  const inp = $('#guest-input');
   const name = (inp.value || '').trim();
   if(!name){ inp.focus(); return; }
-  // Check duplicate
+  // ห้ามชื่อซ้ำกับ guest หรือ member ที่เลือกแล้ว
   if(STATE.players.some(p => p.name === name)){
     toast('มีชื่อนี้อยู่แล้ว'); return;
   }
-  // Try matching to a registered member by name
+  // ถ้าตรงกับสมาชิกเป๊ะ → แนะนำให้ใช้ list ด้านบน
   const matched = STATE.membersIndex[name.toLowerCase()];
   if(matched){
-    addMemberById(matched.id);
-    return;
+    if(confirm(`"${name}" เป็นสมาชิกอยู่แล้ว · เพิ่มจาก list ด้านบนแทนไหม?`)){
+      toggleMember(matched.id);
+      inp.value = '';
+      return;
+    }
   }
-  // Otherwise add as guest
   STATE.players.push({
     id:           genId(),
     name:         name,
@@ -593,9 +635,9 @@ function addPlayer(){
     status:       'pool',
   });
   inp.value = '';
-  renderSuggestions();
   renderPlayerList();
   saveSession();
+  toast(`เพิ่ม "${name}" ✨`);
 }
 
 function removePlayer(id){
@@ -613,9 +655,11 @@ function removePlayer(id){
 
 function renderPlayerList(){
   $('#players-sub').textContent = `${STATE.players.length} คน`;
+  const pickedCount = $('#picked-count');
+  if(pickedCount) pickedCount.textContent = STATE.players.length;
   const list = $('#player-list');
   if(!STATE.players.length){
-    list.innerHTML = '<div class="empty-msg">ยังไม่มีผู้เล่น · เพิ่มได้เลย</div>';
+    list.innerHTML = '<div class="empty-msg">ยังไม่มีผู้เล่น · เลือกหรือเพิ่มได้เลย</div>';
   } else {
     list.innerHTML = STATE.players.map(p => `
       <div class="player-row ${p.isMember?'':'guest'}">
@@ -627,6 +671,8 @@ function renderPlayerList(){
       </div>
     `).join('');
   }
+  // sync member grid (highlight selected)
+  renderMemberGrid();
   const btn = $('#btn-start');
   if(btn) btn.disabled = STATE.players.length < 4;
 }
@@ -994,9 +1040,9 @@ $$('.opt-btn').forEach(b => b.addEventListener('click', () => {
   selectCourtCount(+b.dataset.c);
   saveSession();
 }));
-$('#player-input').addEventListener('input', renderSuggestions);
-$('#player-input').addEventListener('keydown', e => {
-  if(e.key === 'Enter'){ e.preventDefault(); addPlayer(); }
+$('#member-search').addEventListener('input', renderMemberGrid);
+$('#guest-input').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); addGuest(); }
 });
 
 /* ================================================================
