@@ -2,135 +2,563 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes"/>
 <title>🎨 Rich Menu Builder — ก๊วนอยากตี ต้องได้ตี</title>
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800;900&family=DM+Sans:wght@500;700;800&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
 <style>
-  body{margin:0;background:#0c0d10;color:#f5f3ee;font-family:'Prompt',sans-serif;padding:30px;text-align:center}
-  h1{margin:0 0 6px;font-size:24px}
-  .sub{color:#8e8c85;font-size:13px;margin-bottom:20px}
-  canvas{max-width:100%;height:auto;border:1.5px solid #2e3038;border-radius:8px;box-shadow:0 8px 32px #0008}
-  button{margin-top:20px;padding:14px 36px;font-size:17px;font-weight:800;background:#06c755;color:#fff;border:0;border-radius:10px;cursor:pointer;font-family:inherit;letter-spacing:.02em}
-  button:active{transform:scale(.96)}
-  .info{margin-top:24px;color:#8e8c85;font-size:12px;line-height:1.7}
-  .info code{background:#1c1e24;padding:2px 6px;border-radius:4px;color:#c8f135;font-family:'IBM Plex Mono',monospace;font-size:11px}
+  :root{
+    --bg:#0c0d10;--card:#16181d;--card2:#1c1e24;--input:#1e2028;--border:#2e3038;
+    --ink:#f5f3ee;--soft:#c9c7c0;--mute:#8e8c85;--accent:#c8f135;
+    --radius:14px;--rsm:10px;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Prompt',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 18px 60px}
+  h1{margin:0 0 4px;font-size:22px;font-weight:800}
+  .sub{color:var(--mute);font-size:13px;margin-bottom:18px}
+
+  .preview-wrap{
+    background:var(--card);border:1.5px solid var(--border);
+    border-radius:var(--radius);padding:14px;margin-bottom:14px;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  canvas{max-width:100%;height:auto;border-radius:8px;box-shadow:0 8px 32px #0008;display:block}
+
+  .toolbar{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;
+  }
+  @media (max-width:720px){.toolbar{grid-template-columns:1fr}}
+  .panel{
+    background:var(--card);border:1.5px solid var(--border);
+    border-radius:var(--radius);padding:14px 16px;
+  }
+  .panel-title{font-size:12px;font-weight:800;color:var(--accent);
+    letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;
+    font-family:'IBM Plex Mono',monospace;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+  .row label{font-size:12px;color:var(--soft);font-weight:600;flex-shrink:0;min-width:90px}
+
+  .seg{display:inline-flex;background:var(--input);border:1.5px solid var(--border);border-radius:var(--rsm);overflow:hidden}
+  .seg button{
+    background:transparent;border:0;color:var(--soft);padding:8px 12px;
+    font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  }
+  .seg button.on{background:var(--accent);color:#0c0d10}
+  .seg button:not(.on):hover{background:var(--card2)}
+
+  input[type="text"],input[type="color"]{
+    background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+    padding:8px 12px;border-radius:var(--rsm);font-family:inherit;font-size:13px;outline:none;
+  }
+  input[type="text"]:focus{border-color:var(--accent)}
+  input[type="color"]{padding:2px;width:42px;height:34px;cursor:pointer}
+
+  .tile-edit{
+    display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px;align-items:center;
+    padding:10px;background:var(--card2);border:1.5px solid var(--border);
+    border-radius:var(--rsm);margin-bottom:6px;
+  }
+  .tile-edit .num{font-family:'IBM Plex Mono',monospace;color:var(--mute);font-weight:800;width:22px;text-align:center;font-size:13px}
+  .tile-edit .ej{width:54px;text-align:center;font-size:18px}
+  .tile-edit input.title{font-weight:700}
+  .tile-edit input.sub{font-weight:500;font-size:12px;color:var(--soft)}
+  @media (max-width:560px){
+    .tile-edit{grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;gap:4px}
+    .tile-edit .num{grid-row:1/3}
+    .tile-edit .title{grid-column:2/3}
+    .tile-edit .ej{grid-column:3/4;grid-row:1/3}
+    .tile-edit .sub{grid-column:2/3;grid-row:2/3}
+  }
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .btn{
+    padding:14px 24px;border:0;border-radius:var(--rsm);cursor:pointer;
+    font-family:inherit;font-size:15px;font-weight:800;letter-spacing:.02em;
+    -webkit-tap-highlight-color:transparent;transition:opacity .15s;
+  }
+  .btn:active{opacity:.8}
+  .btn-primary{background:var(--accent);color:#0c0d10}
+  .btn-secondary{background:var(--card2);color:var(--soft);border:1.5px solid var(--border)}
+
+  .info{
+    margin-top:18px;padding:12px 14px;background:var(--card);border:1px solid var(--border);
+    border-radius:var(--rsm);color:var(--soft);font-size:12px;line-height:1.7;
+  }
+  .info code{background:var(--input);padding:2px 6px;border-radius:4px;color:var(--accent);
+    font-family:'IBM Plex Mono',monospace;font-size:11px}
+  .info b{color:var(--ink)}
+
+  .hint{font-size:11px;color:var(--mute);margin-top:4px}
+
+  .preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .preset-btn{
+    padding:6px 10px;background:var(--card2);border:1.5px solid var(--border);
+    color:var(--soft);font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;
+  }
+  .preset-btn:hover{border-color:var(--accent);color:var(--accent)}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<h1>🎨 Rich Menu — ก๊วนอยากตี ต้องได้ตี</h1>
-<div class="sub">Compact 3 ปุ่ม · 2500×843 px</div>
+  <h1>🎨 Rich Menu Builder</h1>
+  <div class="sub">ก๊วนอยากตี ต้องได้ตี · ออกแบบ + Download PNG พร้อมอัปโหลดเข้า LINE OA Manager</div>
 
-<canvas id="cv" width="2500" height="843"></canvas>
-<br>
-<button onclick="dl()">📥 Download PNG (rich-menu.png)</button>
+  <!-- Preview Canvas -->
+  <div class="preview-wrap">
+    <canvas id="cv" width="2500" height="1686"></canvas>
+  </div>
 
-<div class="info">
-  ขนาด: <code>2500 × 843 px</code> · format: <code>PNG</code><br>
-  อัปโหลดได้เลยที่ LINE OA Manager → ริชเมนู → ช่อง "รูป"<br>
-  ถ้าอยากแก้สี/ข้อความ/emoji → แก้ตัวแปรใน <code>&lt;script&gt;</code> ด้านล่างของไฟล์
+  <!-- Layout / Brand controls -->
+  <div class="toolbar">
+    <div class="panel">
+      <div class="panel-title">📐 Layout</div>
+      <div class="row">
+        <label>ขนาด</label>
+        <div class="seg" id="layout-seg">
+          <button data-layout="4-large" class="on">4 ปุ่ม (2x2)</button>
+          <button data-layout="6-large">6 ปุ่ม (3x2)</button>
+          <button data-layout="3-compact">3 ปุ่ม (compact)</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Logo</label>
+        <div class="seg">
+          <button data-logo="off">ซ่อน</button>
+          <button data-logo="on" class="on">แสดง</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Theme</label>
+        <div class="preset-row">
+          <button class="preset-btn" onclick="applyPreset('default')">Default 🟢</button>
+          <button class="preset-btn" onclick="applyPreset('warm')">Warm 🟠</button>
+          <button class="preset-btn" onclick="applyPreset('cool')">Cool 🔵</button>
+          <button class="preset-btn" onclick="applyPreset('mixed')">Mixed 🌈</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📝 ข้อความ</div>
+      <div class="row">
+        <label>ก๊วน</label>
+        <input id="brand-input" type="text" value="ก๊วนอยากตี ต้องได้ตี" style="flex:1"/>
+      </div>
+      <div class="row">
+        <label>คำท้าย</label>
+        <input id="footer-input" type="text" value="แตะปุ่มเพื่อเปิดแอป" style="flex:1"/>
+      </div>
+      <div class="hint">💡 Logo (logo.png) ต้องอยู่โฟลเดอร์เดียวกับไฟล์นี้</div>
+    </div>
+  </div>
+
+  <!-- Tile Editor -->
+  <div class="panel">
+    <div class="panel-title">🎯 ปุ่ม / Tiles</div>
+    <div id="tiles-editor"></div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button class="btn btn-primary" onclick="downloadPng()">📥 Download PNG</button>
+    <button class="btn btn-secondary" onclick="copyToClipboard()">📋 Copy รูปไปคลิปบอร์ด</button>
+  </div>
+
+  <div class="info">
+    <b>วิธีใช้:</b> ออกแบบ → Download PNG → ไป <code>LINE OA Manager</code> → <code>ริชเมนู</code> →
+    <code>เลือกเทมเพลต</code> ตามขนาดที่เลือก → upload PNG ที่ download ไว้<br>
+    <b>ขนาดผลลัพธ์:</b> <span id="size-info">2500 × 1686 px</span> (ตรงกับ template LINE)
+  </div>
+
 </div>
 
 <script>
+/* ================================================================
+   STATE
+   ================================================================ */
+const STATE = {
+  layout:    '4-large',    // '4-large' | '6-large' | '3-compact'
+  showLogo:  true,
+  brand:     'ก๊วนอยากตี ต้องได้ตี',
+  footer:    'แตะปุ่มเพื่อเปิดแอป',
+  tiles: [
+    { emoji:'🏸', title:'เก็บคะแนน',     sub:'บันทึกชนะ-แพ้',  color:'#c8f135' },
+    { emoji:'💰', title:'ช่วยคิดเงิน',   sub:'หารค่าคอร์ท',    color:'#fbbf24' },
+    { emoji:'🎲', title:'สุ่มทีม',        sub:'แบ่งทีมแข่ง',     color:'#a78bfa' },
+    { emoji:'🏟️', title:'จับคู่สนาม',     sub:'จัดเกมแรก',       color:'#22d3ee' },
+    { emoji:'🏆', title:'ทำเนียบ',        sub:'ดูอันดับสมาชิก', color:'#22c55e' },
+    { emoji:'ℹ️', title:'ติดต่อ',         sub:'แอดมิน · ช่วยเหลือ', color:'#f87171' },
+  ],
+};
+
+const PRESETS = {
+  default: ['#c8f135','#c8f135','#c8f135','#c8f135','#c8f135','#c8f135'],
+  warm:    ['#f97316','#fbbf24','#ef4444','#f59e0b','#ec4899','#fb923c'],
+  cool:    ['#22d3ee','#3b82f6','#a78bfa','#06b6d4','#8b5cf6','#22c55e'],
+  mixed:   ['#c8f135','#fbbf24','#a78bfa','#22d3ee','#22c55e','#f87171'],
+};
+
+/* ================================================================
+   LOGO PRELOAD
+   ================================================================ */
+const LOGO = new Image();
+LOGO.crossOrigin = 'anonymous';
+LOGO.src = 'logo.png';
+let _logoReady = false;
+LOGO.onload  = () => { _logoReady = true; draw(); };
+LOGO.onerror = () => { _logoReady = false; console.warn('logo.png not found'); draw(); };
+
+/* ================================================================
+   CANVAS
+   ================================================================ */
 const cv  = document.getElementById('cv');
 const ctx = cv.getContext('2d');
-const W   = 2500, H = 843;
 
-// ─── ตั้งค่าได้ตรงนี้ ────────────────────────────────────────
-const TILES = [
-  { emoji:'🏸', title:'เก็บคะแนน',   sub:'บันทึกชนะ-แพ้',  color:'#c8f135' },
-  { emoji:'💰', title:'ช่วยคิดเงิน', sub:'หารค่าคอร์ท',   color:'#c8f135' },
-  { emoji:'🏆', title:'ทำเนียบสมาชิก',sub:'ดูอันดับ',      color:'#c8f135' },
-];
-const BRAND = '🏸  ก๊วนอยากตี ต้องได้ตี';
-// ────────────────────────────────────────────────────────────
+function setCanvasSize(){
+  const sz = layoutSize();
+  cv.width  = sz.w;
+  cv.height = sz.h;
+}
 
+function layoutSize(){
+  if(STATE.layout === '3-compact') return { w:2500, h:843 };
+  return { w:2500, h:1686 }; // 4-large, 6-large
+}
+
+function tileGrid(){
+  // Returns { cols, rows, tiles:[{x,y,w,h,idx}] } in canvas coords
+  const sz = layoutSize();
+  if(STATE.layout === '3-compact'){
+    const cols = 3, rows = 1;
+    const tw = sz.w/cols, th = sz.h;
+    const tiles = [];
+    for(let i=0;i<3;i++){
+      tiles.push({ x:i*tw, y:0, w:tw, h:th, idx:i });
+    }
+    return { cols, rows, tiles, count:3 };
+  }
+  if(STATE.layout === '4-large'){
+    const cols = 2, rows = 2;
+    const tw = sz.w/cols, th = sz.h/rows;
+    const tiles = [];
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        tiles.push({ x:c*tw, y:r*th, w:tw, h:th, idx:r*cols+c });
+      }
+    }
+    return { cols, rows, tiles, count:4 };
+  }
+  // 6-large
+  const cols = 3, rows = 2;
+  const tw = sz.w/cols, th = sz.h/rows;
+  const tiles = [];
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      tiles.push({ x:c*tw, y:r*th, w:tw, h:th, idx:r*cols+c });
+    }
+  }
+  return { cols, rows, tiles, count:6 };
+}
+
+/* ================================================================
+   DRAW
+   ================================================================ */
 function draw(){
-  // Background gradient
-  const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#0c0d10');
-  bg.addColorStop(.5, '#16181d');
-  bg.addColorStop(1, '#1c1e24');
+  setCanvasSize();
+  const sz = layoutSize();
+  const grid = tileGrid();
+
+  // Background — deep gradient with subtle radial light
+  const bg = ctx.createLinearGradient(0, 0, sz.w, sz.h);
+  bg.addColorStop(0,   '#0a0b0e');
+  bg.addColorStop(.5,  '#16181d');
+  bg.addColorStop(1,   '#0a0b0e');
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
+  ctx.fillRect(0, 0, sz.w, sz.h);
 
-  // Subtle accent stripe at top
-  const stripe = ctx.createLinearGradient(0, 0, W, 0);
-  stripe.addColorStop(0,    '#c8f13500');
-  stripe.addColorStop(.5,   '#c8f13540');
-  stripe.addColorStop(1,    '#c8f13500');
-  ctx.fillStyle = stripe;
-  ctx.fillRect(0, 0, W, 4);
+  // Subtle accent halo at center top
+  const halo = ctx.createRadialGradient(sz.w/2, sz.h*0.1, 50, sz.w/2, sz.h*0.1, sz.w*0.5);
+  halo.addColorStop(0, '#c8f13518');
+  halo.addColorStop(1, '#c8f13500');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, sz.w, sz.h);
 
-  // Brand label top center
-  ctx.fillStyle = '#c9c7c0';
-  ctx.font = '700 36px Prompt, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText(BRAND, W/2, 36);
-
-  // Dividers
-  ctx.strokeStyle = '#2e3038';
-  ctx.lineWidth = 3;
-  for(let i = 1; i < 3; i++){
-    const x = i * (W / 3);
-    ctx.beginPath();
-    ctx.moveTo(x, 130);
-    ctx.lineTo(x, H - 70);
-    ctx.stroke();
+  // Logo + brand banner (only on large layouts, top)
+  let bannerHeight = 0;
+  if(STATE.showLogo && STATE.layout !== '3-compact'){
+    bannerHeight = drawTopBanner(sz.w, sz.h);
+  } else if(STATE.layout === '3-compact'){
+    // For compact, just brand text at very top
+    drawCompactBrand(sz.w);
+    bannerHeight = 70;
   }
 
-  // Tiles
-  const tileW = W / 3;
-  TILES.forEach((t, i) => {
-    const cx = tileW * i + tileW / 2;
-    const cy = 380;
+  // Re-compute tile area below banner
+  const tilesArea = { x:0, y:bannerHeight, w:sz.w, h:sz.h - bannerHeight - 60 }; // 60 = footer
+  const cols = grid.cols, rows = grid.rows;
+  const tw = tilesArea.w / cols;
+  const th = tilesArea.h / rows;
 
-    // Hover-style background tint per tile (very subtle)
-    ctx.fillStyle = i === 1 ? '#c8f1350a' : '#ffffff04';
-    ctx.fillRect(tileW * i + 30, 130, tileW - 60, H - 200);
+  // Draw tiles
+  for(let i=0;i<grid.count;i++){
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const x = tilesArea.x + c*tw;
+    const y = tilesArea.y + r*th;
+    const tile = STATE.tiles[i];
+    drawTile(x, y, tw, th, tile);
+  }
 
-    // Emoji circle bg
+  // Footer
+  drawFooter(sz.w, sz.h);
+
+  // Update size info
+  document.getElementById('size-info').textContent = `${sz.w} × ${sz.h} px`;
+}
+
+function drawTopBanner(W, H){
+  // Returns the banner height
+  const bannerH = 220;
+  // Subtle separator at bottom of banner
+  ctx.fillStyle = '#1c1e24';
+  ctx.fillRect(0, bannerH-2, W, 2);
+  ctx.fillStyle = '#c8f13530';
+  ctx.fillRect(W*0.2, bannerH-2, W*0.6, 2);
+
+  if(_logoReady){
+    // Logo on left
+    const logoSize = 160;
+    const logoX = 60;
+    const logoY = (bannerH - logoSize)/2;
+    ctx.save();
+    // round logo
     ctx.beginPath();
-    ctx.arc(cx, cy - 30, 110, 0, Math.PI * 2);
-    ctx.fillStyle = '#1c1e24';
-    ctx.fill();
-    ctx.strokeStyle = t.color + '50';
-    ctx.lineWidth = 4;
-    ctx.stroke();
+    const r = 24;
+    ctx.moveTo(logoX+r, logoY);
+    ctx.arcTo(logoX+logoSize, logoY, logoX+logoSize, logoY+logoSize, r);
+    ctx.arcTo(logoX+logoSize, logoY+logoSize, logoX, logoY+logoSize, r);
+    ctx.arcTo(logoX, logoY+logoSize, logoX, logoY, r);
+    ctx.arcTo(logoX, logoY, logoX+logoSize, logoY, r);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(LOGO, logoX, logoY, logoSize, logoSize);
+    ctx.restore();
+  }
 
-    // Emoji
-    ctx.font = '160px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(t.emoji, cx, cy - 30);
+  // Brand text — center
+  ctx.fillStyle = '#f5f3ee';
+  ctx.font = '800 64px Prompt, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Highlight last segment
+  const brand = STATE.brand;
+  const parts = brand.split(' ');
+  if(parts.length >= 2){
+    // Render with last word in accent color
+    const last = parts[parts.length-1];
+    const head = parts.slice(0, parts.length-1).join(' ') + ' ';
+    const headW = ctx.measureText(head).width;
+    const lastW = ctx.measureText(last).width;
+    const totalW = headW + lastW;
+    const startX = W/2 - totalW/2;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#f5f3ee';
+    ctx.fillText(head, startX, bannerH/2);
+    ctx.fillStyle = '#c8f135';
+    ctx.fillText(last, startX + headW, bannerH/2);
+  } else {
+    ctx.fillText(brand, W/2, bannerH/2);
+  }
 
-    // Title
-    ctx.fillStyle = t.color;
-    ctx.font = '800 76px Prompt, sans-serif';
-    ctx.fillText(t.title, cx, cy + 175);
+  return bannerH;
+}
 
-    // Subtitle
-    ctx.fillStyle = '#c9c7c0';
-    ctx.font = '500 38px Prompt, sans-serif';
-    ctx.fillText(t.sub, cx, cy + 250);
-  });
+function drawCompactBrand(W){
+  // Compact layout: small brand at top center
+  ctx.fillStyle = '#c9c7c0';
+  ctx.font = '700 30px Prompt, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('🏸  ' + STATE.brand, W/2, 24);
+}
 
-  // Subtle bottom hint
+function drawTile(x, y, w, h, tile){
+  if(!tile) return;
+
+  // Tile background — translucent card
+  const inset = 24;
+  const tx = x + inset, ty = y + inset, tw = w - inset*2, th = h - inset*2;
+
+  // Card bg
+  roundRect(ctx, tx, ty, tw, th, 28);
+  const tileBg = ctx.createLinearGradient(tx, ty, tx, ty+th);
+  tileBg.addColorStop(0, '#1c1e24');
+  tileBg.addColorStop(1, '#16181d');
+  ctx.fillStyle = tileBg;
+  ctx.fill();
+
+  // Color accent stripe at top
+  ctx.save();
+  roundRect(ctx, tx, ty, tw, 6, 3);
+  ctx.fillStyle = tile.color;
+  ctx.fill();
+  ctx.restore();
+
+  // Color border
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = tile.color + '40';
+  roundRect(ctx, tx, ty, tw, th, 28);
+  ctx.stroke();
+
+  // Layout content based on tile size
+  const isCompactTile = STATE.layout === '3-compact';
+  const isLargeTile = STATE.layout === '4-large';
+  const cx = tx + tw/2;
+
+  // Emoji circle
+  const emojiSize = isCompactTile ? 110 : (isLargeTile ? 200 : 130);
+  const emojiR    = isCompactTile ? 80  : (isLargeTile ? 130 : 95);
+  const emojiYoff = isCompactTile ? 0.40 : 0.32;
+
+  const emY = ty + th*emojiYoff;
+  ctx.beginPath();
+  ctx.arc(cx, emY, emojiR, 0, Math.PI*2);
+  ctx.fillStyle = '#0c0d1099';
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = tile.color + '70';
+  ctx.stroke();
+
+  ctx.font = `${emojiSize}px "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(tile.emoji, cx, emY);
+
+  // Title
+  const titleSize = isCompactTile ? 64 : (isLargeTile ? 96 : 70);
+  ctx.fillStyle = tile.color;
+  ctx.font = `800 ${titleSize}px Prompt, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(tile.title, cx, emY + emojiR + titleSize*0.7);
+
+  // Subtitle
+  const subSize = isCompactTile ? 30 : (isLargeTile ? 42 : 32);
+  ctx.fillStyle = '#c9c7c0';
+  ctx.font = `500 ${subSize}px Prompt, sans-serif`;
+  ctx.fillText(tile.sub, cx, emY + emojiR + titleSize*0.7 + subSize*1.4);
+}
+
+function drawFooter(W, H){
   ctx.fillStyle = '#3a3d48';
   ctx.font = '500 22px Prompt, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('แตะปุ่มเพื่อเปิดแอป', W/2, H - 32);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(STATE.footer, W/2, H - 30);
 }
 
-// Wait for fonts to load before drawing
-document.fonts.ready.then(draw);
+/* helper — rounded rect path */
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x,   y+h, r);
+  ctx.arcTo(x,   y+h, x,   y,   r);
+  ctx.arcTo(x,   y,   x+w, y,   r);
+  ctx.closePath();
+}
 
-function dl(){
+/* ================================================================
+   TILE EDITOR (DOM)
+   ================================================================ */
+function renderTileEditor(){
+  const grid = tileGrid();
+  const wrap = document.getElementById('tiles-editor');
+  wrap.innerHTML = '';
+  for(let i=0;i<grid.count;i++){
+    const t = STATE.tiles[i];
+    const row = document.createElement('div');
+    row.className = 'tile-edit';
+    row.innerHTML = `
+      <div class="num">${i+1}</div>
+      <input class="title" type="text" value="${escapeAttr(t.title)}" placeholder="ชื่อปุ่ม"/>
+      <input class="sub"   type="text" value="${escapeAttr(t.sub)}"   placeholder="คำอธิบาย"/>
+      <input class="ej"    type="text" value="${escapeAttr(t.emoji)}" maxlength="2"/>
+    `;
+    const [titleI, subI, ejI] = row.querySelectorAll('input');
+    titleI.addEventListener('input', e => { t.title = e.target.value; draw(); });
+    subI.addEventListener('input',   e => { t.sub   = e.target.value; draw(); });
+    ejI.addEventListener('input',    e => { t.emoji = e.target.value; draw(); });
+    wrap.appendChild(row);
+  }
+}
+function escapeAttr(s){return String(s||'').replace(/"/g,'&quot;')}
+
+/* ================================================================
+   PRESETS
+   ================================================================ */
+function applyPreset(name){
+  const colors = PRESETS[name] || PRESETS.default;
+  STATE.tiles.forEach((t, i) => { t.color = colors[i % colors.length]; });
+  draw();
+}
+
+/* ================================================================
+   DOWNLOAD
+   ================================================================ */
+function downloadPng(){
   const link = document.createElement('a');
-  link.download = 'rich-menu.png';
+  const safeName = `richmenu-${STATE.layout}-${Date.now()}.png`;
+  link.download = safeName;
   link.href = cv.toDataURL('image/png');
   link.click();
 }
+
+async function copyToClipboard(){
+  try{
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]);
+    alert('✅ Copy รูปไปคลิปบอร์ดแล้ว — กด Cmd+V วางได้');
+  }catch(e){
+    alert('❌ Copy ไม่ได้: ' + e.message + '\nกด "Download PNG" แทนได้');
+  }
+}
+
+/* ================================================================
+   EVENTS
+   ================================================================ */
+document.querySelectorAll('#layout-seg button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#layout-seg button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    STATE.layout = btn.dataset.layout;
+    renderTileEditor();
+    draw();
+  });
+});
+document.querySelectorAll('[data-logo]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-logo]').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    STATE.showLogo = btn.dataset.logo === 'on';
+    draw();
+  });
+});
+document.getElementById('brand-input').addEventListener('input',  e => { STATE.brand  = e.target.value; draw(); });
+document.getElementById('footer-input').addEventListener('input', e => { STATE.footer = e.target.value; draw(); });
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+document.fonts.ready.then(() => {
+  renderTileEditor();
+  draw();
+});
 </script>
 </body>
 </html>
