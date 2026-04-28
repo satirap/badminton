@@ -1392,6 +1392,13 @@ async function boot(){
   const cachedPlayer = localStorage.getItem('shuttle_player');
   const isLogout     = localStorage.getItem('shuttle_logout');
 
+  // อ่าน ?tab=... จาก URL — เช่น Rich Menu link มากำหนด tab เริ่ม
+  // รับค่า: daily | monthly | ranks
+  const tabParam = (function(){
+    const t = (urlParams.get('tab') || '').toLowerCase();
+    return ['daily','monthly','ranks'].includes(t) ? t : null;
+  })();
+
   // Fast path: show cache immediately
   if(cachedPlayer && !isLogout){
     currentUser = JSON.parse(cachedPlayer);
@@ -1401,6 +1408,7 @@ async function boot(){
       loadCachedData();
       $('#daily-list').innerHTML = '<div class="empty loading">กำลังบันทึก...</div>';
     } else {
+      if(tabParam) switchTab(tabParam);
       loadCachedData();
     }
   }
@@ -1433,6 +1441,11 @@ async function boot(){
   }
 
   await loginWithLIFF(resultParam);
+
+  // หลัง login: ถ้ามี ?tab= ใน URL → switch
+  if(tabParam && currentUser && !resultParam){
+    switchTab(tabParam);
+  }
 }
 
 // =================================================================
