@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>🏸 QR Win/Lose — ก๊วนอยากตี ต้องได้ตี</title>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800;900&family=DM+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  :root{
+    --bg:#0c0d10;--card:#16181d;--ink:#f5f3ee;--soft:#c9c7c0;--mute:#8e8c85;
+    --accent:#c8f135;--green:#22c55e;--red:#ef4444;--border:#2e3038;
+    --radius:14px;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Prompt',sans-serif;font-size:15px;line-height:1.5}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 16px 60px}
+
+  /* On-screen header (hide on print) */
+  .header-card{
+    background:var(--card);border:1.5px solid var(--border);
+    border-radius:var(--radius);padding:18px 20px;
+    margin-bottom:18px;display:flex;align-items:center;gap:12px;
+  }
+  .header-card img{width:54px;height:54px;border-radius:10px;flex-shrink:0;object-fit:contain}
+  .header-card .ttl{font-weight:800;font-size:20px;line-height:1.15}
+  .header-card .ttl span{color:var(--accent)}
+  .header-card .sub{font-size:12px;color:var(--mute);margin-top:2px}
+
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+  .btn{
+    padding:12px 22px;border:0;border-radius:10px;cursor:pointer;
+    font-family:inherit;font-size:14px;font-weight:800;
+    -webkit-tap-highlight-color:transparent;transition:opacity .15s;
+  }
+  .btn-primary{background:var(--accent);color:#0c0d10}
+  .btn-secondary{background:var(--card);color:var(--soft);border:1.5px solid var(--border)}
+  .btn:active{opacity:.8}
+
+  .qr-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:18px;
+  }
+  @media (max-width:640px){.qr-grid{grid-template-columns:1fr}}
+
+  .qr-card{
+    background:#fff;color:#111;border-radius:var(--radius);overflow:hidden;
+    border:3px solid transparent;display:flex;flex-direction:column;
+    box-shadow:0 12px 32px #0006;
+  }
+  .qr-card.win{border-color:var(--green)}
+  .qr-card.lose{border-color:var(--red)}
+  .qr-head{
+    padding:18px 24px;color:#fff;text-align:center;
+  }
+  .qr-card.win  .qr-head{background:linear-gradient(135deg,#16a34a,#22c55e)}
+  .qr-card.lose .qr-head{background:linear-gradient(135deg,#dc2626,#ef4444)}
+  .qr-head .icon{font-size:48px;line-height:1;margin-bottom:4px}
+  .qr-head .label{font-size:30px;font-weight:900;letter-spacing:.04em}
+  .qr-head .pts{font-size:14px;opacity:.92;font-weight:600;margin-top:4px}
+
+  .qr-body{
+    padding:18px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  }
+  .qr-body canvas{
+    width:280px !important;height:280px !important;
+    background:#fff;display:block;
+  }
+  .qr-foot{
+    padding:12px 18px 18px;text-align:center;font-size:12px;color:#555;
+    border-top:1px dashed #ddd;
+  }
+  .qr-foot b{color:#111}
+  .qr-foot .url{
+    display:block;font-family:monospace;font-size:10px;color:#888;
+    margin-top:6px;word-break:break-all;
+  }
+
+  .info{
+    margin-top:24px;padding:14px 18px;background:var(--card);
+    border:1px solid var(--border);border-radius:var(--radius);
+    color:var(--soft);font-size:13px;line-height:1.7;
+  }
+  .info b{color:var(--ink)}
+  .info code{
+    background:#1c1e24;padding:2px 7px;border-radius:5px;
+    color:var(--accent);font-family:monospace;font-size:12px;
+  }
+
+  /* Print-only styles */
+  @media print {
+    @page { margin:8mm; size:A4 portrait; }
+    body{background:#fff;color:#000}
+    .wrap{padding:0;max-width:none}
+    .header-card,.actions,.info,.no-print{display:none !important}
+    .qr-grid{grid-template-columns:1fr 1fr;gap:14mm;page-break-inside:avoid}
+    .qr-card{box-shadow:none;border-width:4px;break-inside:avoid}
+    .qr-body canvas{width:340px !important;height:340px !important}
+    .qr-foot{font-size:10px}
+    .qr-foot .url{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header-card no-print">
+    <img src="logo-small.png" alt=""/>
+    <div style="flex:1">
+      <div class="ttl">ก๊วนอยากตี<span> ต้องได้ตี</span></div>
+      <div class="sub">🖨 QR Code บันทึกแพ้-ชนะ — สแกนหลังจบเกม</div>
+    </div>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn btn-primary" onclick="window.print()">🖨 พิมพ์ใบนี้</button>
+    <button class="btn btn-secondary" onclick="downloadQR('win')">📥 Win.png</button>
+    <button class="btn btn-secondary" onclick="downloadQR('lose')">📥 Lose.png</button>
+  </div>
+
+  <div class="qr-grid">
+    <div class="qr-card win">
+      <div class="qr-head">
+        <div class="icon">🏆</div>
+        <div class="label">WIN — ชนะ</div>
+        <div class="pts">+3 คะแนน</div>
+      </div>
+      <div class="qr-body">
+        <canvas id="qr-win"></canvas>
+      </div>
+      <div class="qr-foot">
+        สแกน QR นี้หลังจบเกมที่<b>ชนะ</b>
+        <span class="url" id="url-win"></span>
+      </div>
+    </div>
+
+    <div class="qr-card lose">
+      <div class="qr-head">
+        <div class="icon">🎯</div>
+        <div class="label">LOSE — แพ้</div>
+        <div class="pts">+1 คะแนน</div>
+      </div>
+      <div class="qr-body">
+        <canvas id="qr-lose"></canvas>
+      </div>
+      <div class="qr-foot">
+        สแกน QR นี้หลังจบเกมที่<b>แพ้</b>
+        <span class="url" id="url-lose"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="info no-print">
+    <b>วิธีใช้:</b><br>
+    1. <b>พิมพ์</b> ใบนี้ไปแปะที่สนาม (กระดาษ A4 พอเหมาะ ติดให้สูงพอที่จะสแกนได้)<br>
+    2. หลังจบเกม ผู้เล่นเปิดกล้อง LINE → สแกน QR ฝั่งที่ตัวเองได้ (ชนะ/แพ้)<br>
+    3. แอพจะเปิดอัตโนมัติ → บันทึกคะแนนทันที (+3 ชนะ / +1 แพ้)<br><br>
+    <b>URL ที่ encode ใน QR:</b><br>
+    🏆 ชนะ: <code id="code-win">—</code><br>
+    🎯 แพ้: <code id="code-lose">—</code><br><br>
+    💡 ถ้าจะเปลี่ยน URL → แก้ที่ <code>const LIFF_URL</code> ใน JavaScript ของไฟล์นี้
+  </div>
+
+</div>
+
+<script>
+const LIFF_URL = 'https://liff.line.me/2009832825-of9TI64X';
+
+const URLS = {
+  win:  `${LIFF_URL}?result=win`,
+  lose: `${LIFF_URL}?result=lose`,
+};
+
+function genQR(canvasId, url){
+  return new Promise((resolve, reject) => {
+    QRCode.toCanvas(document.getElementById(canvasId), url, {
+      width:           340,
+      margin:          1,
+      errorCorrectionLevel: 'H',
+      color: { dark:'#0c0d10', light:'#ffffff' }
+    }, err => err ? reject(err) : resolve());
+  });
+}
+
+function downloadQR(which){
+  const c = document.getElementById('qr-' + which);
+  const a = document.createElement('a');
+  a.download = `qr-${which}.png`;
+  a.href = c.toDataURL('image/png');
+  a.click();
+}
+
+(async () => {
+  await genQR('qr-win',  URLS.win);
+  await genQR('qr-lose', URLS.lose);
+  document.getElementById('url-win').textContent  = URLS.win;
+  document.getElementById('url-lose').textContent = URLS.lose;
+  document.getElementById('code-win').textContent  = URLS.win;
+  document.getElementById('code-lose').textContent = URLS.lose;
+})();
+</script>
+</body>
+</html>
