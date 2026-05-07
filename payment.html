@@ -42,27 +42,37 @@ body{min-height:100dvh}
 /* ── Header card ── */
 .header-card{
   background:var(--card);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:18px 20px;margin:16px 0 12px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  border-radius:var(--radius);padding:14px 16px;margin:14px 0 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
 }
-.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15}
+.header-card .brand{font-size:16px;font-weight:800;color:var(--ink);line-height:1.2;word-break:keep-all}
 .header-card .brand span{color:var(--accent);display:block}
-@media (min-width:520px){
-  .header-card .brand span{display:inline}
-}
 .header-card .brand-sub{
-  font-size:11px;font-weight:600;color:var(--mute);margin-top:2px;
-  letter-spacing:.02em;white-space:nowrap;
+  font-size:10px;font-weight:600;color:var(--mute);margin-top:2px;
+  letter-spacing:.02em;
 }
-.header-card .date-box{text-align:right;flex:1;margin-right:8px}
-.header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--ink)}
-.header-card .date-box .date-sub{font-size:11px;color:var(--mute);margin-top:1px}
+.header-card .date-box{text-align:right;flex:0 1 auto;margin-right:4px}
+.header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
+.header-card .date-box .date-sub{font-size:10px;color:var(--mute);margin-top:1px}
+@media (min-width:520px){
+  .header-card{padding:18px 20px;margin:16px 0 12px;gap:12px}
+  .header-card .brand{font-size:18px;line-height:1.15}
+  .header-card .brand span{display:inline}
+  .header-card .brand-sub{font-size:11px}
+  .header-card .date-box{flex:1;margin-right:8px}
+  .header-card .date-box .date-big{font-size:15px}
+  .header-card .date-box .date-sub{font-size:11px}
+}
 .history-icon-btn{
-  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
   background:var(--card2);border:1.5px solid var(--border);
-  color:var(--ink);font-size:20px;cursor:pointer;
+  color:var(--ink);font-size:16px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:all .15s;-webkit-tap-highlight-color:transparent;
+}
+@media (min-width:520px){
+  .history-icon-btn{width:44px;height:44px;border-radius:12px;font-size:20px}
+  .header-card .brand-logo{width:46px!important;height:46px!important}
 }
 .history-icon-btn:active{transform:scale(.92);border-color:var(--accent)}
 .back-btn{
@@ -600,6 +610,33 @@ body{min-height:100dvh}
 .stp-row.big.accent{color:var(--accent)}
 .stp-row.big.accent b{font-size:28px;color:var(--accent)}
 
+/* ราคาที่จะแจ้ง (override) */
+.stp-override{
+  background:#c8f13510;border:1.5px solid var(--accent);
+  border-radius:12px;padding:12px 14px;margin-top:10px;
+}
+.ov-label{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:8px}
+.ov-label small{font-weight:500;color:var(--soft);margin-left:4px}
+.ov-row{display:flex;align-items:center;gap:8px}
+.ov-row input{
+  flex:1;background:var(--input);border:1.5px solid var(--accent);border-radius:8px;
+  padding:10px 14px;color:var(--accent);
+  font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:800;
+  text-align:right;outline:none;
+}
+.ov-row input::-webkit-outer-spin-button,
+.ov-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ov-unit{font-size:13px;font-weight:700;color:var(--accent)}
+.ov-fill{
+  padding:8px 12px;border:1.5px solid var(--accent);border-radius:8px;
+  background:transparent;color:var(--accent);
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.ov-fill:active{background:var(--accent);color:#111}
+.ov-hint{font-size:11px;color:var(--mute);margin-top:6px;font-style:italic}
+.ov-hint.active{color:var(--accent);font-style:normal;font-weight:700}
+
 .big-share-btn{
   width:100%;margin-top:14px;padding:18px;border:none;border-radius:var(--radius);
   background:#06c755;color:#fff;
@@ -699,7 +736,7 @@ body{min-height:100dvh}
   <!-- Header -->
   <div class="header-card">
     <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
-      <img src="logo-small.png" alt="" style="width:46px;height:46px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
+      <img src="logo-small.png" alt="" class="brand-logo" style="width:38px;height:38px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
       <div style="min-width:0">
         <div class="brand">ก๊วนอยากตี<span>ต้องได้ตี</span></div>
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
@@ -791,15 +828,25 @@ body{min-height:100dvh}
             <span>รวมทั้งสิ้น</span>
             <span><b id="cost-total">0</b> ฿</span>
           </div>
-          <div class="stp-row big accent">
+          <div class="stp-row big">
             <span>เฉลี่ย/คน <small id="per-note"></small></span>
             <span><b id="cost-per-person">0</b> ฿</span>
+          </div>
+          <!-- ปรับยอดที่จะแจ้งจริง — เผื่อปัดให้สวย เช่น 158→160 -->
+          <div class="stp-override">
+            <div class="ov-label">📢 ราคาที่จะแจ้ง <small>(ปรับให้พอเหมาะ)</small></div>
+            <div class="ov-row">
+              <input type="number" id="price-override" placeholder="0" min="0" step="5" inputmode="numeric"/>
+              <span class="ov-unit">฿/คน</span>
+              <button type="button" class="ov-fill" onclick="fillPriceOverride()" title="ปัดขึ้นเป็นหลัก 10">↑10</button>
+            </div>
+            <div class="ov-hint" id="ov-hint">ปล่อยว่าง = ใช้ค่าเฉลี่ย</div>
           </div>
         </div>
 
         <button class="big-share-btn" onclick="sharePriceCurrent()">
           <span>📢 แจ้งราคาก๊วนทาง LINE</span>
-          <small>ราคา + QR โอน</small>
+          <small>ราคา + QR โอน · ระบบจะให้ยืนยันก่อนส่ง</small>
         </button>
       </div>
     </div>
@@ -983,6 +1030,7 @@ function newSession(){
     shuttlePrice:  0,
     shuttleCount:  0,
     memberEstimate: 0, // ประมาณคนที่จะมา (ใช้คำนวณ pp ก่อนเลือกคนจริง)
+    priceOverride: 0,  // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
     players:       [],
     createdAt:     new Date().toISOString(),
     completedAt:   null,
@@ -1125,6 +1173,7 @@ async function cloudSync(){
       shuttleCost:    breakdown.shuttleCost,
       totalCost:      breakdown.totalCost,
       memberEstimate: memberEst,
+      priceOverride:  getNumInput('price-override'),
       // Legacy fields (คำนวณ)
       perPerson:      pp,
       cashCount:      cashN,
@@ -1179,6 +1228,7 @@ async function loadTodayOpenSession(){
       shuttlePrice:  d.shuttlePrice || 0,
       shuttleCount:  d.shuttleCount || 0,
       memberEstimate: d.memberEstimate || 0,
+      priceOverride: d.priceOverride || 0,
       perPerson:     d.perPerson    || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
@@ -1319,6 +1369,19 @@ function renderSummary(){
     const memberEst = getNumInput('member-est');
     perNoteEl.textContent = total > 0 ? `(${total} คน)` : (memberEst > 0 ? `(ประมาณ ${memberEst} คน)` : '');
   }
+  // Hint สำหรับ override
+  const ovHint = document.getElementById('ov-hint');
+  const ovInp  = document.getElementById('price-override');
+  if(ovHint && ovInp){
+    const override = parseInt(ovInp.value, 10);
+    if(override > 0 && override !== pp){
+      ovHint.textContent = `จะแจ้ง ${fmtBaht(override)} ฿/คน · เฉลี่ยจริง ${fmtBaht(pp)} ฿/คน · ส่วนต่าง ${override > pp ? '+' : ''}${fmtBaht(override - pp)} ฿`;
+      ovHint.classList.add('active');
+    } else {
+      ovHint.textContent = 'ปล่อยว่าง = ใช้ค่าเฉลี่ย · กดปุ่ม ↑10 เพื่อปัดขึ้น';
+      ovHint.classList.remove('active');
+    }
+  }
 
   // summary line ตอน collapse
   const sumT = document.getElementById('c-sum-total');
@@ -1414,6 +1477,7 @@ async function completeSession(){
       shuttleCost:   breakdown.shuttleCost,
       totalCost:     breakdown.totalCost,
       memberEstimate: memberEst,
+      priceOverride: getNumInput('price-override'),
       perPerson:   pp,
       cashCount:   cashN,
       transferCount: transN,
@@ -1769,7 +1833,7 @@ function ensureLiff(){
    ================================================================ */
 const QR_PAYMENT_URL = 'https://satirap.github.io/badminton/qr-payment.png';
 
-function buildPriceFlex(s){
+function buildPriceFlex(s, opts){
   const players      = s.players || [];
   const total        = players.length;
   const courtFee     = s.courtFee     || 0;
@@ -1777,7 +1841,10 @@ function buildPriceFlex(s){
   const shuttleCount = s.shuttleCount || 0;
   const shuttleTotal = shuttlePrice * shuttleCount;
   const totalCost    = courtFee + shuttleTotal;
-  const pp           = total > 0 ? Math.ceil(totalCost / total) : 0;
+  const calculated   = total > 0 ? Math.ceil(totalCost / total) : 0;
+  // ราคาที่จะแสดง — ใช้ override ที่ส่งมา ไม่งั้น fallback เป็น s.priceOverride หรือคำนวณ
+  const pp = (opts && opts.effectivePp) || (s.priceOverride > 0 ? s.priceOverride : calculated);
+  const wasRounded = pp > calculated;
   const dateStr      = s.dateDisplay || s.date || '';
 
   const costRows = [];
@@ -1835,7 +1902,7 @@ function buildPriceFlex(s){
           type:'box', layout:'vertical', backgroundColor:'#c8f135',
           cornerRadius:'12px', paddingAll:'16px', margin:'lg',
           contents:[
-            { type:'text', text:'💸 เฉลี่ยต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
+            { type:'text', text:'💸 ราคาต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
             { type:'text', text:`${fmtBaht(pp)} บาท`, color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'sm' },
           ]
         },
@@ -1972,6 +2039,25 @@ async function shareLineFlex(flex, altText, btnElem){
   }
 }
 
+/** ราคาที่จะแจ้งจริง — ใช้ override ถ้ากรอกไว้ ไม่งั้นใช้ค่าเฉลี่ย */
+function getEffectivePerPerson(){
+  const override = getNumInput('price-override');
+  if(override > 0) return override;
+  return getPerPerson();
+}
+
+/** ปุ่ม "↑10" — ปัดราคาเฉลี่ยขึ้นเป็นหลัก 10 ใส่ override */
+function fillPriceOverride(){
+  const calc = getPerPerson();
+  if(calc <= 0){ toast('ยังไม่มียอดเฉลี่ย'); return; }
+  const rounded = Math.ceil(calc / 10) * 10;
+  const inp = document.getElementById('price-override');
+  if(inp){
+    inp.value = rounded;
+    inp.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+}
+
 async function sharePriceCurrent(){
   if(!session || !session.players || !session.players.length){
     toast('ยังไม่มีรายชื่อสมาชิก');
@@ -1983,10 +2069,25 @@ async function sharePriceCurrent(){
     toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
     return;
   }
-  const pp = Math.ceil(totalCost / total);
-  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${total} คน · เฉลี่ย ${fmtBaht(pp)} บาท/คน`;
+  const calculated = Math.ceil(totalCost / total);
+  const override = getNumInput('price-override');
+  const effective = override > 0 ? override : calculated;
+
+  // ✅ ยืนยันก่อนส่ง — แสดงราคาให้ดูก่อน กันส่งพลาด
+  let confirmMsg = `📢 ส่งราคาก๊วนเข้า LINE?\n\n`;
+  if(override > 0 && override !== calculated){
+    confirmMsg += `คำนวณได้: ${fmtBaht(calculated)} บาท/คน\n`;
+    confirmMsg += `จะแจ้ง:    ${fmtBaht(effective)} บาท/คน${override > calculated ? ` (+${fmtBaht(override-calculated)})` : ''}\n\n`;
+  } else {
+    confirmMsg += `ราคา: ${fmtBaht(effective)} บาท/คน\n`;
+    confirmMsg += `รวม:  ${fmtBaht(effective * total)} ฿ จาก ${total} คน\n\n`;
+  }
+  confirmMsg += `ยืนยันส่ง?`;
+  if(!confirm(confirmMsg)) return;
+
+  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${total} คน · เฉลี่ย ${fmtBaht(effective)} บาท/คน`;
   const btn = document.querySelector('.big-share-btn') || document.querySelector('.btn-share-line.price');
-  await shareLineFlex(buildPriceFlex(session), altText, btn);
+  await shareLineFlex(buildPriceFlex(session, { effectivePp: effective }), altText, btn);
 }
 
 async function shareStatusCurrent(){
@@ -2081,6 +2182,7 @@ async function editSession(docId){
       shuttlePrice:  d.shuttlePrice || 0,
       shuttleCount:  d.shuttleCount || 0,
       memberEstimate: d.memberEstimate || 0,
+      priceOverride: d.priceOverride || 0,
       perPerson:     d.perPerson    || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
@@ -2414,11 +2516,12 @@ function onCostInputChange(){
   session.shuttlePrice  = b.shuttlePrice;
   session.shuttleCount  = b.shuttleCount;
   session.memberEstimate = getNumInput('member-est');
+  session.priceOverride  = getNumInput('price-override');
   saveDraft();
   renderSummary();
   renderTable(); // re-render เพราะ amount ต่อคนเปลี่ยน
 }
-['member-est','courts','court-rate','hours','shuttle-price','shuttle-count'].forEach(id => {
+['member-est','courts','court-rate','hours','shuttle-price','shuttle-count','price-override'].forEach(id => {
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', onCostInputChange);
 });
@@ -2426,13 +2529,14 @@ function onCostInputChange(){
 /** Sync ค่าใน input fields จาก session.* — ใช้ตอน boot, edit, load */
 function setSetupInputsFromSession(){
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = (v ?? 0); };
-  set('member-est',    session.memberEstimate || 0);
-  set('courts',        session.courts || 1);
-  set('court-rate',    session.courtRate || 0);
-  set('hours',         session.hours || 2);
-  set('shuttle-price', session.shuttlePrice || 0);
-  set('shuttle-count', session.shuttleCount || 0);
-  set('court-fee',     session.courtFee || 0);
+  set('member-est',     session.memberEstimate || 0);
+  set('courts',         session.courts || 1);
+  set('court-rate',     session.courtRate || 0);
+  set('hours',          session.hours || 2);
+  set('shuttle-price',  session.shuttlePrice || 0);
+  set('shuttle-count',  session.shuttleCount || 0);
+  set('court-fee',      session.courtFee || 0);
+  set('price-override', session.priceOverride || 0);
 }
 
 /* ================================================================
