@@ -45,8 +45,11 @@ body{min-height:100dvh}
   border-radius:var(--radius);padding:18px 20px;margin:16px 0 12px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15;white-space:nowrap}
-.header-card .brand span{color:var(--accent)}
+.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15}
+.header-card .brand span{color:var(--accent);display:block}
+@media (min-width:520px){
+  .header-card .brand span{display:inline}
+}
 .header-card .brand-sub{
   font-size:11px;font-weight:600;color:var(--mute);margin-top:2px;
   letter-spacing:.02em;white-space:nowrap;
@@ -658,27 +661,6 @@ body{min-height:100dvh}
 }
 .pc-del:active{background:#ef444420;color:var(--red);opacity:1}
 
-/* Hours stepper */
-.hr-stepper{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--input);border:1.5px solid var(--border);border-radius:8px;
-  padding:3px;
-}
-.hr-step-btn{
-  width:30px;height:30px;border-radius:6px;border:none;
-  background:transparent;color:var(--soft);font-size:18px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;line-height:1;
-  -webkit-tap-highlight-color:transparent;
-}
-.hr-step-btn:active{background:var(--card2)}
-.hr-step-btn:disabled{opacity:.3;cursor:not-allowed}
-.hr-value{
-  min-width:54px;text-align:center;
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;color:var(--ink);
-  padding:0 4px;
-}
-.hr-value.partial{color:#fbbf24}
-
 /* BIG pay buttons */
 .pc-pay-row{
   display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;
@@ -708,6 +690,7 @@ body{min-height:100dvh}
 @media (min-width:1100px){
   .player-table{grid-template-columns:repeat(3,1fr)}
 }
+
 </style>
 </head>
 <body>
@@ -718,7 +701,7 @@ body{min-height:100dvh}
     <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
       <img src="logo-small.png" alt="" style="width:46px;height:46px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
       <div style="min-width:0">
-        <div class="brand">ก๊วนอยากตี<span> ต้องได้ตี</span></div>
+        <div class="brand">ก๊วนอยากตี<span>ต้องได้ตี</span></div>
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
     </div>
@@ -1048,28 +1031,13 @@ function getPerPerson(){
   return n > 0 ? Math.ceil(totalCost / n) : 0;
 }
 
-/** ยอดที่แต่ละคนต้องจ่าย — ถ้าทุกคนเล่นเท่ากัน = totalCost/N (ปัดขึ้น)
- *  ถ้ามีคนเล่นไม่เท่ากัน = weighted by hoursPlayed
- */
+/** ยอดที่แต่ละคนต้องจ่าย — หารเท่า ๆ กัน (ปัดขึ้น) */
 function getPlayerShare(p){
   if(!p) return 0;
-  const { totalCost, hours } = getCostBreakdown();
+  const { totalCost } = getCostBreakdown();
   const players = session?.players || [];
   if(players.length === 0 || totalCost <= 0) return 0;
-
-  const fullHours = hours > 0 ? hours : 1;
-  const allFull = players.every(pp => {
-    const ph = Number(pp.hoursPlayed);
-    return !ph || Math.abs(ph - fullHours) < 0.01;
-  });
-  if(allFull){
-    return Math.ceil(totalCost / players.length);
-  }
-  // weighted
-  const totalManHours = players.reduce((s, pp) => s + (Number(pp.hoursPlayed) || fullHours), 0);
-  if(totalManHours <= 0) return 0;
-  const playerHours = Number(p.hoursPlayed) || fullHours;
-  return Math.ceil(totalCost * playerHours / totalManHours);
+  return Math.ceil(totalCost / players.length);
 }
 
 function fmtBaht(n){
@@ -1287,13 +1255,10 @@ function renderTable(){
     el.innerHTML = '<div class="empty" style="grid-column:1/-1">ยังไม่มีรายชื่อ<br>กลับไปเลือกที่ tab "🧑 รายชื่อ"</div>';
     return;
   }
-  const { hours: fullHours } = getCostBreakdown();
   el.innerHTML = session.players.map((p,i) => {
     const cls = p.cash && p.transfer ? 'paid-both'
               : p.cash ? 'paid-cash'
               : p.transfer ? 'paid-transfer' : '';
-    const ph = Number(p.hoursPlayed) || fullHours;
-    const isPartial = fullHours > 0 && Math.abs(ph - fullHours) > 0.01;
     const share = getPlayerShare(p);
     return `<div class="player-card ${cls}">
       <button class="pc-del" onclick="deletePlayer('${p.id}')" title="ลบ">✕</button>
@@ -1301,14 +1266,6 @@ function renderTable(){
         <div class="pc-num">${i+1}</div>
         <div class="pc-name">${escHtml(p.name)}</div>
         <div class="pc-amt">${fmtBaht(share)}<small>฿</small></div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div class="hr-stepper" title="ปรับเวลาเล่นของคนนี้">
-          <button class="hr-step-btn" onclick="adjustPlayerHours('${p.id}',-0.5)" ${ph<=0.5?'disabled':''}>−</button>
-          <span class="hr-value ${isPartial?'partial':''}">${ph} ชม.</span>
-          <button class="hr-step-btn" onclick="adjustPlayerHours('${p.id}',+0.5)" ${ph>=fullHours?'disabled':''}>+</button>
-        </div>
-        ${isPartial?`<span style="font-size:11px;color:#fbbf24;font-weight:700">⚠️ มาไม่เต็ม</span>`:''}
       </div>
       <div class="pc-pay-row">
         <button class="pay-btn-big cash ${p.cash?'on':''}" onclick="togglePay('${p.id}','cash')">
@@ -1320,21 +1277,6 @@ function renderTable(){
       </div>
     </div>`;
   }).join('');
-}
-
-/** ปรับชั่วโมงเล่นของ player คนหนึ่ง (รองรับมาไม่ครบ/กลับก่อน) */
-function adjustPlayerHours(playerId, delta){
-  const p = session.players.find(pp => pp.id === playerId);
-  if(!p) return;
-  const { hours: fullHours } = getCostBreakdown();
-  const cur = Number(p.hoursPlayed) || fullHours;
-  let next = Math.round((cur + delta) * 2) / 2; // step 0.5
-  if(next < 0.5) next = 0.5;
-  if(next > fullHours) next = fullHours;
-  p.hoursPlayed = next;
-  saveDraft();
-  renderTable();
-  renderSummary();
 }
 
 function renderSummary(){
@@ -2043,7 +1985,7 @@ async function sharePriceCurrent(){
   }
   const pp = Math.ceil(totalCost / total);
   const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${total} คน · เฉลี่ย ${fmtBaht(pp)} บาท/คน`;
-  const btn = document.querySelector('.btn-share-line.price');
+  const btn = document.querySelector('.big-share-btn') || document.querySelector('.btn-share-line.price');
   await shareLineFlex(buildPriceFlex(session), altText, btn);
 }
 
