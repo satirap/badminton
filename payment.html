@@ -45,8 +45,11 @@ body{min-height:100dvh}
   border-radius:var(--radius);padding:18px 20px;margin:16px 0 12px;
   display:flex;align-items:center;justify-content:space-between;gap:12px;
 }
-.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15;white-space:nowrap}
-.header-card .brand span{color:var(--accent)}
+.header-card .brand{font-size:18px;font-weight:800;color:var(--ink);line-height:1.15}
+.header-card .brand span{color:var(--accent);display:block}
+@media (min-width:520px){
+  .header-card .brand span{display:inline}
+}
 .header-card .brand-sub{
   font-size:11px;font-weight:600;color:var(--mute);margin-top:2px;
   letter-spacing:.02em;white-space:nowrap;
@@ -658,27 +661,6 @@ body{min-height:100dvh}
 }
 .pc-del:active{background:#ef444420;color:var(--red);opacity:1}
 
-/* Hours stepper */
-.hr-stepper{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--input);border:1.5px solid var(--border);border-radius:8px;
-  padding:3px;
-}
-.hr-step-btn{
-  width:30px;height:30px;border-radius:6px;border:none;
-  background:transparent;color:var(--soft);font-size:18px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;line-height:1;
-  -webkit-tap-highlight-color:transparent;
-}
-.hr-step-btn:active{background:var(--card2)}
-.hr-step-btn:disabled{opacity:.3;cursor:not-allowed}
-.hr-value{
-  min-width:54px;text-align:center;
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;color:var(--ink);
-  padding:0 4px;
-}
-.hr-value.partial{color:#fbbf24}
-
 /* BIG pay buttons */
 .pc-pay-row{
   display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;
@@ -709,49 +691,6 @@ body{min-height:100dvh}
   .player-table{grid-template-columns:repeat(3,1fr)}
 }
 
-/* ── Partial-warning modal ── */
-.pm-overlay{
-  position:fixed;inset:0;z-index:300;background:#000c;
-  display:flex;align-items:center;justify-content:center;padding:16px;
-  animation:vmFade .2s ease;
-}
-.pm-panel{
-  background:var(--card);width:100%;max-width:440px;
-  border-radius:16px;overflow:hidden;display:flex;flex-direction:column;
-  box-shadow:0 12px 48px #000c;animation:vmSlide .25s cubic-bezier(.2,.9,.3,1.2);
-  border:1.5px solid var(--border);
-}
-.pm-head{padding:18px 20px 8px;background:#fbbf2418;border-bottom:1px solid var(--border)}
-.pm-title{font-size:18px;font-weight:800;color:#fbbf24;line-height:1.2}
-.pm-sub{font-size:13px;color:var(--soft);margin-top:4px}
-.pm-body{padding:14px 20px;max-height:35dvh;overflow-y:auto}
-.pm-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
-.pm-list li{
-  background:var(--card2);border:1.5px solid var(--border);
-  border-radius:10px;padding:10px 12px;font-size:14px;color:var(--ink);
-  display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;
-}
-.pm-list li b{font-weight:800;color:var(--ink)}
-.pm-list li .meta{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;color:#fbbf24;font-weight:700;
-}
-.pm-actions{padding:14px 20px 18px;display:flex;flex-direction:column;gap:8px}
-.pm-btn{
-  display:flex;align-items:center;gap:12px;text-align:left;
-  padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;
-  background:var(--input);color:var(--ink);
-  font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;
-  transition:all .15s;-webkit-tap-highlight-color:transparent;
-}
-.pm-btn:active{transform:scale(.98)}
-.pm-btn .ic{font-size:24px;line-height:1;flex:0 0 auto}
-.pm-btn b{display:block;font-size:15px;font-weight:800;color:var(--ink);margin-bottom:2px}
-.pm-btn small{display:block;font-size:11px;font-weight:500;color:var(--mute);line-height:1.4}
-.pm-btn.primary{background:var(--accent);border-color:var(--accent);color:#111}
-.pm-btn.primary b,.pm-btn.primary small{color:#111}
-.pm-btn.primary small{opacity:.75}
-.pm-btn.cancel{justify-content:center;padding:12px;color:var(--mute);font-size:13px;font-weight:700}
-.pm-btn.cancel:active{background:var(--card2)}
 </style>
 </head>
 <body>
@@ -762,7 +701,7 @@ body{min-height:100dvh}
     <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
       <img src="logo-small.png" alt="" style="width:46px;height:46px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
       <div style="min-width:0">
-        <div class="brand">ก๊วนอยากตี<span> ต้องได้ตี</span></div>
+        <div class="brand">ก๊วนอยากตี<span>ต้องได้ตี</span></div>
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
     </div>
@@ -977,36 +916,6 @@ body{min-height:100dvh}
   </div>
 </div>
 
-<!-- ===== Modal: เตือนก่อนแชร์ — มีคนมาไม่เต็มเวลา ===== -->
-<div class="pm-overlay" id="partial-modal" style="display:none">
-  <div class="pm-panel">
-    <div class="pm-head">
-      <div class="pm-title">⚠️ มีคนเล่นไม่เต็มเวลา</div>
-      <div class="pm-sub">ให้แจ้งราคาแบบไหนเข้า LINE?</div>
-    </div>
-    <div class="pm-body">
-      <ul class="pm-list" id="partial-list"></ul>
-    </div>
-    <div class="pm-actions">
-      <button class="pm-btn primary" data-choice="detailed">
-        <span class="ic">📋</span>
-        <div>
-          <b>ส่งแบบละเอียด</b>
-          <small>ทุกคนเห็นยอดของตัวเอง · เน้นคนมาไม่เต็ม</small>
-        </div>
-      </button>
-      <button class="pm-btn" data-choice="average">
-        <span class="ic">⚖️</span>
-        <div>
-          <b>ส่งแบบเฉลี่ย</b>
-          <small>แจ้งราคาเฉลี่ยปกติ · บอกคนมาไม่เต็มเองทีหลัง</small>
-        </div>
-      </button>
-      <button class="pm-btn cancel" data-choice="cancel">ยกเลิก</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1122,28 +1031,13 @@ function getPerPerson(){
   return n > 0 ? Math.ceil(totalCost / n) : 0;
 }
 
-/** ยอดที่แต่ละคนต้องจ่าย — ถ้าทุกคนเล่นเท่ากัน = totalCost/N (ปัดขึ้น)
- *  ถ้ามีคนเล่นไม่เท่ากัน = weighted by hoursPlayed
- */
+/** ยอดที่แต่ละคนต้องจ่าย — หารเท่า ๆ กัน (ปัดขึ้น) */
 function getPlayerShare(p){
   if(!p) return 0;
-  const { totalCost, hours } = getCostBreakdown();
+  const { totalCost } = getCostBreakdown();
   const players = session?.players || [];
   if(players.length === 0 || totalCost <= 0) return 0;
-
-  const fullHours = hours > 0 ? hours : 1;
-  const allFull = players.every(pp => {
-    const ph = Number(pp.hoursPlayed);
-    return !ph || Math.abs(ph - fullHours) < 0.01;
-  });
-  if(allFull){
-    return Math.ceil(totalCost / players.length);
-  }
-  // weighted
-  const totalManHours = players.reduce((s, pp) => s + (Number(pp.hoursPlayed) || fullHours), 0);
-  if(totalManHours <= 0) return 0;
-  const playerHours = Number(p.hoursPlayed) || fullHours;
-  return Math.ceil(totalCost * playerHours / totalManHours);
+  return Math.ceil(totalCost / players.length);
 }
 
 function fmtBaht(n){
@@ -1361,13 +1255,10 @@ function renderTable(){
     el.innerHTML = '<div class="empty" style="grid-column:1/-1">ยังไม่มีรายชื่อ<br>กลับไปเลือกที่ tab "🧑 รายชื่อ"</div>';
     return;
   }
-  const { hours: fullHours } = getCostBreakdown();
   el.innerHTML = session.players.map((p,i) => {
     const cls = p.cash && p.transfer ? 'paid-both'
               : p.cash ? 'paid-cash'
               : p.transfer ? 'paid-transfer' : '';
-    const ph = Number(p.hoursPlayed) || fullHours;
-    const isPartial = fullHours > 0 && Math.abs(ph - fullHours) > 0.01;
     const share = getPlayerShare(p);
     return `<div class="player-card ${cls}">
       <button class="pc-del" onclick="deletePlayer('${p.id}')" title="ลบ">✕</button>
@@ -1375,14 +1266,6 @@ function renderTable(){
         <div class="pc-num">${i+1}</div>
         <div class="pc-name">${escHtml(p.name)}</div>
         <div class="pc-amt">${fmtBaht(share)}<small>฿</small></div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div class="hr-stepper" title="ปรับเวลาเล่นของคนนี้">
-          <button class="hr-step-btn" onclick="adjustPlayerHours('${p.id}',-0.5)" ${ph<=0.5?'disabled':''}>−</button>
-          <span class="hr-value ${isPartial?'partial':''}">${ph} ชม.</span>
-          <button class="hr-step-btn" onclick="adjustPlayerHours('${p.id}',+0.5)" ${ph>=fullHours?'disabled':''}>+</button>
-        </div>
-        ${isPartial?`<span style="font-size:11px;color:#fbbf24;font-weight:700">⚠️ มาไม่เต็ม</span>`:''}
       </div>
       <div class="pc-pay-row">
         <button class="pay-btn-big cash ${p.cash?'on':''}" onclick="togglePay('${p.id}','cash')">
@@ -1394,21 +1277,6 @@ function renderTable(){
       </div>
     </div>`;
   }).join('');
-}
-
-/** ปรับชั่วโมงเล่นของ player คนหนึ่ง (รองรับมาไม่ครบ/กลับก่อน) */
-function adjustPlayerHours(playerId, delta){
-  const p = session.players.find(pp => pp.id === playerId);
-  if(!p) return;
-  const { hours: fullHours } = getCostBreakdown();
-  const cur = Number(p.hoursPlayed) || fullHours;
-  let next = Math.round((cur + delta) * 2) / 2; // step 0.5
-  if(next < 0.5) next = 0.5;
-  if(next > fullHours) next = fullHours;
-  p.hoursPlayed = next;
-  saveDraft();
-  renderTable();
-  renderSummary();
 }
 
 function renderSummary(){
@@ -1901,7 +1769,7 @@ function ensureLiff(){
    ================================================================ */
 const QR_PAYMENT_URL = 'https://satirap.github.io/badminton/qr-payment.png';
 
-function buildPriceFlex(s, opts){
+function buildPriceFlex(s){
   const players      = s.players || [];
   const total        = players.length;
   const courtFee     = s.courtFee     || 0;
@@ -1911,10 +1779,6 @@ function buildPriceFlex(s, opts){
   const totalCost    = courtFee + shuttleTotal;
   const pp           = total > 0 ? Math.ceil(totalCost / total) : 0;
   const dateStr      = s.dateDisplay || s.date || '';
-  const fullHours    = s.hours || 2;
-  const detailed     = !!(opts && opts.detailed);
-  const partials     = (opts && opts.partials) || getPartialPlayers(s);
-  const hasPartial   = partials.length > 0;
 
   const costRows = [];
   if(courtFee > 0){
@@ -1951,52 +1815,6 @@ function buildPriceFlex(s, opts){
     ]
   });
 
-  // Per-person section: detailed (รายคน) หรือ averaged
-  let perPersonBox;
-  if(detailed && hasPartial){
-    // รายคน — ปกติเรียงก่อน, มาไม่เต็มเรียงท้าย
-    const fullPlayers    = players.filter(p => !partials.includes(p));
-    const orderedPlayers = [...fullPlayers, ...partials];
-    const playerLines = orderedPlayers.map(p => {
-      const ph = Number(p.hoursPlayed) || fullHours;
-      const isPartial = Math.abs(ph - fullHours) > 0.01;
-      const share = computePlayerShareLocal(p, s);
-      return {
-        type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
-        contents:[
-          { type:'text', text: p.name||'—', size:'sm', color:'#111111', weight: isPartial?'regular':'bold', flex:5, wrap:false },
-          { type:'text', text: isPartial ? `${ph} ชม.` : '', size:'xs', color:'#d97706', weight:'bold', align:'end', flex:3 },
-          { type:'text', text: `${fmtBaht(share)} ฿`, size:'sm', weight:'bold', color: isPartial?'#d97706':'#111111', align:'end', flex:3 },
-        ]
-      };
-    });
-    perPersonBox = {
-      type:'box', layout:'vertical', backgroundColor:'#f5f3ee',
-      cornerRadius:'12px', paddingAll:'14px', margin:'lg',
-      contents:[
-        { type:'text', text:'💸 ยอดของแต่ละคน', color:'#16181d', size:'sm', weight:'bold', align:'center' },
-        { type:'text', text:`(สีส้ม = มาไม่เต็มเวลา ${partials.length} คน)`, color:'#d97706', size:'xxs', align:'center', margin:'xs' },
-        { type:'separator', margin:'sm' },
-        ...playerLines
-      ]
-    };
-  } else {
-    // เฉลี่ยปกติ — มี note เล็กถ้ามีคนมาไม่เต็ม
-    perPersonBox = {
-      type:'box', layout:'vertical', backgroundColor:'#c8f135',
-      cornerRadius:'12px', paddingAll:'16px', margin:'lg',
-      contents:[
-        { type:'text', text:'💸 เฉลี่ยต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
-        { type:'text', text:`${fmtBaht(pp)} บาท`, color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'sm' },
-        ...(hasPartial ? [{
-          type:'text',
-          text:`* มี ${partials.length} คนมาไม่เต็มเวลา จัดการเป็นรายบุคคล`,
-          size:'xxs', color:'#1a1a1a', align:'center', margin:'sm', wrap:true
-        }] : [])
-      ]
-    };
-  }
-
   return {
     type:'bubble',
     size:'mega',
@@ -2012,7 +1830,15 @@ function buildPriceFlex(s, opts){
       contents:[
         { type:'text', text:'💰 ค่าใช้จ่าย', size:'xs', color:'#8e8c85', weight:'bold' },
         ...costRows,
-        perPersonBox,
+        // Per-person highlight
+        {
+          type:'box', layout:'vertical', backgroundColor:'#c8f135',
+          cornerRadius:'12px', paddingAll:'16px', margin:'lg',
+          contents:[
+            { type:'text', text:'💸 เฉลี่ยต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
+            { type:'text', text:`${fmtBaht(pp)} บาท`, color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'sm' },
+          ]
+        },
         // QR section
         { type:'separator', margin:'xl' },
         { type:'text', text:'📲 โอนได้ที่ QR Code ด้านล่าง', size:'sm', weight:'bold', color:'#3b82f6', align:'center', margin:'lg' },
@@ -2040,34 +1866,15 @@ function buildStatusFlex(s){
   const paidN    = cashList.length + tranList.length;
   const dateStr  = s.dateDisplay || s.date || '';
   const pp       = s.perPerson || (total > 0 ? Math.ceil(((s.courtFee||0) + (s.shuttlePrice||0)*(s.shuttleCount||0)) / total) : 0);
-  const fullHours = s.hours || 2;
-  const partials  = getPartialPlayers(s);
-  const hasPartial = partials.length > 0;
 
-  // ถ้ามีคนมาไม่เต็ม → แสดงยอดของแต่ละคน + ชม. ในบรรทัด
-  const playerRow = (p, status) => {
-    if(hasPartial){
-      const ph = Number(p.hoursPlayed) || fullHours;
-      const isPartial = Math.abs(ph - fullHours) > 0.01;
-      const share = computePlayerShareLocal(p, s);
-      return {
-        type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
-        contents:[
-          { type:'text', text:status.icon, size:'sm', flex:1, color:status.color },
-          { type:'text', text:(p.name||'—') + (isPartial?` (${ph}ชม)`:''), size:'sm', color: isPartial?'#d97706':'#111111', weight:'bold', flex:7, wrap:false },
-          { type:'text', text:`${fmtBaht(share)} ฿`, size:'sm', weight:'bold', color:status.color, align:'end', flex:3 },
-        ]
-      };
-    }
-    return {
-      type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
-      contents:[
-        { type:'text', text:status.icon, size:'sm', flex:1, color:status.color },
-        { type:'text', text:p.name||'—', size:'sm', color:'#111111', weight:'bold', flex:6, wrap:true },
-        { type:'text', text:status.label, size:'xs', weight:'bold', color:status.color, align:'end', flex:4 },
-      ]
-    };
-  };
+  const playerRow = (p, status) => ({
+    type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
+    contents:[
+      { type:'text', text:status.icon, size:'sm', flex:1, color:status.color },
+      { type:'text', text:p.name||'—', size:'sm', color:'#111111', weight:'bold', flex:6, wrap:true },
+      { type:'text', text:status.label, size:'xs', weight:'bold', color:status.color, align:'end', flex:4 },
+    ]
+  });
 
   const sections = [];
 
@@ -2119,11 +1926,7 @@ function buildStatusFlex(s){
           ]
         },
         { type:'box', layout:'horizontal', margin:'lg', contents:[
-          { type:'text',
-            text: hasPartial
-              ? `💸 ราคาตามเวลาเล่น · เฉลี่ย ${fmtBaht(pp)} บาท`
-              : `💸 คนละ ${fmtBaht(pp)} บาท`,
-            size:'sm', color: hasPartial?'#d97706':'#16181d', weight:'bold', align:'center' },
+          { type:'text', text:`💸 คนละ ${fmtBaht(pp)} บาท`, size:'sm', color:'#16181d', weight:'bold', align:'center' },
         ]},
         { type:'separator', margin:'md' },
         ...sections,
@@ -2169,65 +1972,6 @@ async function shareLineFlex(flex, altText, btnElem){
   }
 }
 
-/** หาคนที่เล่นไม่เต็มเวลา */
-function getPartialPlayers(s){
-  const sess = s || session;
-  const fullHours = (sess?.hours) || getFloatInput('hours', 0) || 2;
-  return (sess?.players || []).filter(p => {
-    const ph = Number(p.hoursPlayed) || fullHours;
-    return Math.abs(ph - fullHours) > 0.01;
-  });
-}
-
-/** modal เลือกรูปแบบส่ง — return Promise<'detailed'|'average'|'cancel'> */
-function askPartialChoice(partials){
-  return new Promise(resolve => {
-    const overlay = document.getElementById('partial-modal');
-    const list    = document.getElementById('partial-list');
-    if(!overlay || !list){ resolve('average'); return; }
-    const fullHours = (session?.hours) || 2;
-    list.innerHTML = partials.map(p => {
-      const ph = Number(p.hoursPlayed) || fullHours;
-      const share = computePlayerShareLocal(p, session);
-      return `<li><b>${escHtml(p.name)}</b>
-        <span class="meta">${ph} ชม. · ${fmtBaht(share)} ฿</span></li>`;
-    }).join('');
-    overlay.style.display = 'flex';
-    const onClick = (e) => {
-      const choice = e.target.closest?.('[data-choice]')?.dataset?.choice;
-      if(choice){ done(choice); }
-      else if(e.target === overlay){ done('cancel'); }
-    };
-    const onKey = (e) => { if(e.key === 'Escape') done('cancel'); };
-    function done(val){
-      overlay.style.display = 'none';
-      overlay.removeEventListener('click', onClick);
-      document.removeEventListener('keydown', onKey);
-      resolve(val);
-    }
-    overlay.addEventListener('click', onClick);
-    document.addEventListener('keydown', onKey);
-  });
-}
-
-/** Compute player share จาก session object — ไม่พึ่งพา DOM */
-function computePlayerShareLocal(p, s){
-  if(!p || !s) return 0;
-  const players = s.players || [];
-  const fullHours = s.hours || 2;
-  const totalCost = (s.courtFee || 0) + (s.shuttlePrice || 0) * (s.shuttleCount || 0);
-  if(players.length === 0 || totalCost <= 0) return 0;
-  const allFull = players.every(pp => {
-    const ph = Number(pp.hoursPlayed) || fullHours;
-    return Math.abs(ph - fullHours) < 0.01;
-  });
-  if(allFull) return Math.ceil(totalCost / players.length);
-  const sumHours = players.reduce((sum, pp) => sum + (Number(pp.hoursPlayed) || fullHours), 0);
-  if(sumHours <= 0) return 0;
-  const ph = Number(p.hoursPlayed) || fullHours;
-  return Math.ceil(totalCost * ph / sumHours);
-}
-
 async function sharePriceCurrent(){
   if(!session || !session.players || !session.players.length){
     toast('ยังไม่มีรายชื่อสมาชิก');
@@ -2239,18 +1983,10 @@ async function sharePriceCurrent(){
     toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
     return;
   }
-  // เช็คคนมาไม่เต็มเวลา → ถามรูปแบบส่ง
-  const partials = getPartialPlayers(session);
-  let detailed = false;
-  if(partials.length > 0){
-    const choice = await askPartialChoice(partials);
-    if(choice === 'cancel') return;
-    detailed = (choice === 'detailed');
-  }
   const pp = Math.ceil(totalCost / total);
-  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${total} คน · ${detailed?'ราคาตามเวลาที่เล่น':`เฉลี่ย ${fmtBaht(pp)} บาท/คน`}`;
+  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${total} คน · เฉลี่ย ${fmtBaht(pp)} บาท/คน`;
   const btn = document.querySelector('.big-share-btn') || document.querySelector('.btn-share-line.price');
-  await shareLineFlex(buildPriceFlex(session, { detailed, partials }), altText, btn);
+  await shareLineFlex(buildPriceFlex(session), altText, btn);
 }
 
 async function shareStatusCurrent(){
