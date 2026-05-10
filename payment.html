@@ -627,13 +627,6 @@ body{min-height:100dvh}
 .ov-row input::-webkit-outer-spin-button,
 .ov-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .ov-unit{font-size:13px;font-weight:700;color:var(--accent)}
-.ov-fill{
-  padding:8px 12px;border:1.5px solid var(--accent);border-radius:8px;
-  background:transparent;color:var(--accent);
-  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-}
-.ov-fill:active{background:var(--accent);color:#111}
 .ov-hint{font-size:11px;color:var(--mute);margin-top:6px;font-style:italic}
 .ov-hint.active{color:var(--accent);font-style:normal;font-weight:700}
 
@@ -930,7 +923,7 @@ body{min-height:100dvh}
             <div class="stp-field">
               <label>ลูกแบด/ลูก</label>
               <div class="stp-field-row">
-                <input type="number" id="shuttle-price" value="75" min="0" step="5" inputmode="numeric"/>
+                <input type="number" id="shuttle-price" value="73" min="0" step="5" inputmode="numeric"/>
                 <span class="suf">฿</span>
               </div>
             </div>
@@ -960,15 +953,14 @@ body{min-height:100dvh}
               <span>เฉลี่ย/คน <small id="per-note"></small></span>
               <span><b id="cost-per-person">0</b> ฿</span>
             </div>
-            <!-- ปรับยอดที่จะแจ้งจริง — เผื่อปัดให้สวย -->
+            <!-- ปรับยอดที่จะแจ้งจริง — auto ปัดเต็ม 10 · พิมพ์ทับเองได้ -->
             <div class="stp-override">
-              <div class="ov-label">📢 ราคาที่จะแจ้ง <small>(ปรับให้พอเหมาะ)</small></div>
+              <div class="ov-label">📢 ราคาที่จะแจ้ง <small>(ปัดเต็ม 10 · พิมพ์ทับได้)</small></div>
               <div class="ov-row">
                 <input type="number" id="price-override" placeholder="0" min="0" step="5" inputmode="numeric"/>
                 <span class="ov-unit">฿/คน</span>
-                <button type="button" class="ov-fill" onclick="fillPriceOverride()" title="ปัดขึ้นเป็นหลัก 10">↑10</button>
               </div>
-              <div class="ov-hint" id="ov-hint">ปล่อยว่าง = ใช้ค่าเฉลี่ย · กดปุ่ม ↑10 เพื่อปัดขึ้น</div>
+              <div class="ov-hint" id="ov-hint">ระบบปัดขึ้นเต็ม 10 ให้แล้ว · พิมพ์เพื่อปรับเอง</div>
               <div class="gongklang-row" id="gongklang-row" style="display:none">
                 💰 เก็บเข้ากองกลาง: <b id="gongklang-amt">0</b> ฿
               </div>
@@ -1127,7 +1119,7 @@ function newSession(){
     courtRate:     220, // default ค่าคอร์ด/ชม.
     hours:         2,
     courtFee:      0,   // = courts × courtRate × hours (สำหรับ compat)
-    shuttlePrice:  75,  // default ค่าลูก/ลูก
+    shuttlePrice:  73,  // default ค่าลูก/ลูก
     shuttleCount:  0,
     memberEstimate: 0,  // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
     priceOverride: 0,   // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
@@ -2214,15 +2206,32 @@ function getEffectivePerPerson(){
   return getPerPerson();
 }
 
-/** ปุ่ม "↑10" — ปัดราคาเฉลี่ยขึ้นเป็นหลัก 10 ใส่ override */
-function fillPriceOverride(){
-  const calc = getPerPerson();
-  if(calc <= 0){ toast('ยังไม่มียอดเฉลี่ย'); return; }
-  const rounded = Math.ceil(calc / 10) * 10;
+/** Auto-fill ราคาที่จะแจ้ง = ceil(เฉลี่ย / 10) * 10
+ *  - ถ้า field ว่างหรือ = 0 → auto-fill
+ *  - ถ้า field ตรงกับค่า auto ครั้งก่อน → re-auto-fill (calc เปลี่ยน)
+ *  - ถ้าผู้ใช้พิมพ์ค่าอื่นไว้ → คงค่าเดิม (manual override)
+ */
+function refreshAutoOverride(){
   const inp = document.getElementById('price-override');
-  if(inp){
-    inp.value = rounded;
-    inp.dispatchEvent(new Event('input', {bubbles:true}));
+  if(!inp) return;
+  const calc = getPerPerson();
+  const autoRounded = calc > 0 ? Math.ceil(calc / 10) * 10 : 0;
+  const currentText = (inp.value || '').trim();
+  const currentNum = parseInt(currentText, 10) || 0;
+  const lastAuto = inp.dataset.autoLast || '';
+
+  // Skip ถ้าผู้ใช้พิมพ์ค่าเฉพาะ (ไม่ตรงกับ auto ครั้งก่อน)
+  if(currentNum > 0 && currentText !== lastAuto) return;
+
+  if(autoRounded > 0){
+    inp.value = String(autoRounded);
+    inp.dataset.autoLast = String(autoRounded);
+    session.priceOverride = autoRounded;
+  } else if(currentNum > 0){
+    // Cost = 0 แต่มี override เก่าค้าง → เคลียร์
+    inp.value = '';
+    inp.dataset.autoLast = '';
+    session.priceOverride = 0;
   }
 }
 
@@ -2372,6 +2381,7 @@ async function editSession(docId){
     switchSection('payment'); // edit mode ควรไปหน้ารับเงินตรง ๆ
     renderDate();
     setSetupInputsFromSession();
+    refreshAutoOverride();
     renderTable();
     renderSummary();
     renderPlayerListMini();
@@ -2464,6 +2474,7 @@ function syncHeadcountInput(){
   session.memberEstimate = n;
   const inp = document.getElementById('member-est');
   if(inp) inp.value = n;
+  refreshAutoOverride(); // headcount เปลี่ยน → auto-fill ราคาที่จะแจ้ง
 }
 
 /** กดปุ่ม "เพิ่มผู้เล่น" — REPLACE player list ทั้งหมดจากข้อความ paste */
@@ -2580,7 +2591,7 @@ document.getElementById('new-member-name').addEventListener('keydown', e => {
 });
 
 // Any setup input change → recompute summary + save
-function onCostInputChange(){
+function onCostInputChange(e){
   const b = getCostBreakdown();
   session.courts        = b.courts;
   session.courtRate     = b.courtRate;
@@ -2590,6 +2601,18 @@ function onCostInputChange(){
   session.shuttleCount  = b.shuttleCount;
   session.memberEstimate = getNumInput('member-est');
   session.priceOverride  = getNumInput('price-override');
+  // Auto-refresh ราคาที่จะแจ้ง — ยกเว้นตอน user พิมพ์ใน price-override เอง
+  if(e?.target?.id !== 'price-override'){
+    refreshAutoOverride();
+  } else {
+    // user typed in override → clear autoLast ถ้าเป็นการพิมพ์ค่าใหม่
+    const inp = e.target;
+    const v = (inp.value || '').trim();
+    if(v === '' || parseInt(v,10) === 0){
+      // user cleared → reset state เผื่อ refresh ต่อไปจะ auto-fill
+      inp.dataset.autoLast = '';
+    }
+  }
   saveDraft();
   renderSummary();
   renderTable(); // re-render เพราะ amount ต่อคนเปลี่ยน
@@ -2637,6 +2660,7 @@ function setSetupInputsFromSession(){
   }
 
   setSetupInputsFromSession();
+  refreshAutoOverride();  // Auto-fill ราคาที่จะแจ้ง (ปัดเต็ม 10) ตอนเริ่ม
   renderDate();
   renderTable();
   renderSummary();
