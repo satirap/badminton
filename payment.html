@@ -909,14 +909,14 @@ body{min-height:100dvh}
               </div>
             </div>
             <div class="stp-field">
-              <label>คอร์ด</label>
+              <label>จำนวนคอร์ท</label>
               <div class="stp-field-row">
                 <input type="number" id="courts" value="1" min="1" step="1" inputmode="numeric"/>
-                <span class="suf">คอร์ด</span>
+                <span class="suf">คอร์ท</span>
               </div>
             </div>
             <div class="stp-field">
-              <label>ค่าคอร์ด/ชม.</label>
+              <label>ค่าคอร์ท/ชั่วโมง</label>
               <div class="stp-field-row">
                 <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric"/>
                 <span class="suf">฿</span>
@@ -947,7 +947,7 @@ body{min-height:100dvh}
 
           <div class="setup-totals">
             <div class="stp-row">
-              <span>ค่าคอร์ด <small id="court-formula"></small></span>
+              <span>ค่าคอร์ท <small id="court-formula"></small></span>
               <span><b id="court-cost-display">0</b> ฿</span>
             </div>
             <div class="stp-row">
@@ -1123,9 +1123,9 @@ function newSession(){
     date:        iso,
     dateDisplay: thaiDate(iso),
     status:      'open',
-    // ── ตัวตั้ง: คอร์ด/เรท/ชม. (ใหม่) — courtFee จะ derive จาก 3 ตัวนี้
+    // ── ตัวตั้ง: คอร์ท/เรท/ชม. (ใหม่) — courtFee จะ derive จาก 3 ตัวนี้
     courts:        1,
-    courtRate:     220, // default ค่าคอร์ด/ชม.
+    courtRate:     220, // default ค่าคอร์ท/ชม.
     hours:         2,
     courtFee:      0,   // = courts × courtRate × hours (สำหรับ compat)
     shuttlePrice:  73,  // default ค่าลูก/ลูก
@@ -1166,7 +1166,7 @@ function getCostBreakdown(){
   const hours        = getFloatInput('hours', 0);
   const shuttlePrice = getNumInput('shuttle-price');
   const shuttleCount = getNumInput('shuttle-count');
-  const courtFee     = courts * courtRate * hours; // ค่าคอร์ดทั้งหมด
+  const courtFee     = courts * courtRate * hours; // ค่าคอร์ททั้งหมด
   const shuttleCost  = shuttlePrice * shuttleCount;
   const totalCost    = courtFee + shuttleCost;
   return { courts, courtRate, hours, courtFee, shuttlePrice, shuttleCount, shuttleCost, totalCost };
