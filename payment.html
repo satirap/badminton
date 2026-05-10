@@ -1494,7 +1494,7 @@ function renderSummary(){
       ovHint.textContent = `จะแจ้ง ${fmtBaht(override)} ฿/คน · เฉลี่ยจริง ${fmtBaht(pp)} ฿/คน · ส่วนต่าง ${override > pp ? '+' : ''}${fmtBaht(override - pp)} ฿`;
       ovHint.classList.add('active');
     } else {
-      ovHint.textContent = 'ปล่อยว่าง = ใช้ค่าเฉลี่ย · กดปุ่ม ↑10 เพื่อปัดขึ้น';
+      ovHint.textContent = 'ระบบปัดเต็ม 10 ให้อัตโนมัติ · พิมพ์ทับเพื่อปรับเอง (cost เปลี่ยน = reset)';
       ovHint.classList.remove('active');
     }
   }
@@ -2207,28 +2207,19 @@ function getEffectivePerPerson(){
 }
 
 /** Auto-fill ราคาที่จะแจ้ง = ceil(เฉลี่ย / 10) * 10
- *  - ถ้า field ว่างหรือ = 0 → auto-fill
- *  - ถ้า field ตรงกับค่า auto ครั้งก่อน → re-auto-fill (calc เปลี่ยน)
- *  - ถ้าผู้ใช้พิมพ์ค่าอื่นไว้ → คงค่าเดิม (manual override)
+ *  ทุกครั้งที่ค่าใน "ตั้งค่ารอบ" เปลี่ยน (cost / headcount) → บังคับปัดใหม่
+ *  (ผู้ใช้ยังพิมพ์ทับเองได้ในช่อง override แต่จะถูก overwrite ตอนเปลี่ยน cost ครั้งถัดไป)
  */
 function refreshAutoOverride(){
   const inp = document.getElementById('price-override');
   if(!inp) return;
   const calc = getPerPerson();
   const autoRounded = calc > 0 ? Math.ceil(calc / 10) * 10 : 0;
-  const currentText = (inp.value || '').trim();
-  const currentNum = parseInt(currentText, 10) || 0;
-  const lastAuto = inp.dataset.autoLast || '';
-
-  // Skip ถ้าผู้ใช้พิมพ์ค่าเฉพาะ (ไม่ตรงกับ auto ครั้งก่อน)
-  if(currentNum > 0 && currentText !== lastAuto) return;
-
   if(autoRounded > 0){
     inp.value = String(autoRounded);
     inp.dataset.autoLast = String(autoRounded);
     session.priceOverride = autoRounded;
-  } else if(currentNum > 0){
-    // Cost = 0 แต่มี override เก่าค้าง → เคลียร์
+  } else {
     inp.value = '';
     inp.dataset.autoLast = '';
     session.priceOverride = 0;
@@ -2601,21 +2592,14 @@ function onCostInputChange(e){
   session.shuttleCount  = b.shuttleCount;
   session.memberEstimate = getNumInput('member-est');
   session.priceOverride  = getNumInput('price-override');
-  // Auto-refresh ราคาที่จะแจ้ง — ยกเว้นตอน user พิมพ์ใน price-override เอง
+  // ✅ เปลี่ยนค่า "ตั้งค่ารอบ" ใด ๆ → บังคับปัดราคาที่จะแจ้งเป็นเต็ม 10 ใหม่
+  //    ยกเว้นตอน user พิมพ์ใน price-override เอง (จะถูก overwrite ตอน cost เปลี่ยนรอบหน้า)
   if(e?.target?.id !== 'price-override'){
     refreshAutoOverride();
-  } else {
-    // user typed in override → clear autoLast ถ้าเป็นการพิมพ์ค่าใหม่
-    const inp = e.target;
-    const v = (inp.value || '').trim();
-    if(v === '' || parseInt(v,10) === 0){
-      // user cleared → reset state เผื่อ refresh ต่อไปจะ auto-fill
-      inp.dataset.autoLast = '';
-    }
   }
   saveDraft();
   renderSummary();
-  renderTable(); // re-render เพราะ amount ต่อคนเปลี่ยน
+  renderTable();
 }
 ['member-est','courts','court-rate','hours','shuttle-price','shuttle-count','price-override'].forEach(id => {
   const el = document.getElementById(id);
