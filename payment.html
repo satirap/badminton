@@ -594,6 +594,15 @@ body{min-height:100dvh}
 .stp-field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stp-field .suf{font-size:12px;font-weight:700;color:var(--mute);flex:0 0 auto}
 .stp-field:focus-within{border-color:var(--accent)}
+.stp-field.need-fill{
+  border-color:#fbbf24;background:#fbbf2410;
+  animation:nudge .8s ease-in-out infinite;
+}
+.stp-field.need-fill label{color:#fbbf24}
+@keyframes nudge{
+  0%,100%{box-shadow:0 0 0 0 #fbbf2400}
+  50%{box-shadow:0 0 0 4px #fbbf2440}
+}
 
 .setup-totals{
   display:flex;flex-direction:column;gap:6px;
@@ -2213,8 +2222,20 @@ function getEffectivePerPerson(){
 function refreshAutoOverride(){
   const inp = document.getElementById('price-override');
   if(!inp) return;
+  const totalCost = getCostBreakdown().totalCost;
+  const headcount = getBillingHeadcount();
   const calc = getPerPerson();
   const autoRounded = calc > 0 ? Math.ceil(calc / 10) * 10 : 0;
+
+  // UI hint: highlight "คนที่จะมา" ถ้ามี cost แต่ยังไม่ตั้งจำนวนคน
+  const memberEstInp = document.getElementById('member-est');
+  const needHeadcount = totalCost > 0 && headcount === 0;
+  if(memberEstInp){
+    const wrapper = memberEstInp.closest('.stp-field');
+    if(wrapper) wrapper.classList.toggle('need-fill', needHeadcount);
+  }
+  inp.placeholder = needHeadcount ? '⚠️ ใส่ "คนที่จะมา" ก่อน' : '0';
+
   if(autoRounded > 0){
     inp.value = String(autoRounded);
     inp.dataset.autoLast = String(autoRounded);
