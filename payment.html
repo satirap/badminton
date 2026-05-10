@@ -1395,6 +1395,7 @@ function addPlayer(name){
 
 function deletePlayer(id){
   session.players = session.players.filter(p => p.id !== id);
+  syncHeadcountInput();
   saveDraft();
   renderTable();
   renderSummary();
@@ -2424,23 +2425,45 @@ function switchSection(name){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-/** Parse รายชื่อจากข้อความ LINE — ตัด header, เลขลำดับ, จุด, ช่องว่าง */
+/** Parse รายชื่อจากข้อความ LINE — ตัด header, เลขลำดับ, จุด, ช่องว่าง
+ *
+ *  Logic: บรรทัดที่ขึ้นต้นด้วยตัวเลข → ลอกตัวเลข + จุด/วงเล็บ + space ออก
+ *  ถ้าหลังตัดเลขแล้วเป็นว่าง (เช่น "22.", "23", "24") → ข้าม ไม่ใช่ชื่อ
+ *  ถ้าหลังตัดเลขแล้วไม่มีตัวอักษร (เช่น ":00", "...") → ข้าม
+ *
+ *  รองรับ: "1.", "1. ", "1.<no space>", "1 ", "1)", "1)<no space>", "10.", etc.
+ *  ตัด: "22." (เลข+จุด เปล่า), "23" (เลขเปล่า), "24" (เลขเปล่า)
+ */
 function parsePlayersFromText(text){
   if(!text) return [];
   const lines = text.split(/\r?\n/);
   const names = [];
+  // ✅ regex ใช้ (.*) ไม่ใช่ (.+?) — กันเลข backtrack มาเป็นชื่อ "."
+  const re = /^\s*\d+\s*[\.\)]?\s*(.*)$/;
+  // ชื่อต้องมีอักขระอย่างน้อย 1 ตัวที่ไม่ใช่ตัวเลข/ช่องว่าง/punctuation พื้นฐาน
+  // (อนุญาต Thai, English, อื่น ๆ — เพราะอาจมี Th@mmie, ฯลฯ)
+  const hasLetter = /[^\d\s\.\,\)\(\-:;\[\]]/;
   for(const raw of lines){
     const line = raw.trim();
     if(!line) continue;
-    // เอาเฉพาะบรรทัดที่ขึ้นต้นด้วยตัวเลข
-    // รองรับ: "1.", "1. ", "1.<no space>", "1 ", "1)", "1) ", "10.", etc.
-    const m = line.match(/^\s*\d+\s*[\.\)]?\s*(.+?)\s*$/);
-    if(!m) continue; // header / non-numbered line
+    const m = line.match(re);
+    if(!m) continue; // ไม่ขึ้นต้นด้วยตัวเลข = header / non-list line
     const name = m[1].trim();
-    if(!name) continue; // เลขเปล่า ไม่มีชื่อ → ข้าม
+    if(!name) continue;             // "22.", "23" → ตัวเลขเปล่า ข้าม
+    if(!hasLetter.test(name)) continue; // ":00", "..." → ไม่มีตัวอักษร ข้าม
     names.push(name);
   }
   return names;
+}
+
+/** Sync ค่า "คนที่จะมา" (member-est) ในหน้าคำนวณราคา = จำนวนผู้เล่นปัจจุบัน
+ *  เรียกทุกครั้งที่ player list เปลี่ยน — แต่ user ยัง override ได้ในหน้านั้น
+ */
+function syncHeadcountInput(){
+  const n = session?.players?.length || 0;
+  session.memberEstimate = n;
+  const inp = document.getElementById('member-est');
+  if(inp) inp.value = n;
 }
 
 /** กดปุ่ม "เพิ่มผู้เล่น" — REPLACE player list ทั้งหมดจากข้อความ paste */
@@ -2460,6 +2483,7 @@ function addPlayersFromPaste(){
     transfer: false
   }));
   if(ta) ta.value = '';
+  syncHeadcountInput();
   saveDraft();
   renderPlayerListMini();
   renderTable();
@@ -2516,6 +2540,7 @@ function addNewMember(){
   });
   inp.value = '';
   inp.focus();
+  syncHeadcountInput();
   saveDraft();
   renderPlayerListMini();
   renderTable();
@@ -2527,6 +2552,7 @@ function clearMemberSelection(){
   if(!session?.players?.length) return;
   if(!confirm('เคลียร์รายชื่อผู้เล่นทั้งหมด?')) return;
   session.players = [];
+  syncHeadcountInput();
   saveDraft();
   renderPlayerListMini();
   renderTable();
