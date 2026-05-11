@@ -2840,14 +2840,12 @@ function setSetupInputsFromSession(){
   if(!loadedFromCloud){
     // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี
     if(loadDraft()){
-      // ✅ FIX: รักษา draft ที่กำลังแก้ไข doc บน Firestore อยู่ (session.id ถูก set)
-      const isEditingExisting = !!session.id;
-      if(!isEditingExisting && session.date !== todayISO()){
-        // draft local ที่ยังไม่ผูกกับ Firestore doc + ของวันอื่น → เริ่มใหม่
+      // ✅ ถ้า draft ไม่ใช่ของวันนี้ → reset (ไม่ติด doc เก่า)
+      //    ถ้าเป็นวันนี้ และมี session.id → subscribe real-time
+      if(session.date !== todayISO()){
         session = newSession();
         editingId = null;
-      } else if(isEditingExisting){
-        // มี id อยู่ → subscribe real-time
+      } else if(session.id){
         subscribeToSession(session.id);
       }
     } else {
