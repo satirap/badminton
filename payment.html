@@ -1265,12 +1265,8 @@ async function cloudSync(){
     const cashN   = session.players.filter(p => p.cash).length;
     const transN  = session.players.filter(p => p.transfer).length;
     const breakdown = getCostBreakdown();
-    const pp      = getPerPerson();
-    // ✅ Auto-save (cloudSync) จะ "ไม่ยุ่ง" กับ field status เลย — เก็บข้อมูลอย่างเดียว
-    //   - doc ที่มีอยู่แล้ว: merge:true จะคง status เดิม (open ก็ open, complete ก็ complete)
-    //   - doc ใหม่: เพิ่ม status:'open' เฉพาะตอนสร้าง
-    //   - status เปลี่ยนเป็น 'complete' ได้ทางเดียว = กดปุ่ม "🎉 จบรอบ" (completeSession)
-    // ผลรวมตามจริงของแต่ละคน (รองรับเล่นไม่เท่ากัน)
+    const effective = getEffectivePrice(); // ✅ ราคาที่จะแจ้ง (ปัดเต็ม 10 หรือ override)
+    // ผลรวมตามจริงของแต่ละคน
     let totalAmt = 0, cashAmt = 0, transAmt = 0;
     session.players.forEach(p => {
       const s = getPlayerShare(p);
@@ -1283,7 +1279,7 @@ async function cloudSync(){
       date:           session.date,
       dateDisplay:    session.dateDisplay,
       players:        session.players,
-      // Cost breakdown (ใหม่ + เก่า)
+      // Cost breakdown
       courts:         breakdown.courts,
       courtRate:      breakdown.courtRate,
       hours:          breakdown.hours,
@@ -1294,8 +1290,8 @@ async function cloudSync(){
       totalCost:      breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride:  getNumInput('price-override'),
-      // Legacy fields (คำนวณ)
-      perPerson:      pp,
+      // ✅ perPerson = effective price (ราคาที่ใช้จริงในการเก็บ — ปัดเต็ม 10 แล้ว)
+      perPerson:      effective,
       cashCount:      cashN,
       transferCount:  transN,
       totalCount:     session.players.length,
@@ -1567,16 +1563,22 @@ function renderSummary(){
     }
   }
 
-  // Finish button: ซ่อนถ้ารอบนี้จบไปแล้ว · disable ถ้า mismatch
+  // Finish button: โผล่ตลอดเมื่อจ่ายครบ · disable ถ้า mismatch
+  //   - status='open'  → "🎉 จบรอบ"  (เซฟ + ปิดรอบ + ขึ้นรอบใหม่)
+  //   - status='complete' → "✅ ปิดและเริ่มรอบใหม่" (รีเซ็ตเฉย ๆ ไม่เขียนซ้ำ)
   const finBtn = document.getElementById('btn-complete');
   if(finBtn){
     const allPaid = total > 0 && paidN >= total;
     const isComplete = session?.status === 'complete';
-    finBtn.style.display = (allPaid && !isComplete) ? 'flex' : 'none';
+    finBtn.style.display = allPaid ? 'flex' : 'none';
     finBtn.disabled = mismatch;
-    finBtn.textContent = mismatch
-      ? `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`
-      : `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
+    if(mismatch){
+      finBtn.textContent = `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`;
+    } else if(isComplete){
+      finBtn.textContent = `✅ ปิดและเริ่มรอบใหม่`;
+    } else {
+      finBtn.textContent = `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
+    }
   }
 
   // Edit-mode banner (เฉพาะรอบที่จบแล้วและกำลังแก้ไข)
@@ -1604,18 +1606,42 @@ async function completeSession(){
   const transN = session.players.filter(p => p.transfer).length;
   const paidN  = cashN + transN;
   if(paidN < session.players.length){ toast('ยังไม่จ่ายครบ'); return; }
-  if(!confirm('จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?')) return;
+  // ถ้าจบไปแล้ว → กดอีกครั้ง = ปิดและขึ้นรอบใหม่ (ไม่ต้องเขียนซ้ำ)
+  const wasComplete = session.status === 'complete';
+  const confirmMsg = wasComplete
+    ? 'ปิดรอบนี้และเริ่มรอบใหม่?'
+    : 'จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?';
+  if(!confirm(confirmMsg)) return;
 
   const btn = document.getElementById('btn-complete');
   btn.disabled = true;
-  btn.textContent = '⏳ กำลังจบรอบ...';
+  btn.textContent = wasComplete ? '⏳ กำลังปิดรอบ...' : '⏳ กำลังจบรอบ...';
   if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+
+  // ── กรณี wasComplete: ข้ามการเขียน DB (auto-save ทำไปแล้ว) — แค่รีเซ็ต
+  if(wasComplete){
+    toast('✅ ขึ้นรอบใหม่ได้แล้ว');
+    setTimeout(() => {
+      editingId = null;
+      session = newSession();
+      try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+      setSetupInputsFromSession();
+      refreshAutoOverride();
+      renderTable();
+      renderSummary();
+      renderDate();
+      renderPlayerListMini();
+      document.getElementById('autosave-label').textContent = '';
+      switchSection('members');
+    }, 500);
+    return;
+  }
 
   try{
     session.status = 'complete';
     const breakdown = getCostBreakdown();
-    const pp = getPerPerson();
-    // ผลรวมตามจริง (รองรับเล่นไม่เท่ากัน)
+    const effective = getEffectivePrice(); // ✅ ราคาที่ใช้จริง (ปัดเต็ม 10)
+    // ผลรวมตามจริงของแต่ละคน
     let totalAmt = 0, cashAmt = 0, transAmt = 0;
     session.players.forEach(p => {
       const s = getPlayerShare(p);
@@ -1639,7 +1665,8 @@ async function completeSession(){
       totalCost:     breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride: getNumInput('price-override'),
-      perPerson:   pp,
+      // ✅ perPerson = effective price (ราคาที่ใช้จริง — ปัดเต็ม 10)
+      perPerson:   effective,
       cashCount:   cashN,
       transferCount: transN,
       totalCount:  session.players.length,
@@ -1754,7 +1781,8 @@ function renderViewModal(d){
   const transN  = d.transferCount || players.filter(p=>p.transfer).length;
   const total   = d.totalCount || players.length;
   const unpaid  = total - (cashN + transN);
-  const pp      = d.perPerson || 0;
+  // ✅ priceOverride (ปัดเต็ม 10) > perPerson (อาจเป็น calc ไม่ปัด — กรณี data เก่า)
+  const pp      = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
 
   document.getElementById('vm-title').textContent = d.dateDisplay || d.date || 'ประวัติการเก็บเงิน';
   const statusTxt = d.status === 'complete'
@@ -1849,7 +1877,8 @@ function buildPaymentFlex(d){
   const cashN   = d.cashCount     || players.filter(p=>p.cash).length;
   const transN  = d.transferCount || players.filter(p=>p.transfer).length;
   const unpaid  = total - (cashN + transN);
-  const pp      = d.perPerson     || 0;
+  // ✅ priceOverride (ปัดเต็ม 10) > perPerson
+  const pp      = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
   const courtFee     = d.courtFee     || 0;
   const shuttlePrice = d.shuttlePrice || 0;
   const shuttleCount = d.shuttleCount || 0;
@@ -2101,7 +2130,10 @@ function buildStatusFlex(s){
   const total    = players.length;
   const paidN    = cashList.length + tranList.length;
   const dateStr  = s.dateDisplay || s.date || '';
-  const pp       = s.perPerson || (total > 0 ? Math.ceil(((s.courtFee||0) + (s.shuttlePrice||0)*(s.shuttleCount||0)) / total) : 0);
+  // ✅ priceOverride (ปัดเต็ม 10) > perPerson — กัน data เก่าแสดงผิด
+  const pp = (s.priceOverride && s.priceOverride > 0)
+    ? s.priceOverride
+    : (s.perPerson || (total > 0 ? Math.ceil(((s.courtFee||0) + (s.shuttlePrice||0)*(s.shuttleCount||0)) / total) : 0));
 
   const playerRow = (p, status) => ({
     type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
