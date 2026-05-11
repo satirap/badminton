@@ -1259,6 +1259,75 @@ function scheduleCloudSync(){
   _syncTimer = setTimeout(() => { cloudSync().catch(e => console.warn('sync', e)); }, 800);
 }
 
+/* ── Real-time listener (multi-user) — onSnapshot subscribe ── */
+let _docUnsubscribe = null;
+let _subscribedDocId = null;
+
+function subscribeToSession(docId){
+  if(!docId) return;
+  if(_subscribedDocId === docId) return; // already listening
+  unsubscribeFromSession();
+  _subscribedDocId = docId;
+  _docUnsubscribe = db.collection('payment_sessions').doc(docId)
+    .onSnapshot(snap => {
+      if(!snap.exists) return;
+      // ✅ Skip own pending writes — มันจะ echo กลับมา แต่เรามี state local อยู่แล้ว
+      if(snap.metadata.hasPendingWrites) return;
+      const d = snap.data();
+      mergeRemoteIntoSession(d);
+      const lbl = document.getElementById('autosave-label');
+      if(lbl){
+        const t = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+        lbl.textContent = `🔄 sync จาก cloud · ${t}`;
+      }
+    }, err => { console.warn('snapshot error', err); });
+}
+
+function unsubscribeFromSession(){
+  if(_docUnsubscribe){
+    try{ _docUnsubscribe(); }catch(e){}
+    _docUnsubscribe = null;
+  }
+  _subscribedDocId = null;
+}
+
+/** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
+function mergeRemoteIntoSession(d){
+  if(!d) return;
+  // player list — main reason สำหรับ multi-user
+  if(Array.isArray(d.players)){
+    session.players = d.players.map(p => ({
+      ...p,
+      id: p.id || ('p' + Date.now() + Math.random().toString(36).slice(2,5))
+    }));
+  }
+  // cost setup — update เฉพาะ field ที่ user ไม่ได้ focus อยู่
+  const setIfNotFocused = (id, v) => {
+    const el = document.getElementById(id);
+    if(el && document.activeElement !== el){
+      el.value = (v ?? 0);
+    }
+  };
+  if(d.courts        !== undefined){ session.courts        = d.courts || 1;  setIfNotFocused('courts', session.courts); }
+  if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
+  if(d.hours         !== undefined){ session.hours         = d.hours || 2;    setIfNotFocused('hours', session.hours); }
+  if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
+  if(d.shuttleCount  !== undefined){ session.shuttleCount  = d.shuttleCount || 0; setIfNotFocused('shuttle-count', session.shuttleCount); }
+  if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
+  if(d.priceOverride !== undefined){ session.priceOverride = d.priceOverride || 0; setIfNotFocused('price-override', session.priceOverride); }
+  if(d.courtFee !== undefined) session.courtFee = d.courtFee || 0;
+  if(d.status) session.status = d.status;
+  if(d.completedAt && d.completedAt.toDate){
+    session.completedAt = d.completedAt.toDate().toISOString();
+  }
+  // persist local
+  try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  // re-render
+  renderTable();
+  renderSummary();
+  renderPlayerListMini();
+}
+
 async function cloudSync(){
   if(!session || !session.players) return;
   // ไม่ sync session เปล่า (ยังไม่มีคน)
@@ -1322,6 +1391,7 @@ async function cloudSync(){
       editingId = ref.id;
       session.id = ref.id;
       try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+      subscribeToSession(editingId); // ✅ เพิ่งสร้าง doc → เริ่มฟัง real-time
     }
     updateAutosaveLabel('cloud');
   }catch(e){
@@ -1367,6 +1437,7 @@ async function loadTodayOpenSession(){
       session.courts = 1;
     }
     try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+    subscribeToSession(doc.id); // ✅ เริ่มฟัง real-time
     return true;
   }catch(e){ console.warn('loadTodayOpenSession', e); return false; }
 }
@@ -1674,6 +1745,7 @@ async function completeSession(){
     clearDraft();
     toast('🎉 จบรอบเรียบร้อย');
     setTimeout(() => {
+      unsubscribeFromSession();
       editingId = null;
       session = newSession();
       try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
@@ -1696,6 +1768,7 @@ async function completeSession(){
 /** ออกจากโหมดแก้ไข (สำหรับรอบ complete) — ไม่เขียน DB ซ้ำ แค่รีเซ็ตหน้าจอ */
 function exitEditMode(){
   if(!confirm('ออกจากการแก้ไข?\n(ข้อมูลถูกบันทึกอัตโนมัติแล้ว · พร้อมเริ่มรอบใหม่)')) return;
+  unsubscribeFromSession();
   editingId = null;
   session = newSession();
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
@@ -1714,12 +1787,14 @@ function exitEditMode(){
 function clearSession(){
   if(!session.players.length) return;
   if(!confirm('ล้างรายชื่อทั้งหมด?')) return;
+  unsubscribeFromSession();
   editingId = null;
   session = newSession();
   saveDraft();
   renderTable();
   renderSummary();
   renderDate();
+  renderPlayerListMini();
 }
 
 /* ================================================================
@@ -1738,26 +1813,43 @@ async function loadHistory(){
         const icon = p.cash ? '💵' : p.transfer ? '📲' : '⬜';
         return `${icon} ${escHtml(p.name)}`;
       }).join('  ');
-      const badge = d.status==='complete'
+      const isComplete = d.status === 'complete';
+      const badge = isComplete
         ? '<span class="hc-badge complete">จ่ายครบ</span>'
         : '<span class="hc-badge open">กำลังเก็บ</span>';
+      // ✅ ใช้ priceOverride (ปัดเต็ม 10) > perPerson > 0
+      const ppShow = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
+      // ✅ ยอดเก็บได้: ลำดับ fallback
+      //   1) d.totalAmount (newest)
+      //   2) cashAmount + transferAmount (paid only)
+      //   3) ppShow × totalCount (calc fallback)
+      const totalCollected = (d.totalAmount && d.totalAmount > 0)
+        ? d.totalAmount
+        : (((d.cashAmount||0) + (d.transferAmount||0)) || (ppShow * (d.totalCount||0)));
+      const cashAmt  = (d.cashAmount && d.cashAmount > 0) ? d.cashAmount : ((d.cashCount||0) * ppShow);
+      const transAmt = (d.transferAmount && d.transferAmount > 0) ? d.transferAmount : ((d.transferCount||0) * ppShow);
       return `<div class="history-card">
         <div class="hc-head">
           <div class="hc-date">${escHtml(d.dateDisplay||d.date||'')}</div>
           ${badge}
         </div>
+        ${isComplete ? `
+        <div style="background:#c8f13518;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-size:13px;color:var(--soft);font-weight:600">💰 ยอดเก็บได้รอบนี้</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollected)} ฿</span>
+        </div>` : ''}
         <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
-          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(d.totalAmount||0)}฿</strong></span>
-          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(d.cashAmount||0)}฿</strong> (${d.cashCount||0})</span>
-          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(d.transferAmount||0)}฿</strong> (${d.transferCount||0})</span>
+          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
+          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(cashAmt)}฿</strong> (${d.cashCount||0})</span>
+          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(transAmt)}฿</strong> (${d.transferCount||0})</span>
         </div>
         ${(d.courtFee||d.shuttlePrice||d.shuttleCount) ? `
         <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px;line-height:1.6">
           🏟 คอร์ท ${fmtBaht(d.courtFee||0)}฿ · 🏸 ${fmtBaht(d.shuttlePrice||0)}฿×${d.shuttleCount||0}ลูก = <strong style="color:var(--soft)">${fmtBaht(d.totalCost||0)}฿</strong><br>
-          เฉลี่ย ${fmtBaht(d.perPerson||0)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
+          เฉลี่ย ${fmtBaht(ppShow)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
           ${d.gongklang > 0 ? `<br><span style="color:var(--accent);font-weight:700">💰 เข้ากองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}
         </div>` : `
-        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน${d.gongklang > 0 ? ` · <span style="color:var(--accent);font-weight:700">💰 กองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}</div>`}
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${fmtBaht(ppShow)} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน${d.gongklang > 0 ? ` · <span style="color:var(--accent);font-weight:700">💰 กองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}</div>`}
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
           <button class="hc-btn view" onclick="viewSession('${doc.id}')">👁 เรียกดู</button>
@@ -1828,17 +1920,28 @@ function renderViewModal(d){
       </div>
     </div>`;
 
-  // Summary
+  // Summary — ยอดรวม + breakdown
+  const cashAmtView  = (d.cashAmount && d.cashAmount > 0) ? d.cashAmount : (cashN * pp);
+  const transAmtView = (d.transferAmount && d.transferAmount > 0) ? d.transferAmount : (transN * pp);
+  const totalCollectedView = (d.totalAmount && d.totalAmount > 0)
+    ? d.totalAmount
+    : (cashAmtView + transAmtView + unpaid * pp);
+  const isCompleteView = d.status === 'complete';
   const summaryHtml = `
     <div class="vm-block">
       <div class="vm-block-head">📊 สรุปการจ่าย</div>
+      ${isCompleteView ? `
+      <div style="background:#c8f13520;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:14px;font-weight:700;color:var(--accent)">💰 ยอดเก็บได้รอบนี้</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollectedView)} ฿</span>
+      </div>` : ''}
       <div class="vm-sum-row">
         <div class="vm-sum-item cash">
-          <div class="vm-sum-num">${fmtBaht(d.cashAmount||cashN*pp)}฿</div>
+          <div class="vm-sum-num">${fmtBaht(cashAmtView)}฿</div>
           <div class="vm-sum-lbl">💵 เงินสด (${cashN})</div>
         </div>
         <div class="vm-sum-item transfer">
-          <div class="vm-sum-num">${fmtBaht(d.transferAmount||transN*pp)}฿</div>
+          <div class="vm-sum-num">${fmtBaht(transAmtView)}฿</div>
           <div class="vm-sum-lbl">📲 โอน (${transN})</div>
         </div>
         <div class="vm-sum-item unpaid">
@@ -2441,6 +2544,7 @@ async function editSession(docId){
     renderTable();
     renderSummary();
     renderPlayerListMini();
+    subscribeToSession(docId); // ✅ เริ่มฟัง real-time
     toast(origStatus === 'complete'
       ? '🔒 รอบนี้จบแล้ว · ✏️ แก้ไขข้อมูลได้ (สถานะคงเดิม)'
       : 'โหลดข้อมูลแล้ว ✏️ แก้ไขได้เลย');
@@ -2695,13 +2799,14 @@ function setSetupInputsFromSession(){
     // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี
     if(loadDraft()){
       // ✅ FIX: รักษา draft ที่กำลังแก้ไข doc บน Firestore อยู่ (session.id ถูก set)
-      //         ไม่ว่ารอบนั้นจะของวันไหนก็ตาม — กันไม่ให้ editingId ค้างชี้ doc เดิม
-      //         แล้วเขียน status='open' ทับเวลา cloudSync ทำงาน
       const isEditingExisting = !!session.id;
       if(!isEditingExisting && session.date !== todayISO()){
         // draft local ที่ยังไม่ผูกกับ Firestore doc + ของวันอื่น → เริ่มใหม่
         session = newSession();
         editingId = null;
+      } else if(isEditingExisting){
+        // มี id อยู่ → subscribe real-time
+        subscribeToSession(session.id);
       }
     } else {
       session = newSession();
