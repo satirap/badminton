@@ -837,8 +837,12 @@ body{min-height:100dvh}
   <div id="view-collect">
 
     <!-- Edit-mode banner: แสดงเฉพาะตอนแก้ไขรอบที่จบแล้ว -->
-    <div id="edit-complete-banner" style="display:none;background:#fbbf24;color:#1f2937;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:14px;text-align:center;line-height:1.5">
-      ✅ รอบนี้จบแล้ว · ✏️ แก้ไขข้อมูลได้เลย<br><span style="font-weight:500;font-size:12px;opacity:.85">บันทึกอัตโนมัติ · สถานะจะคงเป็น "จ่ายครบ"</span>
+    <div id="edit-complete-banner" style="display:none;background:#fbbf24;color:#1f2937;padding:12px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:14px;text-align:center;line-height:1.5">
+      <div>✅ รอบนี้จบแล้ว · กำลังแก้ไข</div>
+      <div style="font-weight:500;font-size:11px;opacity:.85;margin-top:2px">บันทึกอัตโนมัติทุกครั้งที่แก้ · สถานะ "จ่ายครบ" คงเดิม</div>
+      <button onclick="exitEditMode()" style="margin-top:10px;background:#1f2937;color:#fbbf24;border:none;border-radius:8px;padding:8px 18px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        ✓ เสร็จแล้ว · ออกจากการแก้ไข
+      </button>
     </div>
 
     <!-- Hidden compat fields -->
@@ -1563,22 +1567,17 @@ function renderSummary(){
     }
   }
 
-  // Finish button: โผล่ตลอดเมื่อจ่ายครบ · disable ถ้า mismatch
-  //   - status='open'  → "🎉 จบรอบ"  (เซฟ + ปิดรอบ + ขึ้นรอบใหม่)
-  //   - status='complete' → "✅ ปิดและเริ่มรอบใหม่" (รีเซ็ตเฉย ๆ ไม่เขียนซ้ำ)
+  // Finish button: แสดงเฉพาะ status='open' + จ่ายครบ
+  //   - status='complete' → ใช้ปุ่ม "เสร็จแล้ว" ใน banner สีเหลืองแทน
   const finBtn = document.getElementById('btn-complete');
   if(finBtn){
     const allPaid = total > 0 && paidN >= total;
     const isComplete = session?.status === 'complete';
-    finBtn.style.display = allPaid ? 'flex' : 'none';
+    finBtn.style.display = (allPaid && !isComplete) ? 'flex' : 'none';
     finBtn.disabled = mismatch;
-    if(mismatch){
-      finBtn.textContent = `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`;
-    } else if(isComplete){
-      finBtn.textContent = `✅ ปิดและเริ่มรอบใหม่`;
-    } else {
-      finBtn.textContent = `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
-    }
+    finBtn.textContent = mismatch
+      ? `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`
+      : `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
   }
 
   // Edit-mode banner (เฉพาะรอบที่จบแล้วและกำลังแก้ไข)
@@ -1606,36 +1605,12 @@ async function completeSession(){
   const transN = session.players.filter(p => p.transfer).length;
   const paidN  = cashN + transN;
   if(paidN < session.players.length){ toast('ยังไม่จ่ายครบ'); return; }
-  // ถ้าจบไปแล้ว → กดอีกครั้ง = ปิดและขึ้นรอบใหม่ (ไม่ต้องเขียนซ้ำ)
-  const wasComplete = session.status === 'complete';
-  const confirmMsg = wasComplete
-    ? 'ปิดรอบนี้และเริ่มรอบใหม่?'
-    : 'จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?';
-  if(!confirm(confirmMsg)) return;
+  if(!confirm('จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?')) return;
 
   const btn = document.getElementById('btn-complete');
   btn.disabled = true;
-  btn.textContent = wasComplete ? '⏳ กำลังปิดรอบ...' : '⏳ กำลังจบรอบ...';
+  btn.textContent = '⏳ กำลังจบรอบ...';
   if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
-
-  // ── กรณี wasComplete: ข้ามการเขียน DB (auto-save ทำไปแล้ว) — แค่รีเซ็ต
-  if(wasComplete){
-    toast('✅ ขึ้นรอบใหม่ได้แล้ว');
-    setTimeout(() => {
-      editingId = null;
-      session = newSession();
-      try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-      setSetupInputsFromSession();
-      refreshAutoOverride();
-      renderTable();
-      renderSummary();
-      renderDate();
-      renderPlayerListMini();
-      document.getElementById('autosave-label').textContent = '';
-      switchSection('members');
-    }, 500);
-    return;
-  }
 
   try{
     session.status = 'complete';
@@ -1704,6 +1679,24 @@ async function completeSession(){
     btn.disabled = false;
     renderSummary();
   }
+}
+
+/** ออกจากโหมดแก้ไข (สำหรับรอบ complete) — ไม่เขียน DB ซ้ำ แค่รีเซ็ตหน้าจอ */
+function exitEditMode(){
+  if(!confirm('ออกจากการแก้ไข?\n(ข้อมูลถูกบันทึกอัตโนมัติแล้ว · พร้อมเริ่มรอบใหม่)')) return;
+  editingId = null;
+  session = newSession();
+  try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  setSetupInputsFromSession();
+  refreshAutoOverride();
+  renderTable();
+  renderSummary();
+  renderDate();
+  renderPlayerListMini();
+  const lbl = document.getElementById('autosave-label');
+  if(lbl) lbl.textContent = '';
+  switchSection('members');
+  toast('✓ ออกจากการแก้ไขแล้ว · พร้อมเริ่มรอบใหม่');
 }
 
 function clearSession(){
