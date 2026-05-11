@@ -222,17 +222,11 @@ section.view.active{display:block}
 .rk-tbl .rk-badge.tk{
   background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2440;
 }
-.rk-tbl .rk-badge.newbie{
-  background:#60a5fa20;color:#93c5fd;border:1px solid #60a5fa40;
-}
 /* my-card level badge */
 .my-lv-badge{
   display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;
   background:#c8f13520;color:#c8f135;border:1px solid #c8f13540;
   padding:2px 8px;border-radius:100px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;
-}
-.my-lv-badge.newbie{
-  background:#60a5fa20;color:#93c5fd;border-color:#60a5fa40;
 }
 /* monthly info banner */
 .monthly-raffle-info{
@@ -1176,7 +1170,7 @@ function rkTblRowHtml(r, mode){
   const wr      = played > 0 ? Math.round(wins/played*100) : 0;
   const wrColor = wr>=70?'#4ade80':wr>=40?'#fbbf24':wr>0?'#ef4444':'#3a3d48';
   // ── Badge ตาม mode ──
-  //   ranks    → Lv N (≥100 pts) · "🌱 newbie" (<100 pts)
+  //   ranks    → Lv N (รวม Lv 0 สำหรับ <100 pts)
   //   monthly  → 🎫 N สิทธิ์
   let badgeHtml = '';
   if(mode === 'monthly'){
@@ -1184,11 +1178,7 @@ function rkTblRowHtml(r, mode){
     if(t > 0) badgeHtml = `<span class="rk-badge tk">🎫 ${t}</span>`;
   } else { // 'ranks' หรือ default
     const lv = calcLevel(pts);
-    if(lv > 0){
-      badgeHtml = `<span class="rk-badge lv">Lv ${lv}</span>`;
-    } else {
-      badgeHtml = `<span class="rk-badge newbie">🌱 newbie</span>`;
-    }
+    badgeHtml = `<span class="rk-badge lv">Lv ${lv}</span>`;
   }
   return `<tr>
     <td><div class="rk-pos">${posHtml}</div></td>
@@ -1234,15 +1224,8 @@ function renderMyCard(){
   const allTimePts = Math.max(0, meAll?.points || 0);
   const myLv = calcLevel(allTimePts);
   if(lvBadge){
-    if(myLv > 0){
-      lvBadge.textContent = `Lv ${myLv}`;
-      lvBadge.classList.remove('newbie');
-      lvBadge.style.display = 'inline-block';
-    } else {
-      lvBadge.textContent = `🌱 newbie`;
-      lvBadge.classList.add('newbie');
-      lvBadge.style.display = 'inline-block';
-    }
+    lvBadge.textContent = `Lv ${myLv}`;
+    lvBadge.style.display = 'inline-block';
   }
   const pic = document.getElementById('my-pic');
   if(currentUser.pictureUrl){ pic.src = currentUser.pictureUrl; pic.style.display = 'block'; }
