@@ -936,7 +936,7 @@ body{min-height:100dvh}
             <div class="stp-field">
               <label>ลูกแบด/ลูก</label>
               <div class="stp-field-row">
-                <input type="number" id="shuttle-price" value="73" min="0" step="5" inputmode="numeric"/>
+                <input type="number" id="shuttle-price" value="75" min="0" step="5" inputmode="numeric"/>
                 <span class="suf">฿</span>
               </div>
             </div>
@@ -1132,7 +1132,7 @@ function newSession(){
     courtRate:     220, // default ค่าคอร์ท/ชม.
     hours:         2,
     courtFee:      0,   // = courts × courtRate × hours (สำหรับ compat)
-    shuttlePrice:  73,  // default ค่าลูก/ลูก
+    shuttlePrice:  75,  // default ค่าลูก/ลูก
     shuttleCount:  0,
     memberEstimate: 0,  // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
     priceOverride: 0,   // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
@@ -1279,6 +1279,11 @@ async function cloudSync(){
       if(p.transfer) transAmt += s;
     });
     const memberEst = getNumInput('member-est');
+    // ✅ กองกลาง = (ราคา × headcount) − ค่าใช้จ่ายจริง (ส่วนเกินจากการปัดเต็ม 10)
+    const headcountForGk = getBillingHeadcount();
+    const gongklang = (headcountForGk > 0 && effective > 0 && breakdown.totalCost > 0)
+      ? Math.max(0, effective * headcountForGk - breakdown.totalCost)
+      : 0;
     const payload = {
       date:           session.date,
       dateDisplay:    session.dateDisplay,
@@ -1294,6 +1299,7 @@ async function cloudSync(){
       totalCost:      breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride:  getNumInput('price-override'),
+      gongklang:      gongklang, // ✅ ส่วนเกินเข้ากองกลาง
       // ✅ perPerson = effective price (ราคาที่ใช้จริงในการเก็บ — ปัดเต็ม 10 แล้ว)
       perPerson:      effective,
       cashCount:      cashN,
@@ -1625,6 +1631,11 @@ async function completeSession(){
       if(p.transfer) transAmt += s;
     });
     const memberEst = getNumInput('member-est');
+    // ✅ กองกลาง = (ราคา × headcount) − ค่าใช้จ่ายจริง
+    const headcountForGk = getBillingHeadcount();
+    const gongklang = (headcountForGk > 0 && effective > 0 && breakdown.totalCost > 0)
+      ? Math.max(0, effective * headcountForGk - breakdown.totalCost)
+      : 0;
     const payload = {
       date:        session.date,
       dateDisplay: session.dateDisplay,
@@ -1640,6 +1651,7 @@ async function completeSession(){
       totalCost:     breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride: getNumInput('price-override'),
+      gongklang:     gongklang, // ✅ ส่วนเกินเข้ากองกลาง
       // ✅ perPerson = effective price (ราคาที่ใช้จริง — ปัดเต็ม 10)
       perPerson:   effective,
       cashCount:   cashN,
@@ -1743,8 +1755,9 @@ async function loadHistory(){
         <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px;line-height:1.6">
           🏟 คอร์ท ${fmtBaht(d.courtFee||0)}฿ · 🏸 ${fmtBaht(d.shuttlePrice||0)}฿×${d.shuttleCount||0}ลูก = <strong style="color:var(--soft)">${fmtBaht(d.totalCost||0)}฿</strong><br>
           เฉลี่ย ${fmtBaht(d.perPerson||0)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
+          ${d.gongklang > 0 ? `<br><span style="color:var(--accent);font-weight:700">💰 เข้ากองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}
         </div>` : `
-        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน</div>`}
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน${d.gongklang > 0 ? ` · <span style="color:var(--accent);font-weight:700">💰 กองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}</div>`}
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
           <button class="hc-btn view" onclick="viewSession('${doc.id}')">👁 เรียกดู</button>
@@ -1785,6 +1798,10 @@ function renderViewModal(d){
 
   // Cost block (ถ้ามี breakdown ใหม่)
   const hasBreakdown = d.courtFee || d.shuttlePrice || d.shuttleCount || d.totalCost;
+  const gongklang = d.gongklang || 0;
+  const gkRowHtml = gongklang > 0 ? `
+        <div class="k" style="color:var(--accent);font-weight:800">💰 เข้ากองกลาง</div>
+        <div class="v" style="color:var(--accent);font-weight:800">${fmtBaht(gongklang)} ฿</div>` : '';
   const costHtml = hasBreakdown ? `
     <div class="vm-block">
       <div class="vm-block-head">💰 รายละเอียดค่าใช้จ่าย</div>
@@ -1799,6 +1816,7 @@ function renderViewModal(d){
         <div class="v total">${fmtBaht(d.totalCost||0)} ฿</div>
         <div class="k per">เฉลี่ยต่อคน</div>
         <div class="v per">${fmtBaht(pp)} ฿</div>
+        ${gkRowHtml}
       </div>
     </div>` : `
     <div class="vm-block">
@@ -1806,6 +1824,7 @@ function renderViewModal(d){
       <div class="vm-cost-grid">
         <div class="k per">เฉลี่ยต่อคน</div>
         <div class="v per">${fmtBaht(pp)} ฿</div>
+        ${gkRowHtml}
       </div>
     </div>`;
 
