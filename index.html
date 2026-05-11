@@ -210,6 +210,31 @@ section.view.active{display:block}
   font-size:13px;flex-shrink:0;
 }
 .rk-tbl .rk-name{font-weight:700;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* ── Level / ticket badges ── */
+.rk-tbl .rk-badge{
+  flex:0 0 auto;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:800;
+  padding:2px 6px;border-radius:100px;line-height:1.3;white-space:nowrap;
+  letter-spacing:.02em;
+}
+.rk-tbl .rk-badge.lv{
+  background:#c8f13520;color:#c8f135;border:1px solid #c8f13540;
+}
+.rk-tbl .rk-badge.tk{
+  background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2440;
+}
+/* my-card level badge */
+.my-lv-badge{
+  display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;
+  background:#c8f13520;color:#c8f135;border:1px solid #c8f13540;
+  padding:2px 8px;border-radius:100px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;
+}
+/* monthly info banner */
+.monthly-raffle-info{
+  background:#fbbf2410;border:1.5px solid #fbbf2440;border-radius:10px;
+  padding:10px 14px;margin:-8px 0 16px;font-size:12px;color:#fbbf24;line-height:1.5;
+}
+.monthly-raffle-info b{font-weight:800}
+.monthly-raffle-info .icon{font-size:14px;margin-right:4px}
 .rk-tbl .rk-pts{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--accent);text-align:center}
 .rk-tbl .rk-played{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);text-align:center;font-weight:600}
 .rk-tbl .rk-wins{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#4ade80;text-align:center;font-weight:700}
@@ -430,8 +455,8 @@ section.view.active{display:block}
           <div class="my-info">
             <img id="my-pic" src="" alt="" style="display:none"/>
             <div>
-              <div class="my-name" id="my-name">—</div>
-              <div class="my-label">คะแนนของฉัน (ระบบเชื่อใจ)</div>
+              <div class="my-name" id="my-name">—<span class="my-lv-badge" id="my-lv-badge" style="display:none"></span></div>
+              <div class="my-label" id="my-label">คะแนนของฉัน (ระบบเชื่อใจ)</div>
             </div>
           </div>
           <div class="my-pts-wrap">
@@ -468,6 +493,9 @@ section.view.active{display:block}
     <section class="view" id="view-monthly">
       <h2 class="section-title" id="monthly-title">คะแนนเดือน<em> เมษายน 69</em></h2>
       <p class="text-mute text-sm" id="monthly-label" style="margin:-8px 0 16px;display:none"></p>
+      <div class="monthly-raffle-info">
+        <span class="icon">🎫</span> ทุก <b>10 คะแนน = 1 สิทธิ์</b> ลุ้นรางวัลปลายเดือน · ดูสิทธิ์ปัจจุบันที่ป้ายข้างชื่อ
+      </div>
       <div class="rk-tbl-wrap">
         <table class="rk-tbl">
           <thead>
@@ -1083,7 +1111,7 @@ function renderMonthly(){
   if(tbody){
     tbody.innerHTML = allMonthlyRankings.length === 0
       ? '<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--ink-mute);font-style:italic">ยังไม่มีเกมเดือนนี้</td></tr>'
-      : withRanks(allMonthlyRankings).map(rkTblRowHtml).join('');
+      : withRanks(allMonthlyRankings).map(r => rkTblRowHtml(r, 'monthly')).join('');
   }
   renderMonthlyWinners();
 }
@@ -1117,7 +1145,16 @@ function renderMonthlyWinners(){
   }).join('') + '</div>';
 }
 
-function rkTblRowHtml(r){
+/** Level จากคะแนนสะสม — ทุก 100 pts = +1 Level (100→Lv1, 2000→Lv20) */
+function calcLevel(points){
+  return Math.max(0, Math.floor((points || 0) / 100));
+}
+/** จำนวนสิทธิ์ลุ้นรางวัล — ทุก 10 pts = +1 สิทธิ์ */
+function calcTickets(points){
+  return Math.max(0, Math.floor((points || 0) / 10));
+}
+
+function rkTblRowHtml(r, mode){
   const rank = r._rank;
   const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
   const posHtml = medal
@@ -1132,9 +1169,18 @@ function rkTblRowHtml(r){
   const pts     = Math.max(0, r.points || 0);
   const wr      = played > 0 ? Math.round(wins/played*100) : 0;
   const wrColor = wr>=70?'#4ade80':wr>=40?'#fbbf24':wr>0?'#ef4444':'#3a3d48';
+  // ── Badge ตาม mode: ranks → Lv N · monthly → 🎫 N ──
+  let badgeHtml = '';
+  if(mode === 'monthly'){
+    const t = calcTickets(pts);
+    if(t > 0) badgeHtml = `<span class="rk-badge tk">🎫 ${t}</span>`;
+  } else { // 'ranks' หรือ default
+    const lv = calcLevel(pts);
+    if(lv > 0) badgeHtml = `<span class="rk-badge lv">Lv ${lv}</span>`;
+  }
   return `<tr>
     <td><div class="rk-pos">${posHtml}</div></td>
-    <td><div class="rk-player">${picHtml}<span class="rk-name">${escHtml(r.name)}</span></div></td>
+    <td><div class="rk-player">${picHtml}<span class="rk-name">${escHtml(r.name)}</span>${badgeHtml}</div></td>
     <td><div class="rk-pts">${pts}</div></td>
     <td><div class="rk-played">${played}</div></td>
     <td><div class="rk-wins">${wins}</div></td>
@@ -1153,7 +1199,7 @@ function renderRanks(){
   if(!tbody) return;
   tbody.innerHTML = allRankings.length === 0
     ? '<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--ink-mute);font-style:italic">ยังไม่มีข้อมูลคะแนน<br>สแกน QR ที่สนามเพื่อเริ่มเล่น!</td></tr>'
-    : withRanks(allRankings).map(rkTblRowHtml).join('');
+    : withRanks(allRankings).map(r => rkTblRowHtml(r, 'ranks')).join('');
 }
 
 // =================================================================
@@ -1164,8 +1210,21 @@ function renderMyCard(){
   const el = document.getElementById('my-card');
   if(!el) return;
 
-  // ชื่อ + รูป
-  document.getElementById('my-name').textContent = currentUser.name || '—';
+  // ชื่อ + รูป — แสดง Lv badge จากคะแนน all-time
+  const nameEl = document.getElementById('my-name');
+  const lvBadge = document.getElementById('my-lv-badge');
+  if(nameEl){
+    // childNodes[0] = text node ของชื่อ; วาง badge ไว้หลังชื่อ
+    const safeName = currentUser.name || '—';
+    nameEl.firstChild ? (nameEl.firstChild.nodeValue = safeName) : nameEl.prepend(document.createTextNode(safeName));
+  }
+  const meAll = (typeof allRankings !== 'undefined') ? allRankings.find(r => r.id === currentUser.id) : null;
+  const allTimePts = Math.max(0, meAll?.points || 0);
+  const myLv = calcLevel(allTimePts);
+  if(lvBadge){
+    if(myLv > 0){ lvBadge.textContent = `Lv ${myLv}`; lvBadge.style.display = 'inline-block'; }
+    else { lvBadge.style.display = 'none'; }
+  }
   const pic = document.getElementById('my-pic');
   if(currentUser.pictureUrl){ pic.src = currentUser.pictureUrl; pic.style.display = 'block'; }
 
