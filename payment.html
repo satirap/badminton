@@ -1291,6 +1291,44 @@ function unsubscribeFromSession(){
   _subscribedDocId = null;
 }
 
+/* ── Query listener (multi-user discovery) — รอ doc "open today" ใหม่ ── */
+let _queryUnsubscribe = null;
+
+function subscribeToTodayOpenQuery(){
+  if(_queryUnsubscribe) return;
+  const iso = todayISO();
+  _queryUnsubscribe = db.collection('payment_sessions')
+    .where('date','==',iso)
+    .where('status','==','open')
+    .onSnapshot(snap => {
+      if(snap.empty) return;
+      if(session?.id) return; // มี session แล้ว → doc listener จัดการต่อ
+      // เจอ doc ที่ confirmed แล้ว (ไม่ใช่ pending write ของเรา) → adopt
+      for(const doc of snap.docs){
+        if(doc.metadata.hasPendingWrites) continue;
+        adoptSession(doc.id, doc.data());
+        break;
+      }
+    }, err => console.warn('query snapshot', err));
+}
+
+function unsubscribeFromTodayOpenQuery(){
+  if(_queryUnsubscribe){
+    try{ _queryUnsubscribe(); }catch(e){}
+    _queryUnsubscribe = null;
+  }
+}
+
+/** Adopt — เจอ doc ของคนอื่นที่กำลังเปิดอยู่ → switch มาใช้ doc นั้น */
+function adoptSession(docId, d){
+  editingId = docId;
+  session.id = docId;
+  mergeRemoteIntoSession(d);
+  subscribeToSession(docId);
+  unsubscribeFromTodayOpenQuery();
+  toast('🔄 พบรอบที่เปิดอยู่ · sync แล้ว');
+}
+
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
@@ -1391,7 +1429,8 @@ async function cloudSync(){
       editingId = ref.id;
       session.id = ref.id;
       try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-      subscribeToSession(editingId); // ✅ เพิ่งสร้าง doc → เริ่มฟัง real-time
+      unsubscribeFromTodayOpenQuery(); // ✅ เป็นเจ้าของ doc แล้ว ไม่ต้องฟัง query
+      subscribeToSession(editingId);   // ✅ ฟัง doc ตรง ๆ แทน
     }
     updateAutosaveLabel('cloud');
   }catch(e){
@@ -1756,6 +1795,7 @@ async function completeSession(){
       renderPlayerListMini();
       document.getElementById('autosave-label').textContent = '';
       switchSection('members');
+      subscribeToTodayOpenQuery(); // ✅ เริ่มฟังรอบใหม่จากคนอื่น
     }, 1500);
   }catch(e){
     console.error(e);
@@ -1781,6 +1821,7 @@ function exitEditMode(){
   const lbl = document.getElementById('autosave-label');
   if(lbl) lbl.textContent = '';
   switchSection('members');
+  subscribeToTodayOpenQuery(); // ✅ เริ่มฟังรอบใหม่จากคนอื่น
   toast('✓ ออกจากการแก้ไขแล้ว · พร้อมเริ่มรอบใหม่');
 }
 
@@ -1795,6 +1836,7 @@ function clearSession(){
   renderSummary();
   renderDate();
   renderPlayerListMini();
+  subscribeToTodayOpenQuery(); // ✅ เริ่มฟังรอบใหม่จากคนอื่น
 }
 
 /* ================================================================
@@ -2827,6 +2869,11 @@ function setSetupInputsFromSession(){
   renderPlayerListMini();
   // เลือก section เริ่มต้น: tab รายชื่อ เสมอ
   switchSection('members');
+
+  // ✅ ถ้ายังไม่มี session.id → ฟัง query "open today" เผื่อคนอื่นสร้าง doc ใหม่
+  if(!session?.id){
+    subscribeToTodayOpenQuery();
+  }
 })();
 </script>
 </body>
