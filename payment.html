@@ -1738,26 +1738,43 @@ async function loadHistory(){
         const icon = p.cash ? '💵' : p.transfer ? '📲' : '⬜';
         return `${icon} ${escHtml(p.name)}`;
       }).join('  ');
-      const badge = d.status==='complete'
+      const isComplete = d.status === 'complete';
+      const badge = isComplete
         ? '<span class="hc-badge complete">จ่ายครบ</span>'
         : '<span class="hc-badge open">กำลังเก็บ</span>';
+      // ✅ ใช้ priceOverride (ปัดเต็ม 10) > perPerson > 0
+      const ppShow = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
+      // ✅ ยอดเก็บได้: ลำดับ fallback
+      //   1) d.totalAmount (newest)
+      //   2) cashAmount + transferAmount (paid only)
+      //   3) ppShow × totalCount (calc fallback)
+      const totalCollected = (d.totalAmount && d.totalAmount > 0)
+        ? d.totalAmount
+        : (((d.cashAmount||0) + (d.transferAmount||0)) || (ppShow * (d.totalCount||0)));
+      const cashAmt  = (d.cashAmount && d.cashAmount > 0) ? d.cashAmount : ((d.cashCount||0) * ppShow);
+      const transAmt = (d.transferAmount && d.transferAmount > 0) ? d.transferAmount : ((d.transferCount||0) * ppShow);
       return `<div class="history-card">
         <div class="hc-head">
           <div class="hc-date">${escHtml(d.dateDisplay||d.date||'')}</div>
           ${badge}
         </div>
+        ${isComplete ? `
+        <div style="background:#c8f13518;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-size:13px;color:var(--soft);font-weight:600">💰 ยอดเก็บได้รอบนี้</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollected)} ฿</span>
+        </div>` : ''}
         <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
-          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(d.totalAmount||0)}฿</strong></span>
-          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(d.cashAmount||0)}฿</strong> (${d.cashCount||0})</span>
-          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(d.transferAmount||0)}฿</strong> (${d.transferCount||0})</span>
+          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
+          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(cashAmt)}฿</strong> (${d.cashCount||0})</span>
+          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(transAmt)}฿</strong> (${d.transferCount||0})</span>
         </div>
         ${(d.courtFee||d.shuttlePrice||d.shuttleCount) ? `
         <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px;line-height:1.6">
           🏟 คอร์ท ${fmtBaht(d.courtFee||0)}฿ · 🏸 ${fmtBaht(d.shuttlePrice||0)}฿×${d.shuttleCount||0}ลูก = <strong style="color:var(--soft)">${fmtBaht(d.totalCost||0)}฿</strong><br>
-          เฉลี่ย ${fmtBaht(d.perPerson||0)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
+          เฉลี่ย ${fmtBaht(ppShow)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
           ${d.gongklang > 0 ? `<br><span style="color:var(--accent);font-weight:700">💰 เข้ากองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}
         </div>` : `
-        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${d.perPerson||0} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน${d.gongklang > 0 ? ` · <span style="color:var(--accent);font-weight:700">💰 กองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}</div>`}
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${fmtBaht(ppShow)} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน${d.gongklang > 0 ? ` · <span style="color:var(--accent);font-weight:700">💰 กองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}</div>`}
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
           <button class="hc-btn view" onclick="viewSession('${doc.id}')">👁 เรียกดู</button>
@@ -1828,17 +1845,28 @@ function renderViewModal(d){
       </div>
     </div>`;
 
-  // Summary
+  // Summary — ยอดรวม + breakdown
+  const cashAmtView  = (d.cashAmount && d.cashAmount > 0) ? d.cashAmount : (cashN * pp);
+  const transAmtView = (d.transferAmount && d.transferAmount > 0) ? d.transferAmount : (transN * pp);
+  const totalCollectedView = (d.totalAmount && d.totalAmount > 0)
+    ? d.totalAmount
+    : (cashAmtView + transAmtView + unpaid * pp);
+  const isCompleteView = d.status === 'complete';
   const summaryHtml = `
     <div class="vm-block">
       <div class="vm-block-head">📊 สรุปการจ่าย</div>
+      ${isCompleteView ? `
+      <div style="background:#c8f13520;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:14px;font-weight:700;color:var(--accent)">💰 ยอดเก็บได้รอบนี้</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollectedView)} ฿</span>
+      </div>` : ''}
       <div class="vm-sum-row">
         <div class="vm-sum-item cash">
-          <div class="vm-sum-num">${fmtBaht(d.cashAmount||cashN*pp)}฿</div>
+          <div class="vm-sum-num">${fmtBaht(cashAmtView)}฿</div>
           <div class="vm-sum-lbl">💵 เงินสด (${cashN})</div>
         </div>
         <div class="vm-sum-item transfer">
-          <div class="vm-sum-num">${fmtBaht(d.transferAmount||transN*pp)}฿</div>
+          <div class="vm-sum-num">${fmtBaht(transAmtView)}฿</div>
           <div class="vm-sum-lbl">📲 โอน (${transN})</div>
         </div>
         <div class="vm-sum-item unpaid">
