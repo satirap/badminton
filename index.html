@@ -1791,7 +1791,7 @@ async function viewMemberProfile(playerId){
     const events = allDocs
       .filter(e => e.result === 'win' || e.result === 'lose')
       .sort((a, b) => a.date - b.date);
-    renderWinRateChart(events);
+    renderWinRateChart(events, { wins: scWins, played: scPlayed, wr: scWr });
   }catch(e){
     console.warn('viewMember chart', e);
     const svg = document.getElementById('pf-chart-winrate');
@@ -1847,7 +1847,7 @@ async function loadAndRenderProfileStats(){
       .filter(e => e.result === 'win' || e.result === 'lose')
       .sort((a, b) => a.date - b.date);
     console.log('[profile] events count:', events.length);
-    renderWinRateChart(events);
+    renderWinRateChart(events, { wins: scWins, played: scPlayed, wr: scWr });
   }catch(e){
     console.error('[profile] load failed:', e);
     toast('โหลดประวัติเกมไม่ได้: ' + (e.message || e));
@@ -1863,7 +1863,7 @@ async function loadAndRenderProfileStats(){
  *  Y: % ชนะสะสม ณ สิ้นวันนั้น = ชนะสะสมรวมทุกวันก่อนหน้า + วันนี้ / เกมรวม × 100
  *  เส้นแนว 50% (เสมอ) เป็นจุดอ้างอิง — เหนือ = พัฒนา, ต่ำกว่า = ต้องฝึก
  */
-function renderWinRateChart(events){
+function renderWinRateChart(events, correctStats){
   const svg   = document.getElementById('pf-chart-winrate');
   const empty = document.getElementById('pf-chart-winrate-empty');
   const rateLabel = document.getElementById('pf-current-rate');
@@ -1937,7 +1937,10 @@ function renderWinRateChart(events){
     `;
   }).join('');
 
-  const lastRate = days[n-1].pct;
+  const rawRate = days[n-1].pct;
+  const lastRate = correctStats ? correctStats.wr : rawRate;
+  const displayWins = correctStats ? correctStats.wins : cumWins;
+  const displayGames = correctStats ? correctStats.played : cumGames;
   const lineColor = lastRate >= 70 ? '#34d399' : lastRate >= 40 ? '#fbbf24' : '#fb7185';
   const areaTopColor = lastRate >= 70 ? '#34d399' : lastRate >= 40 ? '#fbbf24' : '#fb7185';
 
@@ -1985,7 +1988,7 @@ function renderWinRateChart(events){
   `;
 
   if(rateLabel){
-    rateLabel.innerHTML = `<span style="color:${lineColor};font-weight:800">${lastRate}% · ${cumWins}/${cumGames}</span>`;
+    rateLabel.innerHTML = `<span style="color:${lineColor};font-weight:800">${lastRate}% · ${displayWins}/${displayGames}</span>`;
   }
 }
 
