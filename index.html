@@ -67,8 +67,7 @@
 [data-theme="sakura"] .tab{color:var(--ink-mute)}
 [data-theme="sakura"] .tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
 [data-theme="sakura"] .header{border-color:var(--line)}
-[data-theme="sakura"] .pf-pic-edit-btn:hover,
-[data-theme="sakura"] .pf-name-edit-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+[data-theme="sakura"] .pf-edit-profile-btn:hover{border-color:var(--accent);color:var(--accent)}
 [data-theme="sakura"] .pf-theme-card.active::after{background:var(--accent);color:#fff}
 [data-theme="sakura"] .rk-tbl .rk-badge.lv-t0{background:#6b728018;color:#4b5563;border-color:#6b728040}
 [data-theme="sakura"] .rk-tbl .rk-badge.lv-t1{background:#16a34a18;color:#15803d;border-color:#16a34a40}
@@ -113,8 +112,7 @@
 [data-theme="light"] .tab{color:var(--ink-mute)}
 [data-theme="light"] .tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
 [data-theme="light"] .header{border-color:var(--line)}
-[data-theme="light"] .pf-pic-edit-btn:hover,
-[data-theme="light"] .pf-name-edit-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+[data-theme="light"] .pf-edit-profile-btn:hover{border-color:var(--accent);color:var(--accent)}
 [data-theme="light"] .pf-theme-card.active::after{background:var(--accent);color:#fff}
 [data-theme="light"] .rk-tbl .rk-badge.lv-t0{background:#6b728018;color:#4b5563;border-color:#6b728040}
 [data-theme="light"] .rk-tbl .rk-badge.lv-t1{background:#16a34a18;color:#15803d;border-color:#16a34a40}
@@ -571,12 +569,21 @@ section.view.active{display:block}
 .pf-name-text{
   font-size:20px;font-weight:800;color:var(--ink);text-align:center;
 }
-.pf-name-edit-btn{
-  background:none;border:1.5px solid var(--line);border-radius:8px;
-  width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:14px;transition:all .15s;-webkit-tap-highlight-color:transparent;
+.pf-edit-profile-btn{
+  display:block;margin:0 auto;padding:8px 24px;border:1.5px solid var(--line);
+  border-radius:10px;background:transparent;color:var(--ink-soft);
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;
 }
-.pf-name-edit-btn:hover,.pf-name-edit-btn:active{background:var(--accent);border-color:var(--accent)}
+.pf-edit-profile-btn:hover,.pf-edit-profile-btn:active{border-color:var(--accent);color:var(--accent)}
+.pf-pic-clickable{position:relative;display:inline-block}
+.pf-pic-clickable.editable{cursor:pointer}
+.pf-pic-clickable.editable::after{
+  content:'📷';position:absolute;bottom:2px;right:2px;width:32px;height:32px;border-radius:50%;
+  background:var(--bg-card);border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  box-shadow:0 2px 8px #0004;pointer-events:none;
+}
 .pf-name-edit-row{
   display:flex;gap:6px;align-items:center;
 }
@@ -595,14 +602,7 @@ section.view.active{display:block}
   padding:10px 12px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
   white-space:nowrap;-webkit-tap-highlight-color:transparent;
 }
-/* ── Avatar edit overlay button ── */
-.pf-pic-edit-btn{
-  position:absolute;bottom:2px;right:2px;width:34px;height:34px;border-radius:50%;
-  background:var(--bg-card);border:2px solid var(--line);
-  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;
-  transition:all .15s;box-shadow:0 2px 8px #0008;-webkit-tap-highlight-color:transparent;
-}
-.pf-pic-edit-btn:hover,.pf-pic-edit-btn:active{background:var(--accent);border-color:var(--accent)}
+/* (pf-pic-edit-btn removed — now using pf-pic-clickable.editable) */
 
 /* ── Theme selector ── */
 .pf-theme-selector{display:flex;gap:10px;flex-wrap:wrap}
@@ -771,6 +771,8 @@ section.view.active{display:block}
   z-index:50;pointer-events:none;box-shadow:0 10px 30px -8px #000c;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+[data-theme="sakura"] .toast{background:#2d0a28;color:#fbcfe8}
+[data-theme="light"] .toast{background:#1e1b4b;color:#e0e7ff}
 
 /* ---- Empty state ---- */
 .empty{
@@ -1039,28 +1041,29 @@ section.view.active{display:block}
       <button class="pf-close" onclick="closeProfileEdit()" aria-label="ปิด">✕</button>
     </div>
     <div class="pf-body">
-      <!-- Avatar + edit button -->
+      <!-- Avatar -->
       <div class="pf-pic-section">
         <div class="pf-pic-backdrop">
-          <div style="position:relative;display:inline-block;">
+          <div id="pf-pic-clickable" class="pf-pic-clickable">
             <img id="profile-pic-preview" class="pf-pic-preview" src="" style="display:none"/>
             <div id="profile-pic-empty" class="pf-no-pic">👤</div>
-            <button class="pf-pic-edit-btn" onclick="document.getElementById('profile-pic-input').click()" title="เปลี่ยนรูป">📷</button>
           </div>
         </div>
         <input type="file" id="profile-pic-input" accept="image/*" style="display:none"/>
-        <div class="pf-pic-hint">กดไอคอน 📷 เพื่อเปลี่ยนรูป</div>
+        <div class="pf-pic-hint" id="pf-pic-hint" style="display:none">กดที่รูป เพื่อเปลี่ยนรูป</div>
       </div>
 
-      <!-- Name display + inline edit -->
-      <div class="pf-name-view">
+      <!-- Name display -->
+      <div class="pf-name-view" id="pf-name-view">
         <span class="pf-name-text" id="profile-name-display">—</span>
-        <button class="pf-name-edit-btn" onclick="toggleProfileNameEdit()" title="แก้ไขชื่อ">✏️</button>
       </div>
+      <!-- Edit profile button -->
+      <button class="pf-edit-profile-btn" id="pf-edit-profile-btn" onclick="enterProfileEdit()">แก้ไขโปรไฟล์</button>
+      <!-- Edit mode: name input + save/cancel -->
       <div class="pf-name-edit-row" id="profile-name-edit-row" style="display:none">
         <input type="text" id="profile-name-input" maxlength="40" autocomplete="off" placeholder="ชื่อ"/>
         <button class="pf-name-save-btn" onclick="saveProfileEdit()">บันทึก</button>
-        <button class="pf-name-cancel-btn" onclick="cancelProfileNameEdit()">ยกเลิก</button>
+        <button class="pf-name-cancel-btn" onclick="exitProfileEdit()">ยกเลิก</button>
       </div>
 
       <!-- Stats grid (view-only) -->
@@ -1829,12 +1832,11 @@ function resizeImageToBase64(file, maxSize, quality){
 function openProfileEdit(){
   if(!currentUser){ toast('กรุณา login LINE ก่อน'); return; }
   _pendingPicData = null;
-  // Show name as text (view-only)
   const nameDisplay = document.getElementById('profile-name-display');
   if(nameDisplay) nameDisplay.textContent = currentUser.name || '—';
   document.getElementById('profile-name-input').value = currentUser.name || '';
-  document.getElementById('profile-name-edit-row').style.display = 'none';
-  document.querySelector('.pf-name-view').style.display = 'flex';
+
+  exitProfileEdit();
 
   const preview = document.getElementById('profile-pic-preview');
   const empty   = document.getElementById('profile-pic-empty');
@@ -1847,29 +1849,32 @@ function openProfileEdit(){
     empty.style.display = 'flex';
   }
 
-  // Render stats grid (view-only)
   renderProfileStatsGrid();
-  // Render theme selector
   renderThemeSelector();
 
   document.getElementById('profile-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
-  // โหลด stats + charts (async)
   loadAndRenderProfileStats().catch(e => console.warn('profile stats', e));
 }
 
-function toggleProfileNameEdit(){
-  document.querySelector('.pf-name-view').style.display = 'none';
-  const row = document.getElementById('profile-name-edit-row');
-  row.style.display = 'flex';
+function enterProfileEdit(){
+  document.getElementById('pf-name-view').style.display = 'none';
+  document.getElementById('pf-edit-profile-btn').style.display = 'none';
+  document.getElementById('profile-name-edit-row').style.display = 'flex';
+  document.getElementById('pf-pic-hint').style.display = '';
+  document.getElementById('pf-pic-clickable').classList.add('editable');
   const inp = document.getElementById('profile-name-input');
   inp.value = currentUser?.name || '';
   inp.focus();
 }
-function cancelProfileNameEdit(){
+function exitProfileEdit(){
   document.getElementById('profile-name-edit-row').style.display = 'none';
-  document.querySelector('.pf-name-view').style.display = 'flex';
+  document.getElementById('pf-name-view').style.display = 'flex';
+  document.getElementById('pf-edit-profile-btn').style.display = 'block';
+  document.getElementById('pf-pic-hint').style.display = 'none';
+  document.getElementById('pf-pic-clickable').classList.remove('editable');
 }
+function cancelProfileNameEdit(){ exitProfileEdit(); }
 
 function renderProfileStatsGrid(){
   const g = document.getElementById('pf-stats-grid');
@@ -1936,17 +1941,12 @@ async function viewMemberProfile(playerId){
   if(!member){ toast('ไม่พบข้อมูลสมาชิก'); return; }
 
   // ซ่อนปุ่มแก้ไข + แสดง view-only
-  const picEditBtn = document.querySelector('.pf-pic-edit-btn');
-  const nameEditBtn = document.querySelector('.pf-name-edit-btn');
-  const nameEditRow = document.getElementById('profile-name-edit-row');
+  exitProfileEdit();
+  const editBtn = document.getElementById('pf-edit-profile-btn');
+  if(editBtn) editBtn.style.display = 'none';
   const themeSection = document.getElementById('pf-theme-selector')?.closest('.pf-stats-section');
-  const picHint = document.querySelector('.pf-pic-hint');
-  if(picEditBtn) picEditBtn.style.display = 'none';
-  if(nameEditBtn) nameEditBtn.style.display = 'none';
-  if(nameEditRow) nameEditRow.style.display = 'none';
   if(themeSection) themeSection.style.display = 'none';
-  if(picHint) picHint.style.display = 'none';
-  document.querySelector('.pf-name-view').style.display = 'flex';
+  document.getElementById('pf-name-view').style.display = 'flex';
 
   // ตั้งค่า UI
   document.querySelector('.pf-head h3').textContent = '👤 โปรไฟล์สมาชิก';
@@ -2760,15 +2760,11 @@ function closeProfileEdit(){
   document.body.style.overflow = '';
   _pendingPicData = null;
   document.getElementById('profile-pic-input').value = '';
-  // Restore own-profile mode (undo viewMemberProfile hiding)
-  const picEditBtn = document.querySelector('.pf-pic-edit-btn');
-  const nameEditBtn = document.querySelector('.pf-name-edit-btn');
+  exitProfileEdit();
+  const editBtn = document.getElementById('pf-edit-profile-btn');
+  if(editBtn) editBtn.style.display = 'block';
   const themeSection = document.getElementById('pf-theme-selector')?.closest('.pf-stats-section');
-  const picHint = document.querySelector('.pf-pic-hint');
-  if(picEditBtn) picEditBtn.style.display = '';
-  if(nameEditBtn) nameEditBtn.style.display = '';
   if(themeSection) themeSection.style.display = '';
-  if(picHint) picHint.style.display = '';
   document.querySelector('.pf-head h3').textContent = '👤 โปรไฟล์';
 }
 
@@ -2779,14 +2775,12 @@ document.addEventListener('DOMContentLoaded', () => {
   inp.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
     if(!file) return;
-    const btn = document.querySelector('.pf-pic-edit-btn');
-    if(btn){ btn.classList.add('processing'); btn.textContent = '⏳'; }
+    const hint = document.getElementById('pf-pic-hint');
+    if(hint) hint.textContent = '⏳ กำลังประมวลผลรูป...';
     try{
       const data = await resizeImageToBase64(file, 400, 0.85);
-      // ขนาดประมาณ KB (base64 = bytes × 1.33; เราต้องการต่ำกว่า ~800KB เพื่อเก็บใน Firestore doc)
       const kb = Math.round(data.length * 0.75 / 1024);
       if(kb > 800){
-        // ลอง quality ต่ำลง
         const data2 = await resizeImageToBase64(file, 400, 0.7);
         _pendingPicData = data2;
       } else {
@@ -2797,35 +2791,22 @@ document.addEventListener('DOMContentLoaded', () => {
       preview.src = _pendingPicData;
       preview.style.display = 'block';
       empty.style.display = 'none';
-      await saveProfilePic(_pendingPicData);
     }catch(err){
       toast('รูปนี้ใช้ไม่ได้: ' + (err.message || 'ลองรูปอื่น'));
     }finally{
-      if(btn){ btn.classList.remove('processing'); btn.textContent = '📷'; }
+      if(hint) hint.textContent = 'กดที่รูป เพื่อเปลี่ยนรูป';
     }
   });
-});
 
-async function saveProfilePic(base64){
-  if(!currentUser?.id || !base64) return;
-  try{
-    await db.collection('players').doc(currentUser.id).set({
-      pictureUrl: base64,
-      profileEdited: true,
-      updatedAt: new Date(),
-    }, { merge: true });
-    currentUser.pictureUrl = base64;
-    _pendingPicData = null;
-    localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
-    if(typeof renderMyCard === 'function') renderMyCard();
-    const dp = document.getElementById('my-pic');
-    if(dp) dp.src = base64;
-    renderAll();
-    toast('✓ บันทึกรูปโปรไฟล์แล้ว');
-  }catch(e){
-    toast('บันทึกรูปไม่สำเร็จ: ' + (e.message || 'ลองใหม่'));
+  // Click on avatar to pick file (only in edit mode)
+  const clickable = document.getElementById('pf-pic-clickable');
+  if(clickable){
+    clickable.addEventListener('click', () => {
+      if(!clickable.classList.contains('editable')) return;
+      document.getElementById('profile-pic-input').click();
+    });
   }
-}
+});
 
 async function saveProfileEdit(){
   if(!currentUser?.id){ toast('ไม่พบข้อมูล user'); return; }
@@ -2851,8 +2832,8 @@ async function saveProfileEdit(){
 
     toast('✓ บันทึกโปรไฟล์แล้ว');
 
-    // กลับ view mode (ไม่ปิด modal)
-    cancelProfileNameEdit();
+    _pendingPicData = null;
+    exitProfileEdit();
     const nameDisplay = document.getElementById('profile-name-display');
     if(nameDisplay) nameDisplay.textContent = name;
 
