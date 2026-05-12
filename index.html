@@ -381,6 +381,27 @@ section.view.active{display:block}
   flex:1;padding:8px;border:none;border-radius:8px;
   font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
 }
+.admin-picker{max-height:200px;overflow-y:auto;margin-top:4px}
+.admin-picker-item{
+  display:flex;align-items:center;gap:8px;padding:8px 4px;
+  border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s;
+  border-radius:6px;
+}
+.admin-picker-item:last-child{border-bottom:none}
+.admin-picker-item:active{background:var(--bg-input)}
+.admin-picker-item img{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.admin-picker-item .no-pic{
+  width:28px;height:28px;border-radius:50%;background:var(--bg-input);
+  display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+.admin-picker-item .pick-name{flex:1;font-size:13px;font-weight:600;color:var(--ink);font-family:'DM Sans',sans-serif}
+.admin-picker-item .pick-btn{
+  background:var(--accent);color:#000;border:none;border-radius:8px;
+  padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;white-space:nowrap;
+}
+.admin-picker-item .pick-btn:active{opacity:.7}
+.admin-picker-empty{font-size:13px;color:var(--ink-mute);font-style:italic;padding:8px 0}
 .admin-copy-btn{background:var(--accent);color:#000}
 .admin-regen-btn{background:var(--bg-card2);color:var(--ink);border:1.5px solid var(--line) !important}
 
@@ -839,7 +860,7 @@ section.view.active{display:block}
       </div>
 
       <div class="rank-list" id="daily-list"></div>
-      <button class="share-daily-btn" id="share-daily-btn" onclick="openShareCard()" style="display:none">
+      <button class="share-daily-btn" id="share-daily-btn" onclick="openShareCard('daily')" style="display:none">
         📤 แชร์ผลประจำวัน
       </button>
     </section>
@@ -869,6 +890,9 @@ section.view.active{display:block}
           </tbody>
         </table>
       </div>
+      <button class="share-daily-btn" id="share-monthly-btn" onclick="openShareCard('monthly')" style="display:none">
+        📤 แชร์ผลประจำเดือน
+      </button>
       <h2 class="section-title" style="margin-top:32px">ผู้ชนะ<em>ประจำเดือน</em></h2>
       <div id="monthly-winners-grid"></div>
     </section>
@@ -915,6 +939,10 @@ section.view.active{display:block}
         <ul class="admin-list" id="admin-list"></ul>
       </div>
       <div class="pf-stats-section">
+        <div class="pf-stats-head">➕ เพิ่ม Admin จากสมาชิก</div>
+        <div class="admin-picker" id="admin-picker"></div>
+      </div>
+      <div class="pf-stats-section">
         <div class="pf-stats-head">🔗 ลิงก์เชิญ Admin</div>
         <div class="admin-invite-box">
           <div class="invite-label">ส่งลิงก์นี้ให้คนที่ต้องการแต่งตั้งเป็น Admin</div>
@@ -936,7 +964,7 @@ section.view.active{display:block}
 <div class="pf-overlay" id="share-modal" style="display:none" onclick="if(event.target===this)closeShareCard()">
   <div class="pf-panel" style="max-width:380px">
     <div class="pf-head">
-      <h3>📤 แชร์ผลประจำวัน</h3>
+      <h3 id="share-modal-title">📤 แชร์ผลประจำวัน</h3>
       <button class="pf-close" onclick="closeShareCard()" aria-label="ปิด">✕</button>
     </div>
     <div class="pf-body" style="padding:12px">
@@ -1602,6 +1630,8 @@ function renderMonthly(){
       : withRanks(allMonthlyRankings).map(r => rkTblRowHtml(r, 'monthly')).join('');
   }
   renderMonthlyWinners();
+  const shareMonBtn = document.getElementById('share-monthly-btn');
+  if(shareMonBtn) shareMonBtn.style.display = (isAdmin && allMonthlyRankings.some(r=>(r.points||0)>0)) ? 'block' : 'none';
 }
 
 function renderMonthlyWinners(){
@@ -2269,11 +2299,14 @@ function updateAdminUI(){
   if(btn) btn.style.display = isAdmin ? '' : 'none';
   const shareBtn = document.getElementById('share-daily-btn');
   if(shareBtn) shareBtn.style.display = (isAdmin && allDailyRankings.length > 0) ? 'block' : 'none';
+  const shareMonBtn = document.getElementById('share-monthly-btn');
+  if(shareMonBtn) shareMonBtn.style.display = (isAdmin && allMonthlyRankings.some(r=>(r.points||0)>0)) ? 'block' : 'none';
 }
 
 function openAdminPanel(){
   if(!isAdmin) return;
   renderAdminList();
+  renderAdminPicker();
   renderAdminInviteLink();
   document.getElementById('admin-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -2308,10 +2341,50 @@ function renderAdminInviteLink(){
   if(el) el.textContent = getInviteUrl();
 }
 
+function renderAdminPicker(){
+  const wrap = document.getElementById('admin-picker');
+  if(!wrap) return;
+  const candidates = allRankings.filter(r => !adminIds.includes(r.id));
+  if(candidates.length === 0){
+    wrap.innerHTML = '<div class="admin-picker-empty">ไม่มีสมาชิกที่เพิ่มได้</div>';
+    return;
+  }
+  wrap.innerHTML = candidates.map(r => {
+    const pic = r.pic
+      ? `<img src="${escHtml(r.pic)}" alt="">`
+      : `<div class="no-pic">${escHtml((r.name||'?')[0])}</div>`;
+    return `<div class="admin-picker-item">
+      ${pic}
+      <span class="pick-name">${escHtml(r.name)}</span>
+      <button class="pick-btn" onclick="addAdminDirect('${r.id}')">เพิ่ม</button>
+    </div>`;
+  }).join('');
+}
+
+async function addAdminDirect(id){
+  if(!isAdmin || adminIds.includes(id)) return;
+  try {
+    adminIds.push(id);
+    await db.collection('config').doc('admins').update({
+      ids: firebase.firestore.FieldValue.arrayUnion(id)
+    });
+    renderAdminList();
+    renderAdminPicker();
+  } catch(e){
+    console.error('addAdminDirect error', e);
+    adminIds = adminIds.filter(x => x !== id);
+    alert('เพิ่ม Admin ไม่สำเร็จ');
+  }
+}
+
 // =================================================================
-// SHARE DAILY RESULTS
+// SHARE RESULTS
 // =================================================================
-function openShareCard(){
+let _shareMode = 'daily';
+function openShareCard(mode){
+  _shareMode = mode || 'daily';
+  const title = document.getElementById('share-modal-title');
+  if(title) title.textContent = _shareMode === 'daily' ? '📤 แชร์ผลประจำวัน' : '📤 แชร์ผลประจำเดือน';
   renderShareCanvas();
   document.getElementById('share-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -2325,17 +2398,28 @@ function renderShareCanvas(){
   const canvas = document.getElementById('share-canvas');
   if(!canvas) return;
   const W = 720;
-  const daily = withRanks(allDailyRankings);
-  const monthly = withRanks(allMonthlyRankings);
+  const now = new Date();
   const rowH = 52;
-  const dailyH = Math.max(daily.length * rowH, 60);
-  const top5 = monthly.slice(0, 5);
-  const monthlyH = top5.length * 44;
-  const H = 200 + dailyH + (top5.length > 0 ? 90 + monthlyH : 0) + 50;
+
+  const rows = _shareMode === 'daily'
+    ? withRanks(allDailyRankings)
+    : withRanks(allMonthlyRankings).filter(r => (r.points||0) > 0);
+  const showPlayed = _shareMode === 'daily';
+
+  const monName = THAI_MONTHS_FULL[now.getMonth()];
+  const yr2 = (now.getFullYear() + 543) % 100;
+  const subtitle = _shareMode === 'daily' ? 'ผลการแข่งขันประจำวัน' : `สถิติประจำเดือน ${monName} ${String(yr2).padStart(2,'0')}`;
+  const dateStr = _shareMode === 'daily'
+    ? now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+    : `${monName} ${now.getFullYear()+543}`;
+  const sectionTitle = _shareMode === 'daily' ? '📊 ผลประจำวัน' : `📅 คะแนนเดือน ${monName} ${String(yr2).padStart(2,'0')}`;
+  const emptyText = _shareMode === 'daily' ? 'ยังไม่มีเกมวันนี้' : 'ยังไม่มีเกมเดือนนี้';
+
+  const tableH = Math.max(rows.length * rowH, 60);
+  const H = 200 + tableH + 50;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // Background gradient
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, '#0f1118');
   bg.addColorStop(0.5, '#151820');
@@ -2343,7 +2427,6 @@ function renderShareCanvas(){
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // Decorative accent line top
   const topLine = ctx.createLinearGradient(0, 0, W, 0);
   topLine.addColorStop(0, '#c8f13500');
   topLine.addColorStop(0.3, '#c8f135');
@@ -2353,47 +2436,37 @@ function renderShareCanvas(){
   ctx.fillRect(0, 0, W, 3);
 
   let y = 36;
-
-  // Title
   ctx.font = '800 28px "DM Sans", sans-serif';
   ctx.fillStyle = '#f5f3ee';
   ctx.textAlign = 'center';
   ctx.fillText('🏸 ก๊วนอยากตี ต้องได้ตี', W/2, y);
   y += 14;
 
-  // Subtitle line
   ctx.font = '500 13px "DM Sans", sans-serif';
   ctx.fillStyle = '#8e8c85';
-  ctx.fillText('ผลการแข่งขันประจำวัน', W/2, y + 18);
+  ctx.fillText(subtitle, W/2, y + 18);
   y += 40;
 
-  // Date
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   ctx.font = '700 16px "DM Sans", sans-serif';
   ctx.fillStyle = '#c8f135';
   ctx.fillText(dateStr, W/2, y);
   y += 30;
 
-  // Divider
   drawDivider(ctx, 40, W-40, y, '#c8f13540');
   y += 20;
 
-  // Daily header
   ctx.textAlign = 'left';
   ctx.font = '800 18px "DM Sans", sans-serif';
   ctx.fillStyle = '#f5f3ee';
-  ctx.fillText('📊 ผลประจำวัน', 40, y);
+  ctx.fillText(sectionTitle, 40, y);
   y += 24;
 
-  if(daily.length === 0){
+  if(rows.length === 0){
     ctx.font = '500 14px "DM Sans", sans-serif';
     ctx.fillStyle = '#8e8c85';
     ctx.textAlign = 'center';
-    ctx.fillText('ยังไม่มีเกมวันนี้', W/2, y + 10);
-    y += 40;
+    ctx.fillText(emptyText, W/2, y + 10);
   } else {
-    // Table header
     ctx.font = '700 11px "IBM Plex Mono", monospace';
     ctx.fillStyle = '#8e8c85';
     ctx.textAlign = 'left';
@@ -2402,28 +2475,21 @@ function renderShareCanvas(){
     ctx.textAlign = 'center';
     ctx.fillText('ชนะ', 420, y);
     ctx.fillText('แพ้', 490, y);
-    ctx.fillText('เล่น', 555, y);
+    if(showPlayed) ctx.fillText('เล่น', 555, y);
     ctx.textAlign = 'right';
     ctx.fillText('คะแนน', 680, y);
     y += 8;
     drawDivider(ctx, 40, W-40, y, '#2e303850');
     y += 14;
 
-    daily.forEach((r, i) => {
-      // Zebra
+    rows.forEach((r, i) => {
       if(i % 2 === 1){
         ctx.fillStyle = '#ffffff06';
         ctx.fillRect(36, y - 14, W - 72, rowH);
       }
-
       const rank = r._rank;
       const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
-      const wins = Math.max(0, r.wins||0);
-      const losses = Math.max(0, r.losses||0);
-      const played = Math.max(0, r.played||0);
-      const pts = Math.max(0, r.points||0);
 
-      // Rank
       ctx.textAlign = 'center';
       if(medal){
         ctx.font = '20px serif';
@@ -2434,111 +2500,33 @@ function renderShareCanvas(){
         ctx.fillText(String(rank), 56, y + 6);
       }
 
-      // Name
       ctx.textAlign = 'left';
       ctx.font = '700 15px "DM Sans", sans-serif';
       ctx.fillStyle = '#f5f3ee';
-      const name = (r.name || '—').length > 14 ? (r.name||'—').slice(0,14)+'…' : (r.name||'—');
+      const name = (r.name||'—').length > 14 ? (r.name||'—').slice(0,14)+'…' : (r.name||'—');
       ctx.fillText(name, 80, y + 6);
 
-      // Wins
       ctx.textAlign = 'center';
       ctx.font = '700 15px "IBM Plex Mono", monospace';
       ctx.fillStyle = '#4ade80';
-      ctx.fillText(String(wins), 420, y + 6);
-
-      // Losses
+      ctx.fillText(String(Math.max(0,r.wins||0)), 420, y + 6);
       ctx.fillStyle = '#f87171';
-      ctx.fillText(String(losses), 490, y + 6);
+      ctx.fillText(String(Math.max(0,r.losses||0)), 490, y + 6);
+      if(showPlayed){
+        ctx.fillStyle = '#8e8c85';
+        ctx.font = '600 13px "IBM Plex Mono", monospace';
+        ctx.fillText(String(Math.max(0,r.played||0)), 555, y + 6);
+      }
 
-      // Played
-      ctx.fillStyle = '#8e8c85';
-      ctx.font = '600 13px "IBM Plex Mono", monospace';
-      ctx.fillText(String(played), 555, y + 6);
-
-      // Points
       ctx.textAlign = 'right';
       ctx.font = '800 17px "IBM Plex Mono", monospace';
       ctx.fillStyle = '#c8f135';
-      ctx.fillText(String(pts), 680, y + 6);
+      ctx.fillText(String(Math.max(0,r.points||0)), 680, y + 6);
 
       y += rowH;
     });
-    y += 10;
   }
 
-  // Monthly section
-  if(top5.length > 0){
-    drawDivider(ctx, 40, W-40, y, '#2e303850');
-    y += 24;
-
-    const monName = THAI_MONTHS_FULL[now.getMonth()];
-    const yr2 = (now.getFullYear() + 543) % 100;
-    ctx.textAlign = 'left';
-    ctx.font = '800 18px "DM Sans", sans-serif';
-    ctx.fillStyle = '#f5f3ee';
-    ctx.fillText(`📅 สถิติเดือน ${monName} ${String(yr2).padStart(2,'0')}`, 40, y);
-    y += 24;
-
-    // Top 5
-    ctx.font = '700 11px "IBM Plex Mono", monospace';
-    ctx.fillStyle = '#8e8c85';
-    ctx.textAlign = 'left';
-    ctx.fillText('#', 44, y);
-    ctx.fillText('ผู้เล่น', 80, y);
-    ctx.textAlign = 'center';
-    ctx.fillText('ชนะ', 420, y);
-    ctx.fillText('แพ้', 490, y);
-    ctx.textAlign = 'right';
-    ctx.fillText('คะแนน', 680, y);
-    y += 8;
-    drawDivider(ctx, 40, W-40, y, '#2e303850');
-    y += 14;
-
-    top5.forEach((r, i) => {
-      if(i % 2 === 1){
-        ctx.fillStyle = '#ffffff06';
-        ctx.fillRect(36, y - 14, W - 72, 44);
-      }
-      const rank = r._rank;
-      const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
-      const wins = Math.max(0, r.wins||0);
-      const losses = Math.max(0, r.losses||0);
-      const pts = Math.max(0, r.points||0);
-
-      ctx.textAlign = 'center';
-      if(medal){
-        ctx.font = '18px serif';
-        ctx.fillText(medal, 56, y + 6);
-      } else {
-        ctx.font = '700 13px "IBM Plex Mono", monospace';
-        ctx.fillStyle = '#8e8c85';
-        ctx.fillText(String(rank), 56, y + 4);
-      }
-
-      ctx.textAlign = 'left';
-      ctx.font = '600 14px "DM Sans", sans-serif';
-      ctx.fillStyle = '#c9c7c0';
-      const name = (r.name||'—').length > 14 ? (r.name||'—').slice(0,14)+'…' : (r.name||'—');
-      ctx.fillText(name, 80, y + 5);
-
-      ctx.textAlign = 'center';
-      ctx.font = '700 14px "IBM Plex Mono", monospace';
-      ctx.fillStyle = '#4ade80';
-      ctx.fillText(String(wins), 420, y + 5);
-      ctx.fillStyle = '#f87171';
-      ctx.fillText(String(losses), 490, y + 5);
-
-      ctx.textAlign = 'right';
-      ctx.font = '800 15px "IBM Plex Mono", monospace';
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillText(String(pts), 680, y + 5);
-
-      y += 44;
-    });
-  }
-
-  // Footer
   y = H - 30;
   ctx.textAlign = 'center';
   ctx.font = '500 11px "DM Sans", sans-serif';
@@ -2555,23 +2543,105 @@ function drawDivider(ctx, x1, x2, y, color){
   ctx.stroke();
 }
 
+function buildFlexShare(){
+  const now = new Date();
+  const monName = THAI_MONTHS_FULL[now.getMonth()];
+  const yr2 = (now.getFullYear()+543)%100;
+  const isDaily = _shareMode === 'daily';
+  const showPlayed = isDaily;
+
+  const rows = isDaily
+    ? withRanks(allDailyRankings)
+    : withRanks(allMonthlyRankings).filter(r => (r.points||0) > 0);
+
+  const dateStr = isDaily
+    ? now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
+    : `${monName} ${now.getFullYear()+543}`;
+  const sectionTitle = isDaily ? '📊 ผลประจำวัน' : `📅 คะแนนเดือน ${monName} ${String(yr2).padStart(2,'0')}`;
+  const emptyText = isDaily ? 'ยังไม่มีเกมวันนี้' : 'ยังไม่มีเกมเดือนนี้';
+  const altText = isDaily ? `🏸 ผลแข่งขันประจำวัน ${dateStr}` : `🏸 สถิติเดือน${monName} ${yr2}`;
+  const medals = ['','🥇','🥈','🥉'];
+
+  function playerRow(r){
+    const m = medals[r._rank] || '';
+    const rankTxt = m || `#${r._rank}`;
+    const cols = [
+      {type:'text',text:rankTxt,size:'sm',flex:1,align:'center',gravity:'center',color:'#c8f135'},
+      {type:'text',text:r.name||'—',size:'sm',flex:4,gravity:'center',color:'#f5f3ee',weight:'bold'},
+      {type:'text',text:String(Math.max(0,r.wins||0)),size:'sm',flex:1,align:'center',gravity:'center',color:'#4ade80',weight:'bold'},
+      {type:'text',text:String(Math.max(0,r.losses||0)),size:'sm',flex:1,align:'center',gravity:'center',color:'#f87171',weight:'bold'}
+    ];
+    if(showPlayed) cols.push({type:'text',text:String(Math.max(0,r.played||0)),size:'xs',flex:1,align:'center',gravity:'center',color:'#8e8c85'});
+    cols.push({type:'text',text:String(Math.max(0,r.points||0)),size:'sm',flex:1,align:'center',gravity:'center',color:'#fbbf24',weight:'bold'});
+    return {type:'box',layout:'horizontal',contents:cols,margin:'sm',height:'36px'};
+  }
+
+  function headerRow(){
+    const cols = [
+      {type:'text',text:'#',size:'xxs',flex:1,align:'center',color:'#8e8c85'},
+      {type:'text',text:'ผู้เล่น',size:'xxs',flex:4,color:'#8e8c85'},
+      {type:'text',text:'ชนะ',size:'xxs',flex:1,align:'center',color:'#8e8c85'},
+      {type:'text',text:'แพ้',size:'xxs',flex:1,align:'center',color:'#8e8c85'}
+    ];
+    if(showPlayed) cols.push({type:'text',text:'เล่น',size:'xxs',flex:1,align:'center',color:'#8e8c85'});
+    cols.push({type:'text',text:'PTS',size:'xxs',flex:1,align:'center',color:'#8e8c85'});
+    return {type:'box',layout:'horizontal',contents:cols,margin:'md'};
+  }
+
+  const bodyContents = [
+    {type:'text',text:'🏸 ก๊วนอยากตี ต้องได้ตี',weight:'bold',size:'lg',color:'#f5f3ee',align:'center'},
+    {type:'text',text:dateStr,size:'xs',color:'#c8f135',align:'center',margin:'sm'},
+    {type:'separator',margin:'lg',color:'#2e303850'},
+    {type:'text',text:sectionTitle,weight:'bold',size:'md',color:'#f5f3ee',margin:'lg'}
+  ];
+
+  if(rows.length === 0){
+    bodyContents.push({type:'text',text:emptyText,size:'sm',color:'#8e8c85',align:'center',margin:'md'});
+  } else {
+    bodyContents.push(headerRow());
+    bodyContents.push({type:'separator',margin:'sm',color:'#2e303830'});
+    rows.forEach(r => bodyContents.push(playerRow(r)));
+  }
+
+  return {
+    type:'flex',
+    altText,
+    contents:{
+      type:'bubble',
+      size:'giga',
+      styles:{
+        body:{backgroundColor:'#0f1118'},
+        footer:{backgroundColor:'#0f1118'}
+      },
+      body:{type:'box',layout:'vertical',contents:bodyContents,paddingAll:'20px'},
+      footer:{
+        type:'box',layout:'vertical',
+        contents:[
+          {type:'separator',color:'#2e303850'},
+          {type:'text',text:'ก๊วนอยากตี ต้องได้ตี · สแกน QR เพื่อเข้าร่วม',size:'xxs',color:'#4a4d55',align:'center',margin:'md'}
+        ],
+        paddingAll:'12px'
+      }
+    }
+  };
+}
+
 async function shareToLine(){
-  const canvas = document.getElementById('share-canvas');
-  if(!canvas) return;
   try{
     if(typeof liff !== 'undefined' && liff.isLoggedIn() && liff.shareTargetPicker){
-      const dataUrl = canvas.toDataURL('image/png');
-      await liff.shareTargetPicker([{
-        type: 'image',
-        originalContentUrl: dataUrl,
-        previewImageUrl: dataUrl
-      }]);
-      toast('✓ แชร์สำเร็จ');
+      const msg = buildFlexShare();
+      const res = await liff.shareTargetPicker([msg]);
+      if(res){
+        toast('✓ แชร์สำเร็จ');
+      } else {
+        toast('ยกเลิกการแชร์');
+      }
     } else {
       saveShareImage();
     }
   }catch(e){
     console.warn('share error', e);
+    toast('แชร์ไม่สำเร็จ ลองบันทึกรูปแทน');
     saveShareImage();
   }
 }
@@ -2580,7 +2650,7 @@ function saveShareImage(){
   const canvas = document.getElementById('share-canvas');
   if(!canvas) return;
   const link = document.createElement('a');
-  link.download = 'badminton-daily.png';
+  link.download = _shareMode === 'daily' ? 'badminton-daily.png' : 'badminton-monthly.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
   toast('✓ บันทึกรูปแล้ว');
