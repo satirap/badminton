@@ -253,11 +253,12 @@ section.view.active{display:block}
   -webkit-tap-highlight-color:transparent;transition:all .12s;
   display:inline-flex;align-items:center;justify-content:center;
 }
-.counter-card.win .counter-btn:not(:disabled){border:1.5px solid #4ade8055;color:#4ade80}
-.counter-card.lose .counter-btn:not(:disabled){border:1.5px solid #f8717155;color:#f87171}
-.counter-btn:not(:disabled):active{transform:scale(.9)}
-.counter-btn.plus:not(:disabled){background:transparent}
-.counter-btn.minus:disabled{opacity:.2;cursor:not-allowed;border-color:var(--line)!important}
+.counter-card.win .counter-btn.plus:not(:disabled){background:#16a34a;color:#fff;border:none}
+.counter-card.win .counter-btn.minus:not(:disabled){background:#dc2626;color:#fff;border:none}
+.counter-card.lose .counter-btn.plus:not(:disabled){background:#dc2626;color:#fff;border:none}
+.counter-card.lose .counter-btn.minus:not(:disabled){background:#16a34a;color:#fff;border:none}
+.counter-btn:not(:disabled):active{transform:scale(.9);opacity:.8}
+.counter-btn.minus:disabled{opacity:.2;cursor:not-allowed}
 
 .counter-num{
   flex:1;font-family:'Instrument Serif',serif;font-size:56px;font-weight:400;
@@ -1200,30 +1201,23 @@ async function dbUndoResult(playerId, result){
     throw new Error(result==='win' ? 'ไม่มีชนะในวันนี้ให้ลด' : 'ไม่มีแพ้ในวันนี้ให้ลด');
   }
 
-  // Guard #2: atomic update + clamp
-  await db.runTransaction(async tx => {
-    const snap = await tx.get(playerRef);
-    if(!snap.exists) throw new Error('ไม่พบข้อมูลผู้เล่น');
-    const d = snap.data();
-    const curVal    = Math.max(0, d[field]        || 0);
-    const curPlayed = Math.max(0, d.played        || 0);
-    const curPts    = Math.max(0, d.totalPoints   || 0);
-    if(curVal <= 0) throw new Error(result==='win' ? 'ไม่มีชนะให้ลด' : 'ไม่มีแพ้ให้ลด');
+  const batch = db.batch();
+  const scoreRef = db.collection('scores').doc();
+  const inc = firebase.firestore.FieldValue.increment;
 
-    const scoreRef = db.collection('scores').doc();
-    tx.set(scoreRef, {
-      playerId,
-      result:   result === 'win' ? 'undo-win' : 'undo-lose',
-      points:   pts,
-      createdAt: new Date(),
-    });
-
-    tx.update(playerRef, {
-      totalPoints: Math.max(0, curPts + pts),
-      played:      Math.max(0, curPlayed - 1),
-      [field]:     Math.max(0, curVal - 1),
-    });
+  batch.set(scoreRef, {
+    playerId,
+    result:   result === 'win' ? 'undo-win' : 'undo-lose',
+    points:   pts,
+    createdAt: new Date(),
   });
+
+  batch.update(playerRef, {
+    totalPoints: inc(pts),
+    played:      inc(-1),
+    [field]:     inc(-1),
+  });
+  await batch.commit();
   return { success: true };
 }
 
@@ -1239,11 +1233,10 @@ async function dbGetAllData(){
   const yearStart  = new Date(now.getFullYear(), 0, 1);
   const curMonth   = now.getMonth(); // 0-11
 
-  const [playersSnap, dailySnap, yearSnap, allScoresSnap] = await Promise.all([
+  const [playersSnap, dailySnap, yearSnap] = await Promise.all([
     db.collection('players').orderBy('totalPoints','desc').get(),
     db.collection('scores').where('createdAt','>=',dayStart).get(),
     db.collection('scores').where('createdAt','>=',yearStart).get(),
-    db.collection('scores').get(),
   ]);
 
   // Player map  {lineUserId → player data}
@@ -1251,9 +1244,9 @@ async function dbGetAllData(){
   const playerMap = {};
   players.forEach(p => { playerMap[p.id] = p; });
 
-  // ── Aggregate all-time wins/losses from scores (accurate, not stale player doc) ──
+  // ── Aggregate wins/losses from year scores (ครอบคลุมทั้งปี) ──
   const allTimeAgg = {};
-  allScoresSnap.docs.forEach(d => {
+  yearSnap.docs.forEach(d => {
     const s = d.data();
     if(!allTimeAgg[s.playerId]) allTimeAgg[s.playerId] = { wins:0, losses:0, played:0 };
     if(s.result === 'win')            { allTimeAgg[s.playerId].wins++;   allTimeAgg[s.playerId].played++; }
@@ -2861,7 +2854,8 @@ async function manualRecord(result){
     await loadAllData();
   }catch(err){
     console.error(err);
-    loadCachedData();
+    const undoResult = result === 'win' ? 'undo-win' : 'undo-lose';
+    applyOptimisticUpdate(currentUser.id, undoResult, -pts);
     toast('บันทึกไม่สำเร็จ ลองใหม่');
   }
 }
@@ -2886,7 +2880,7 @@ async function manualUndo(result){
     await loadAllData();
   }catch(err){
     console.error('manualUndo error:', err);
-    loadCachedData();
+    applyOptimisticUpdate(currentUser.id, result, result === 'win' ? 3 : 1);
     toast('ลดคะแนนไม่ได้: ' + (err.message || 'ลองใหม่'));
   }
 }
@@ -2959,7 +2953,8 @@ async function processResult(result){
   }catch(err){
     console.error('recordResult error', err);
     _resultHandled = false; // allow retry
-    loadCachedData();       // rollback UI กลับ state เดิม
+    const undoResult = result === 'win' ? 'undo-win' : 'undo-lose';
+    applyOptimisticUpdate(currentUser.id, undoResult, -pts);
     toast('บันทึกไม่สำเร็จ กรุณาสแกนใหม่');
   }
 }
