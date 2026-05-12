@@ -251,14 +251,14 @@ section.view.active{display:block}
 
 /* ── Profile edit modal ── */
 .pf-overlay{
-  position:fixed;inset:0;z-index:999;background:#000c;
+  position:fixed;inset:0;z-index:999;background:#000000ee;
   display:flex;align-items:center;justify-content:center;padding:16px;
-  animation:pfFade .2s ease;
+  animation:pfFade .2s ease;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
 }
 @keyframes pfFade{from{opacity:0}to{opacity:1}}
 @keyframes pfSlide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .pf-panel{
-  background:var(--card);border:1.5px solid var(--line);
+  background:var(--bg-card);border:1.5px solid var(--line);
   border-radius:18px;width:100%;max-width:440px;max-height:92dvh;overflow:hidden;
   display:flex;flex-direction:column;
   box-shadow:0 12px 48px #000c;animation:pfSlide .25s cubic-bezier(.2,.9,.3,1.2);
@@ -278,12 +278,12 @@ section.view.active{display:block}
 .pf-pic-section{display:flex;flex-direction:column;align-items:center;gap:10px}
 .pf-pic-preview{
   width:120px;height:120px;border-radius:50%;
-  object-fit:cover;background:var(--card2);
+  object-fit:cover;background:var(--bg-card2);
   border:2px solid var(--line);
 }
 .pf-no-pic{
   width:120px;height:120px;border-radius:50%;
-  background:var(--card2);border:2px solid var(--line);
+  background:var(--bg-card2);border:2px solid var(--line);
   display:flex;align-items:center;justify-content:center;
   font-size:48px;color:var(--ink-mute);
 }
@@ -299,7 +299,7 @@ section.view.active{display:block}
 .pf-name-section label{font-size:12px;color:var(--ink-mute);font-weight:700;letter-spacing:.04em}
 .pf-name-section input{
   padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;
-  background:var(--card2);color:var(--ink);
+  background:var(--bg-card2);color:var(--ink);
   font-family:inherit;font-size:15px;font-weight:600;outline:none;
 }
 .pf-name-section input:focus{border-color:var(--accent)}
@@ -331,7 +331,7 @@ section.view.active{display:block}
   display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
 }
 .pf-stat{
-  background:var(--card2);border:1.5px solid var(--line);
+  background:var(--bg-card2);border:1.5px solid var(--line);
   border-radius:10px;padding:10px 8px;text-align:center;
 }
 .pf-stat .v{
@@ -347,7 +347,7 @@ section.view.active{display:block}
 
 /* Chart container */
 .pf-chart-wrap{
-  background:var(--card2);border:1.5px solid var(--line);
+  background:var(--bg-card2);border:1.5px solid var(--line);
   border-radius:10px;padding:12px 14px 10px;
 }
 .pf-chart-title{
@@ -1502,27 +1502,32 @@ async function loadAndRenderProfileStats(){
     `;
   }
 
-  // โหลด scores history
+  // โหลด scores history — ไม่ใช้ orderBy (กัน composite index requirement) sort client-side
   try{
     const snap = await db.collection('scores')
       .where('playerId', '==', currentUser.id)
-      .orderBy('createdAt', 'asc')
       .limit(500)
       .get();
     const events = snap.docs.map(d => {
       const x = d.data();
-      const t = x.createdAt?.toDate ? x.createdAt.toDate() : new Date(x.createdAt);
+      const t = x.createdAt?.toDate ? x.createdAt.toDate() : new Date(x.createdAt || 0);
       return { date: t, result: x.result, points: x.points || 0 };
-    });
+    }).filter(e => e.date && !isNaN(e.date.getTime()));
+    events.sort((a, b) => a.date - b.date);
     renderCumulativeChart(events);
     renderDailyChart(events);
   }catch(e){
-    console.warn('load profile history', e);
+    console.error('load profile history failed:', e);
+    toast('โหลดประวัติเกมไม่ได้: ' + (e.message || e));
     // แสดง empty state
-    document.getElementById('pf-chart-cumulative').innerHTML = '';
-    document.getElementById('pf-chart-cumulative-empty').style.display = 'block';
-    document.getElementById('pf-chart-daily').innerHTML = '';
-    document.getElementById('pf-chart-daily-empty').style.display = 'block';
+    const c1 = document.getElementById('pf-chart-cumulative');
+    const c2 = document.getElementById('pf-chart-daily');
+    if(c1) c1.innerHTML = '';
+    if(c2) c2.innerHTML = '';
+    const e1 = document.getElementById('pf-chart-cumulative-empty');
+    const e2 = document.getElementById('pf-chart-daily-empty');
+    if(e1) e1.style.display = 'block';
+    if(e2) e2.style.display = 'block';
   }
 }
 
