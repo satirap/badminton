@@ -953,6 +953,10 @@ section.view.active{display:block}
           </div>
         </div>
       </div>
+      <div class="pf-stats-section">
+        <div class="pf-stats-head">📣 เชิญสมาชิกลงคะแนน</div>
+        <button class="share-action-btn line-btn" style="width:100%;margin-top:8px" onclick="shareInviteToLine()">💬 ส่งคำเชิญทาง LINE</button>
+      </div>
     </div>
     <div class="pf-foot">
       <button class="pf-cancel" onclick="closeAdminPanel()" style="flex:1">ปิด</button>
@@ -2292,6 +2296,52 @@ function copyAdminInvite(){
   navigator.clipboard.writeText(url).then(() => toast('✓ คัดลอกลิงก์แล้ว')).catch(() => {
     prompt('คัดลอกลิงก์:', url);
   });
+}
+
+async function shareInviteToLine(){
+  const appUrl = `https://liff.line.me/${LIFF_ID}`;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+  try{
+    if(typeof liff !== 'undefined' && liff.isLoggedIn() && liff.shareTargetPicker){
+      const res = await liff.shareTargetPicker([{
+        type:'flex',
+        altText:'🏸 มาลงคะแนนแบดกัน! กดลิงก์เพื่อเข้าใช้งาน',
+        contents:{
+          type:'bubble',
+          size:'mega',
+          styles:{body:{backgroundColor:'#0f1118'},footer:{backgroundColor:'#0f1118'}},
+          body:{
+            type:'box',layout:'vertical',paddingAll:'24px',
+            contents:[
+              {type:'text',text:'🏸 ก๊วนอยากตี ต้องได้ตี',weight:'bold',size:'xl',color:'#f5f3ee',align:'center'},
+              {type:'text',text:dateStr,size:'sm',color:'#c8f135',align:'center',margin:'sm'},
+              {type:'separator',margin:'xl',color:'#2e303850'},
+              {type:'text',text:'📣 เชิญลงคะแนนแบด!',weight:'bold',size:'lg',color:'#f5f3ee',align:'center',margin:'xl'},
+              {type:'text',text:'สแกน QR หรือกดปุ่มด้านล่าง\nเพื่อเข้าบันทึกผลการแข่งขัน',size:'sm',color:'#c9c7c0',align:'center',margin:'lg',wrap:true},
+              {type:'box',layout:'vertical',margin:'xl',contents:[
+                {type:'button',action:{type:'uri',label:'🏸 เข้าลงคะแนน',uri:appUrl},style:'primary',color:'#c8f135',height:'md'}
+              ]}
+            ]
+          },
+          footer:{
+            type:'box',layout:'vertical',paddingAll:'12px',
+            contents:[
+              {type:'separator',color:'#2e303850'},
+              {type:'text',text:'ก๊วนอยากตี ต้องได้ตี · สแกน QR เพื่อเข้าร่วม',size:'xxs',color:'#4a4d55',align:'center',margin:'md'}
+            ]
+          }
+        }
+      }]);
+      if(res) toast('✓ ส่งคำเชิญแล้ว');
+      else toast('ยกเลิกการส่ง');
+    } else {
+      toast('ต้องใช้งานผ่าน LINE เท่านั้น');
+    }
+  }catch(e){
+    console.warn('shareInvite error', e);
+    toast('ส่งไม่สำเร็จ');
+  }
 }
 
 function updateAdminUI(){
