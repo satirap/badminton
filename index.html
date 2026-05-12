@@ -1751,6 +1751,23 @@ async function viewMemberProfile(playerId){
       return { date: t, result: x.result };
     }).filter(e => e.date && !isNaN(e.date.getTime()) && (e.result === 'win' || e.result === 'lose'));
     events.sort((a, b) => a.date - b.date);
+    // Sync stats grid with scores data so numbers match the chart
+    const scWins = events.filter(e => e.result === 'win').length;
+    const scLosses = events.filter(e => e.result === 'lose').length;
+    const scPlayed = scWins + scLosses;
+    const scWr = scPlayed > 0 ? Math.round(scWins / scPlayed * 100) : 0;
+    const pts = Math.max(0, member.points || 0);
+    const lv = typeof calcLevel === 'function' ? calcLevel(pts) : 0;
+    if(g){
+      g.innerHTML = `
+        <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
+        <div class="pf-stat wins"><div class="v">${scWins}</div><div class="l">ชนะ</div></div>
+        <div class="pf-stat losses"><div class="v">${scLosses}</div><div class="l">แพ้</div></div>
+        <div class="pf-stat played"><div class="v">${scPlayed}</div><div class="l">เล่น</div></div>
+        <div class="pf-stat wr"><div class="v">${scWr}%</div><div class="l">อัตราชนะ</div></div>
+        <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+      `;
+    }
     renderWinRateChart(events);
   }catch(e){
     console.warn('viewMember chart', e);
@@ -1779,6 +1796,24 @@ async function loadAndRenderProfileStats(){
     }).filter(e => e.date && !isNaN(e.date.getTime()) && (e.result === 'win' || e.result === 'lose'));
     events.sort((a, b) => a.date - b.date);
     console.log('[profile] events count:', events.length);
+    // Sync stats grid with scores data so numbers match the chart
+    const scWins = events.filter(e => e.result === 'win').length;
+    const scLosses = events.filter(e => e.result === 'lose').length;
+    const scPlayed = scWins + scLosses;
+    const scWr = scPlayed > 0 ? Math.round(scWins / scPlayed * 100) : 0;
+    const pts = Math.max(0, currentUser.totalPoints || currentUser.points || 0);
+    const lv = typeof calcLevel === 'function' ? calcLevel(pts) : 0;
+    const sg = document.getElementById('pf-stats-grid');
+    if(sg){
+      sg.innerHTML = `
+        <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
+        <div class="pf-stat wins"><div class="v">${scWins}</div><div class="l">ชนะ</div></div>
+        <div class="pf-stat losses"><div class="v">${scLosses}</div><div class="l">แพ้</div></div>
+        <div class="pf-stat played"><div class="v">${scPlayed}</div><div class="l">เล่น</div></div>
+        <div class="pf-stat wr"><div class="v">${scWr}%</div><div class="l">อัตราชนะ</div></div>
+        <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+      `;
+    }
     renderWinRateChart(events);
   }catch(e){
     console.error('[profile] load failed:', e);
