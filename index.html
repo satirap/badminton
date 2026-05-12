@@ -240,17 +240,14 @@ section.view.active{display:block}
 .my-lv-badge.lv-t4{background:#ef444420;color:#f87171;border-color:#ef444455}
 .my-lv-badge.lv-t5{background:#a855f720;color:#c084fc;border-color:#a855f755}
 
-/* Edit profile — เด่นใต้ชื่อ */
-.my-edit-row{margin:3px 0 5px}
-.my-edit-link{
-  display:inline-block;font-size:12px;font-weight:800;
-  color:var(--accent);cursor:pointer;
-  background:#c8f13515;border:1px solid #c8f13540;
-  padding:3px 10px;border-radius:100px;
-  text-decoration:none;-webkit-tap-highlight-color:transparent;
-  transition:background .15s;letter-spacing:.01em;
+/* Header — clickable name+pic opens profile */
+.header .user-clickable{
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  border-radius:8px;padding:4px 6px;margin:-4px -6px;transition:background .15s;
 }
-.my-edit-link:hover,.my-edit-link:active{background:#c8f13530}
+.header .user-clickable:active{background:#ffffff10}
+.header .user-clickable:hover .uname{color:var(--accent)}
 
 /* ── Profile edit modal ── */
 .pf-overlay{
@@ -262,7 +259,7 @@ section.view.active{display:block}
 @keyframes pfSlide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .pf-panel{
   background:var(--card);border:1.5px solid var(--line);
-  border-radius:18px;width:100%;max-width:380px;overflow:hidden;
+  border-radius:18px;width:100%;max-width:440px;max-height:92dvh;overflow:hidden;
   display:flex;flex-direction:column;
   box-shadow:0 12px 48px #000c;animation:pfSlide .25s cubic-bezier(.2,.9,.3,1.2);
 }
@@ -277,7 +274,7 @@ section.view.active{display:block}
   -webkit-tap-highlight-color:transparent;
 }
 .pf-close:hover{background:#ffffff10;color:var(--ink)}
-.pf-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.pf-body{padding:20px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
 .pf-pic-section{display:flex;flex-direction:column;align-items:center;gap:10px}
 .pf-pic-preview{
   width:120px;height:120px;border-radius:50%;
@@ -321,6 +318,53 @@ section.view.active{display:block}
 .pf-foot .pf-save{background:var(--accent);color:#000}
 .pf-foot .pf-save:active{opacity:.85}
 .pf-foot .pf-save:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Stats section in profile modal ── */
+.pf-stats-section{
+  padding-top:14px;border-top:1px solid var(--line);margin-top:4px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.pf-stats-head{
+  font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.02em;
+}
+.pf-stats-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+}
+.pf-stat{
+  background:var(--card2);border:1.5px solid var(--line);
+  border-radius:10px;padding:10px 8px;text-align:center;
+}
+.pf-stat .v{
+  font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;line-height:1.1;
+}
+.pf-stat .l{font-size:10px;color:var(--ink-mute);margin-top:3px;font-weight:700}
+.pf-stat.pts .v{color:var(--accent)}
+.pf-stat.wins .v{color:#4ade80}
+.pf-stat.losses .v{color:#f87171}
+.pf-stat.played .v{color:var(--ink)}
+.pf-stat.wr .v{color:#fbbf24}
+.pf-stat.lv .v{color:#fbbf24;font-size:14px;font-family:'DM Sans',sans-serif}
+
+/* Chart container */
+.pf-chart-wrap{
+  background:var(--card2);border:1.5px solid var(--line);
+  border-radius:10px;padding:12px 14px 10px;
+}
+.pf-chart-title{
+  font-size:11px;color:var(--ink-mute);font-weight:700;letter-spacing:.04em;
+  margin-bottom:8px;text-transform:uppercase;
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.pf-chart-title .legend{
+  font-family:'DM Sans',sans-serif;font-size:10px;text-transform:none;letter-spacing:0;
+}
+.pf-chart-title .legend .lw{color:#4ade80}
+.pf-chart-title .legend .ll{color:#f87171;margin-left:8px}
+.pf-chart-title .legend .lp{color:var(--accent);margin-left:8px}
+.pf-chart-svg{width:100%;height:140px;display:block}
+.pf-chart-empty{
+  text-align:center;color:var(--ink-mute);padding:24px;font-size:12px;font-style:italic;
+}
 /* monthly info banner */
 .monthly-raffle-info{
   background:#fbbf2410;border:1.5px solid #fbbf2440;border-radius:10px;
@@ -524,8 +568,10 @@ section.view.active{display:block}
     <header class="header">
       <div class="brand" style="display:flex;align-items:center;gap:10px"><img src="logo-small.png" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:contain;flex-shrink:0"/><span style="font-size:18px;font-weight:800;font-family:'DM Sans',sans-serif;letter-spacing:0;line-height:1.1">ก๊วนอยากตี<br/><span style="color:var(--accent)">ต้องได้ตี</span></span></div>
       <div class="user-info">
-        <span class="uname" id="display-name">—</span>
-        <img id="display-pic" src="" alt="profile" style="display:none" />
+        <div class="user-clickable" onclick="openProfileEdit()" title="แก้ไขโปรไฟล์">
+          <span class="uname" id="display-name">—</span>
+          <img id="display-pic" src="" alt="profile" style="display:none" />
+        </div>
         <button class="logout" id="btn-logout">ออก</button>
       </div>
     </header>
@@ -549,7 +595,6 @@ section.view.active{display:block}
             <img id="my-pic" src="" alt="" style="display:none"/>
             <div>
               <div class="my-name" id="my-name">—<span class="my-lv-badge" id="my-lv-badge" style="display:none"></span></div>
-              <div class="my-edit-row"><a class="my-edit-link" onclick="openProfileEdit()">✏️ แก้ไขโปรไฟล์</a></div>
               <div class="my-label" id="my-label">คะแนนของฉัน · ระบบเชื่อใจ</div>
             </div>
           </div>
@@ -661,6 +706,30 @@ section.view.active{display:block}
       <div class="pf-name-section">
         <label for="profile-name-input">ชื่อ</label>
         <input type="text" id="profile-name-input" maxlength="40" autocomplete="off"/>
+      </div>
+
+      <!-- ── Stats section ── -->
+      <div class="pf-stats-section">
+        <div class="pf-stats-head">📊 สถิติของฉัน</div>
+        <div class="pf-stats-grid" id="pf-stats-grid">
+          <!-- filled by JS -->
+        </div>
+        <div class="pf-chart-wrap">
+          <div class="pf-chart-title">
+            <span>คะแนนสะสมตามเวลา</span>
+            <span class="legend"><span class="lp">— points</span></span>
+          </div>
+          <svg class="pf-chart-svg" id="pf-chart-cumulative" viewBox="0 0 320 140" preserveAspectRatio="none"></svg>
+          <div class="pf-chart-empty" id="pf-chart-cumulative-empty" style="display:none">ยังไม่มีประวัติเกม</div>
+        </div>
+        <div class="pf-chart-wrap">
+          <div class="pf-chart-title">
+            <span>ชนะ / แพ้ ย้อนหลัง 30 วัน</span>
+            <span class="legend"><span class="lw">▮ ชนะ</span><span class="ll">▮ แพ้</span></span>
+          </div>
+          <svg class="pf-chart-svg" id="pf-chart-daily" viewBox="0 0 320 140" preserveAspectRatio="none"></svg>
+          <div class="pf-chart-empty" id="pf-chart-daily-empty" style="display:none">ยังไม่มีเกมใน 30 วันที่ผ่านมา</div>
+        </div>
       </div>
     </div>
     <div class="pf-foot">
@@ -1403,6 +1472,165 @@ function openProfileEdit(){
   }
   document.getElementById('profile-modal').style.display = 'flex';
   document.body.style.overflow = 'hidden';
+  // โหลด stats + charts (async)
+  loadAndRenderProfileStats().catch(e => console.warn('profile stats', e));
+}
+
+/** โหลดประวัติของ user ปัจจุบัน + render สถิติ + กราฟ */
+async function loadAndRenderProfileStats(){
+  if(!currentUser?.id) return;
+  // ใช้ค่าสะสมจาก allRankings ก่อน (real-time)
+  const me = (typeof allRankings !== 'undefined') ? allRankings.find(r => r.id === currentUser.id) : null;
+  const totalPts  = Math.max(0, me?.points || 0);
+  const wins      = Math.max(0, me?.wins   || 0);
+  const losses    = Math.max(0, me?.losses || 0);
+  const played    = Math.max(0, me?.played || 0);
+  const winRate   = played > 0 ? Math.round(wins/played*100) : 0;
+  const lv        = calcLevel(totalPts);
+  const tier      = levelTier(lv);
+
+  // Stats grid
+  const grid = document.getElementById('pf-stats-grid');
+  if(grid){
+    grid.innerHTML = `
+      <div class="pf-stat lv"><div class="v" style="color:${['#9ca3af','#c8f135','#fbbf24','#fb923c','#f87171','#c084fc'][tier]}">Lv ${lv}</div><div class="l">เลเวล</div></div>
+      <div class="pf-stat pts"><div class="v">${totalPts.toLocaleString()}</div><div class="l">คะแนน</div></div>
+      <div class="pf-stat played"><div class="v">${played}</div><div class="l">เกม</div></div>
+      <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">ชนะ</div></div>
+      <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">แพ้</div></div>
+      <div class="pf-stat wr"><div class="v">${winRate}%</div><div class="l">อัตราชนะ</div></div>
+    `;
+  }
+
+  // โหลด scores history
+  try{
+    const snap = await db.collection('scores')
+      .where('playerId', '==', currentUser.id)
+      .orderBy('createdAt', 'asc')
+      .limit(500)
+      .get();
+    const events = snap.docs.map(d => {
+      const x = d.data();
+      const t = x.createdAt?.toDate ? x.createdAt.toDate() : new Date(x.createdAt);
+      return { date: t, result: x.result, points: x.points || 0 };
+    });
+    renderCumulativeChart(events);
+    renderDailyChart(events);
+  }catch(e){
+    console.warn('load profile history', e);
+    // แสดง empty state
+    document.getElementById('pf-chart-cumulative').innerHTML = '';
+    document.getElementById('pf-chart-cumulative-empty').style.display = 'block';
+    document.getElementById('pf-chart-daily').innerHTML = '';
+    document.getElementById('pf-chart-daily-empty').style.display = 'block';
+  }
+}
+
+/** Line chart: cumulative points over time */
+function renderCumulativeChart(events){
+  const svg = document.getElementById('pf-chart-cumulative');
+  const empty = document.getElementById('pf-chart-cumulative-empty');
+  if(!svg) return;
+  if(!events.length){
+    svg.innerHTML = ''; empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+  const W = 320, H = 140, PAD_L = 8, PAD_R = 8, PAD_T = 10, PAD_B = 18;
+  // cumulative
+  let cum = 0;
+  const pts = events.map(e => { cum += (e.points||0); return cum; });
+  const minP = 0;
+  const maxP = Math.max(...pts, 1);
+  const n = pts.length;
+  const coords = pts.map((p, i) => {
+    const x = PAD_L + (n > 1 ? (i/(n-1)) * (W - PAD_L - PAD_R) : (W - PAD_L - PAD_R)/2);
+    const y = H - PAD_B - ((p - minP)/(maxP - minP || 1)) * (H - PAD_T - PAD_B);
+    return [x, y];
+  });
+  // Build SVG: area fill + line
+  const linePath = coords.map((c, i) => (i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
+  const areaPath = linePath + ` L ${coords[coords.length-1][0].toFixed(1)},${H - PAD_B} L ${coords[0][0].toFixed(1)},${H - PAD_B} Z`;
+  // เส้นแนว horizontal (อ้างอิง)
+  const baseline = H - PAD_B;
+  svg.innerHTML = `
+    <line x1="${PAD_L}" y1="${baseline}" x2="${W - PAD_R}" y2="${baseline}" stroke="#3a3d48" stroke-width="1"/>
+    <path d="${areaPath}" fill="#c8f13520"/>
+    <path d="${linePath}" fill="none" stroke="#c8f135" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${coords.length <= 60 ? coords.map(c => `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2" fill="#c8f135"/>`).join('') : ''}
+    <text x="${W - PAD_R}" y="${PAD_T + 8}" text-anchor="end" fill="#9ca3af" font-size="10" font-family="IBM Plex Mono, monospace">${maxP.toLocaleString()} pts</text>
+    <text x="${PAD_L}" y="${H - 4}" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">${formatChartDate(events[0].date)}</text>
+    <text x="${W - PAD_R}" y="${H - 4}" text-anchor="end" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">${formatChartDate(events[events.length-1].date)}</text>
+  `;
+}
+
+/** Daily bar chart: wins (green up) + losses (red down), last 30 days */
+function renderDailyChart(events){
+  const svg = document.getElementById('pf-chart-daily');
+  const empty = document.getElementById('pf-chart-daily-empty');
+  if(!svg) return;
+
+  // กลุ่มตามวัน (YYYY-MM-DD ของ local timezone)
+  const dateKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const map = new Map();
+  events.forEach(e => {
+    const k = dateKey(e.date);
+    if(!map.has(k)) map.set(k, {wins:0, losses:0});
+    const day = map.get(k);
+    if(e.result === 'win') day.wins++;
+    else day.losses++;
+  });
+
+  // เลือก 30 วันล่าสุด (รวมวันที่ไม่ได้เล่นเป็น 0)
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = [];
+  for(let i=29; i>=0; i--){
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const k = dateKey(d);
+    const st = map.get(k) || {wins:0, losses:0};
+    days.push({date:d, ...st});
+  }
+
+  // ถ้าทุกวันเป็น 0 → empty
+  if(!days.some(d => d.wins > 0 || d.losses > 0)){
+    svg.innerHTML = ''; empty.style.display = 'block'; return;
+  }
+  empty.style.display = 'none';
+
+  const W = 320, H = 140, PAD_L = 8, PAD_R = 8, PAD_T = 10, PAD_B = 18;
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const mid = PAD_T + innerH/2; // baseline กลาง
+  const maxCount = Math.max(...days.flatMap(d => [d.wins, d.losses]), 1);
+  const barW = innerW / days.length * 0.7;
+  const gap  = innerW / days.length * 0.3;
+
+  let bars = '';
+  days.forEach((d, i) => {
+    const x = PAD_L + i * (barW + gap) + gap/2;
+    // ชนะ — บาร์ขึ้นจาก mid
+    if(d.wins > 0){
+      const h = (d.wins / maxCount) * (innerH/2);
+      bars += `<rect x="${x.toFixed(1)}" y="${(mid - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="#4ade80" rx="1"/>`;
+    }
+    // แพ้ — บาร์ลงจาก mid
+    if(d.losses > 0){
+      const h = (d.losses / maxCount) * (innerH/2);
+      bars += `<rect x="${x.toFixed(1)}" y="${mid.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="#f87171" rx="1"/>`;
+    }
+  });
+
+  svg.innerHTML = `
+    <line x1="${PAD_L}" y1="${mid}" x2="${W - PAD_R}" y2="${mid}" stroke="#3a3d48" stroke-width="1"/>
+    ${bars}
+    <text x="${PAD_L}" y="${H - 4}" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">${formatChartDate(days[0].date)}</text>
+    <text x="${W - PAD_R}" y="${H - 4}" text-anchor="end" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">${formatChartDate(days[days.length-1].date)}</text>
+    <text x="${W - PAD_R}" y="${PAD_T + 9}" text-anchor="end" fill="#9ca3af" font-size="9" font-family="IBM Plex Mono, monospace">max ${maxCount}</text>
+  `;
+}
+
+function formatChartDate(d){
+  if(!d) return '';
+  return `${d.getDate()}/${d.getMonth()+1}`;
 }
 
 function closeProfileEdit(){
