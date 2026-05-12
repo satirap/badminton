@@ -239,6 +239,83 @@ section.view.active{display:block}
 .my-lv-badge.lv-t3{background:#fb923c20;color:#fb923c;border-color:#fb923c55}
 .my-lv-badge.lv-t4{background:#ef444420;color:#f87171;border-color:#ef444455}
 .my-lv-badge.lv-t5{background:#a855f720;color:#c084fc;border-color:#a855f755}
+
+/* Edit profile link in my-label */
+.my-edit-link{
+  color:var(--accent);cursor:pointer;font-weight:700;
+  text-decoration:none;-webkit-tap-highlight-color:transparent;margin-left:4px;
+}
+.my-edit-link:hover{text-decoration:underline}
+
+/* ── Profile edit modal ── */
+.pf-overlay{
+  position:fixed;inset:0;z-index:999;background:#000c;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  animation:pfFade .2s ease;
+}
+@keyframes pfFade{from{opacity:0}to{opacity:1}}
+@keyframes pfSlide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.pf-panel{
+  background:var(--card);border:1.5px solid var(--line);
+  border-radius:18px;width:100%;max-width:380px;overflow:hidden;
+  display:flex;flex-direction:column;
+  box-shadow:0 12px 48px #000c;animation:pfSlide .25s cubic-bezier(.2,.9,.3,1.2);
+}
+.pf-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--line);
+}
+.pf-head h3{margin:0;font-size:16px;color:var(--ink);font-weight:800}
+.pf-close{
+  background:transparent;border:none;color:var(--ink-mute);
+  font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;
+  -webkit-tap-highlight-color:transparent;
+}
+.pf-close:hover{background:#ffffff10;color:var(--ink)}
+.pf-body{padding:20px;display:flex;flex-direction:column;gap:16px}
+.pf-pic-section{display:flex;flex-direction:column;align-items:center;gap:10px}
+.pf-pic-preview{
+  width:120px;height:120px;border-radius:50%;
+  object-fit:cover;background:var(--card2);
+  border:2px solid var(--line);
+}
+.pf-no-pic{
+  width:120px;height:120px;border-radius:50%;
+  background:var(--card2);border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-size:48px;color:var(--ink-mute);
+}
+.pf-pic-btn{
+  background:var(--accent);color:#000;border:none;border-radius:10px;
+  padding:8px 18px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:opacity .15s;
+}
+.pf-pic-btn:active{opacity:.8}
+.pf-pic-btn.processing{opacity:.6;cursor:wait}
+.pf-pic-hint{font-size:11px;color:var(--ink-mute);text-align:center;font-style:italic}
+.pf-name-section{display:flex;flex-direction:column;gap:6px}
+.pf-name-section label{font-size:12px;color:var(--ink-mute);font-weight:700;letter-spacing:.04em}
+.pf-name-section input{
+  padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;
+  background:var(--card2);color:var(--ink);
+  font-family:inherit;font-size:15px;font-weight:600;outline:none;
+}
+.pf-name-section input:focus{border-color:var(--accent)}
+.pf-foot{
+  display:flex;gap:8px;padding:14px 20px;border-top:1px solid var(--line);
+}
+.pf-foot button{
+  flex:1;padding:12px;border-radius:10px;border:none;
+  font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:opacity .15s;
+}
+.pf-foot .pf-cancel{
+  background:transparent;border:1.5px solid var(--line);color:var(--ink-soft);
+}
+.pf-foot .pf-cancel:active{background:#ffffff05}
+.pf-foot .pf-save{background:var(--accent);color:#000}
+.pf-foot .pf-save:active{opacity:.85}
+.pf-foot .pf-save:disabled{opacity:.5;cursor:not-allowed}
 /* monthly info banner */
 .monthly-raffle-info{
   background:#fbbf2410;border:1.5px solid #fbbf2440;border-radius:10px;
@@ -467,7 +544,7 @@ section.view.active{display:block}
             <img id="my-pic" src="" alt="" style="display:none"/>
             <div>
               <div class="my-name" id="my-name">—<span class="my-lv-badge" id="my-lv-badge" style="display:none"></span></div>
-              <div class="my-label" id="my-label">คะแนนของฉัน (ระบบเชื่อใจ)</div>
+              <div class="my-label" id="my-label">คะแนนของฉัน (ระบบเชื่อใจ) · <a class="my-edit-link" onclick="openProfileEdit()">✏️ แก้ไขโปรไฟล์</a></div>
             </div>
           </div>
           <div class="my-pts-wrap">
@@ -558,6 +635,35 @@ section.view.active{display:block}
 
 </main>
 
+<!-- ===== Profile edit modal ===== -->
+<div class="pf-overlay" id="profile-modal" style="display:none" onclick="if(event.target===this)closeProfileEdit()">
+  <div class="pf-panel">
+    <div class="pf-head">
+      <h3>✏️ แก้ไขโปรไฟล์</h3>
+      <button class="pf-close" onclick="closeProfileEdit()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="pf-body">
+      <div class="pf-pic-section">
+        <img id="profile-pic-preview" class="pf-pic-preview" src="" style="display:none"/>
+        <div id="profile-pic-empty" class="pf-no-pic">👤</div>
+        <input type="file" id="profile-pic-input" accept="image/*" style="display:none"/>
+        <button id="profile-pic-btn" class="pf-pic-btn" onclick="document.getElementById('profile-pic-input').click()">
+          📷 เลือกรูป
+        </button>
+        <div class="pf-pic-hint">รูปจะถูกย่อเป็น 400×400</div>
+      </div>
+      <div class="pf-name-section">
+        <label for="profile-name-input">ชื่อ</label>
+        <input type="text" id="profile-name-input" maxlength="40" autocomplete="off"/>
+      </div>
+    </div>
+    <div class="pf-foot">
+      <button class="pf-cancel" onclick="closeProfileEdit()">ยกเลิก</button>
+      <button class="pf-save" id="profile-save-btn" onclick="saveProfileEdit()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -640,15 +746,21 @@ async function dbRegisterPlayer(lineUserId, name, pictureUrl){
       createdAt: new Date(),
     });
   } else {
-    // Update display name / pic in case they changed in LINE
-    await ref.update({ name, pictureUrl: pictureUrl || '' });
+    // ✅ ถ้า user เคยแก้โปรไฟล์เอง (profileEdited) → ไม่ overwrite จาก LINE
+    const existing = snap.data();
+    if(!existing.profileEdited){
+      await ref.update({ name, pictureUrl: pictureUrl || '' });
+    }
   }
 
-  const data = isNew
+  // Re-read หลัง update เพื่อเอาค่าจริงที่บันทึก (เผื่อเคย profileEdited)
+  const finalData = isNew
     ? { id: lineUserId, name, pictureUrl: pictureUrl || '', totalPoints: 0, wins: 0, losses: 0, played: 0 }
-    : { ...snap.data(), name, pictureUrl: pictureUrl || '' };
+    : (snap.data().profileEdited
+        ? snap.data() // คงค่าที่ user แก้ไว้
+        : { ...snap.data(), name, pictureUrl: pictureUrl || '' });
 
-  return { success: true, isNew, player: data };
+  return { success: true, isNew, player: finalData };
 }
 
 /**
@@ -1235,6 +1347,142 @@ function renderRanks(){
 // =================================================================
 // MY CARD — personal score widget on daily tab
 // =================================================================
+/* =================================================================
+   PROFILE EDIT — เปลี่ยนชื่อ + อัปโหลดรูปตัวเอง
+   ================================================================= */
+let _pendingPicData = null; // base64 ที่รอ save (จาก resize)
+
+/** ย่อรูปลง 400×400 → JPEG quality 0.85 → return base64 data URL */
+function resizeImageToBase64(file, maxSize, quality){
+  return new Promise((resolve, reject) => {
+    if(!file){ reject(new Error('no file')); return; }
+    if(!/^image\//.test(file.type)){ reject(new Error('ไม่ใช่ไฟล์รูป')); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        const m = maxSize || 400;
+        if(w > h){
+          if(w > m){ h = Math.round(h * m / w); w = m; }
+        } else {
+          if(h > m){ w = Math.round(w * m / h); h = m; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality || 0.85));
+      };
+      img.onerror = () => reject(new Error('โหลดรูปไม่ได้'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('อ่านไฟล์ไม่ได้'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function openProfileEdit(){
+  if(!currentUser){ toast('กรุณา login LINE ก่อน'); return; }
+  _pendingPicData = null;
+  document.getElementById('profile-name-input').value = currentUser.name || '';
+  const preview = document.getElementById('profile-pic-preview');
+  const empty   = document.getElementById('profile-pic-empty');
+  if(currentUser.pictureUrl){
+    preview.src = currentUser.pictureUrl;
+    preview.style.display = 'block';
+    empty.style.display = 'none';
+  } else {
+    preview.style.display = 'none';
+    empty.style.display = 'flex';
+  }
+  document.getElementById('profile-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeProfileEdit(){
+  document.getElementById('profile-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  _pendingPicData = null;
+  document.getElementById('profile-pic-input').value = ''; // reset file input
+}
+
+/** จัดการ file input change — resize + preview */
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('profile-pic-input');
+  if(!inp) return;
+  inp.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    const btn = document.getElementById('profile-pic-btn');
+    if(btn){ btn.classList.add('processing'); btn.textContent = '⏳ กำลังย่อ...'; }
+    try{
+      const data = await resizeImageToBase64(file, 400, 0.85);
+      // ขนาดประมาณ KB (base64 = bytes × 1.33; เราต้องการต่ำกว่า ~800KB เพื่อเก็บใน Firestore doc)
+      const kb = Math.round(data.length * 0.75 / 1024);
+      if(kb > 800){
+        // ลอง quality ต่ำลง
+        const data2 = await resizeImageToBase64(file, 400, 0.7);
+        _pendingPicData = data2;
+      } else {
+        _pendingPicData = data;
+      }
+      const preview = document.getElementById('profile-pic-preview');
+      const empty   = document.getElementById('profile-pic-empty');
+      preview.src = _pendingPicData;
+      preview.style.display = 'block';
+      empty.style.display = 'none';
+    }catch(err){
+      toast('รูปนี้ใช้ไม่ได้: ' + (err.message || 'ลองรูปอื่น'));
+    }finally{
+      if(btn){ btn.classList.remove('processing'); btn.textContent = '📷 เลือกรูปอื่น'; }
+    }
+  });
+});
+
+async function saveProfileEdit(){
+  if(!currentUser?.id){ toast('ไม่พบข้อมูล user'); return; }
+  const name = document.getElementById('profile-name-input').value.trim();
+  if(!name){ toast('กรอกชื่อก่อน'); return; }
+  if(name.length > 40){ toast('ชื่อยาวเกินไป (≤40 ตัวอักษร)'); return; }
+
+  const saveBtn = document.getElementById('profile-save-btn');
+  if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = '⏳ บันทึก...'; }
+
+  const newPic = _pendingPicData || currentUser.pictureUrl || '';
+  try{
+    await db.collection('players').doc(currentUser.id).set({
+      name,
+      pictureUrl: newPic,
+      profileEdited: true,  // ✅ flag กัน LINE login overwrite ครั้งหน้า
+      updatedAt: new Date(),
+    }, { merge: true });
+
+    // Update local cache
+    currentUser.name = name;
+    currentUser.pictureUrl = newPic;
+    localStorage.setItem('shuttle_player', JSON.stringify(currentUser));
+
+    toast('✓ บันทึกโปรไฟล์แล้ว');
+    closeProfileEdit();
+
+    // Refresh UI
+    if(typeof renderMyCard === 'function') renderMyCard();
+    const dn = document.getElementById('display-name'); if(dn) dn.textContent = name;
+    const dp = document.getElementById('my-pic');
+    if(dp){
+      if(newPic){ dp.src = newPic; dp.style.display = 'block'; }
+      else dp.style.display = 'none';
+    }
+    // โหลด rankings ใหม่เพื่อให้ชื่อ/รูปอัปเดต
+    if(typeof loadAllData === 'function') loadAllData().catch(()=>{});
+  }catch(err){
+    console.error('saveProfile', err);
+    toast('บันทึกไม่สำเร็จ: ' + (err.message || 'ลองใหม่'));
+  }finally{
+    if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = 'บันทึก'; }
+  }
+}
+
 function renderMyCard(){
   if(!currentUser) return;
   const el = document.getElementById('my-card');
