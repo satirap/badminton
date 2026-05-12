@@ -216,18 +216,29 @@ section.view.active{display:block}
   padding:2px 6px;border-radius:100px;line-height:1.3;white-space:nowrap;
   letter-spacing:.02em;
 }
-.rk-tbl .rk-badge.lv{
-  background:#c8f13520;color:#c8f135;border:1px solid #c8f13540;
-}
+.rk-tbl .rk-badge.lv{ /* base — overridden by tier */ }
+/* Level tiers: gray → green → gold → orange → red → purple */
+.rk-tbl .rk-badge.lv-t0{background:#6b728020;color:#9ca3af;border:1px solid #6b728050}
+.rk-tbl .rk-badge.lv-t1{background:#c8f13520;color:#c8f135;border:1px solid #c8f13550}
+.rk-tbl .rk-badge.lv-t2{background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2450}
+.rk-tbl .rk-badge.lv-t3{background:#fb923c20;color:#fb923c;border:1px solid #fb923c55}
+.rk-tbl .rk-badge.lv-t4{background:#ef444420;color:#f87171;border:1px solid #ef444455}
+.rk-tbl .rk-badge.lv-t5{background:#a855f720;color:#c084fc;border:1px solid #a855f755}
 .rk-tbl .rk-badge.tk{
   background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2440;
 }
-/* my-card level badge */
+/* my-card level badge — same tier system */
 .my-lv-badge{
   display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:800;
-  background:#c8f13520;color:#c8f135;border:1px solid #c8f13540;
   padding:2px 8px;border-radius:100px;margin-left:8px;vertical-align:middle;letter-spacing:.02em;
+  background:#6b728020;color:#9ca3af;border:1px solid #6b728050;
 }
+.my-lv-badge.lv-t0{background:#6b728020;color:#9ca3af;border-color:#6b728050}
+.my-lv-badge.lv-t1{background:#c8f13520;color:#c8f135;border-color:#c8f13550}
+.my-lv-badge.lv-t2{background:#fbbf2420;color:#fbbf24;border-color:#fbbf2450}
+.my-lv-badge.lv-t3{background:#fb923c20;color:#fb923c;border-color:#fb923c55}
+.my-lv-badge.lv-t4{background:#ef444420;color:#f87171;border-color:#ef444455}
+.my-lv-badge.lv-t5{background:#a855f720;color:#c084fc;border-color:#a855f755}
 /* monthly info banner */
 .monthly-raffle-info{
   background:#fbbf2410;border:1.5px solid #fbbf2440;border-radius:10px;
@@ -1153,6 +1164,22 @@ function calcLevel(points){
 function calcTickets(points){
   return Math.max(0, Math.floor((points || 0) / 10));
 }
+/** Tier ของ Level สำหรับสี badge
+ *   t0 (gray)   Lv 0       0-99   pts
+ *   t1 (green)  Lv 1-4     100-499
+ *   t2 (gold)   Lv 5-9     500-999
+ *   t3 (orange) Lv 10-14   1000-1499
+ *   t4 (red)    Lv 15-19   1500-1999
+ *   t5 (purple) Lv 20+     2000+
+ */
+function levelTier(lv){
+  if(lv >= 20) return 5;
+  if(lv >= 15) return 4;
+  if(lv >= 10) return 3;
+  if(lv >= 5)  return 2;
+  if(lv >= 1)  return 1;
+  return 0;
+}
 
 function rkTblRowHtml(r, mode){
   const rank = r._rank;
@@ -1170,7 +1197,7 @@ function rkTblRowHtml(r, mode){
   const wr      = played > 0 ? Math.round(wins/played*100) : 0;
   const wrColor = wr>=70?'#4ade80':wr>=40?'#fbbf24':wr>0?'#ef4444':'#3a3d48';
   // ── Badge ตาม mode ──
-  //   ranks    → Lv N (รวม Lv 0 สำหรับ <100 pts)
+  //   ranks    → Lv N (สี tier-based: gray→green→gold→orange→red→purple)
   //   monthly  → 🎫 N สิทธิ์
   let badgeHtml = '';
   if(mode === 'monthly'){
@@ -1178,7 +1205,8 @@ function rkTblRowHtml(r, mode){
     if(t > 0) badgeHtml = `<span class="rk-badge tk">🎫 ${t}</span>`;
   } else { // 'ranks' หรือ default
     const lv = calcLevel(pts);
-    badgeHtml = `<span class="rk-badge lv">Lv ${lv}</span>`;
+    const tier = levelTier(lv);
+    badgeHtml = `<span class="rk-badge lv lv-t${tier}">Lv ${lv}</span>`;
   }
   return `<tr>
     <td><div class="rk-pos">${posHtml}</div></td>
@@ -1224,7 +1252,10 @@ function renderMyCard(){
   const allTimePts = Math.max(0, meAll?.points || 0);
   const myLv = calcLevel(allTimePts);
   if(lvBadge){
+    const tier = levelTier(myLv);
     lvBadge.textContent = `Lv ${myLv}`;
+    // ลบ class lv-tN เก่าแล้วใส่ใหม่
+    lvBadge.className = `my-lv-badge lv-t${tier}`;
     lvBadge.style.display = 'inline-block';
   }
   const pic = document.getElementById('my-pic');
