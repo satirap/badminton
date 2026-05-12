@@ -255,6 +255,7 @@ section.view.active{display:block}
 .rk-tbl tbody tr:last-child td{border-bottom:none}
 /* Zebra striping — แถวคู่สีอ่อน ๆ ช่วยแยกชื่อสมาชิก */
 .rk-tbl tbody tr:nth-child(even) td{background:#ffffff05}
+.rk-tbl tbody tr:active td{background:#ffffff10}
 .rk-tbl .rk-pos{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-mute);text-align:center;font-weight:700}
 .rk-tbl .rk-pos .medal{font-size:18px}
 .rk-tbl .rk-player{display:flex;align-items:center;gap:7px;min-width:0;padding-left:4px}
@@ -1520,7 +1521,7 @@ function rkTblRowHtml(r, mode){
     const tier = levelTier(lv);
     badgeHtml = `<span class="rk-badge lv lv-t${tier}">Lv ${lv}</span>`;
   }
-  return `<tr>
+  return `<tr onclick="viewMemberProfile('${r.id}')" style="cursor:pointer" title="ดูโปรไฟล์ ${escHtml(r.name)}">
     <td><div class="rk-pos">${posHtml}</div></td>
     <td><div class="rk-player">${picHtml}<span class="rk-name">${escHtml(r.name)}</span>${badgeHtml}</div></td>
     <td><div class="rk-pts">${pts}</div></td>
@@ -1680,6 +1681,86 @@ function renderThemeSelector(){
   }catch(e){}
 })();
 
+/** เปิด profile ของสมาชิกคนอื่น (view-only) */
+async function viewMemberProfile(playerId){
+  if(!playerId) return;
+  // ถ้ากดตัวเอง → เปิด profile ปกติ (แก้ไขได้)
+  if(currentUser && playerId === currentUser.id){ openProfileEdit(); return; }
+
+  // หาข้อมูลจาก allRankings
+  const member = allRankings.find(r => r.id === playerId);
+  if(!member){ toast('ไม่พบข้อมูลสมาชิก'); return; }
+
+  // ซ่อนปุ่มแก้ไข + แสดง view-only
+  const picEditBtn = document.querySelector('.pf-pic-edit-btn');
+  const nameEditBtn = document.querySelector('.pf-name-edit-btn');
+  const nameEditRow = document.getElementById('profile-name-edit-row');
+  const themeSection = document.getElementById('pf-theme-selector')?.closest('.pf-stats-section');
+  if(picEditBtn) picEditBtn.style.display = 'none';
+  if(nameEditBtn) nameEditBtn.style.display = 'none';
+  if(nameEditRow) nameEditRow.style.display = 'none';
+  if(themeSection) themeSection.style.display = 'none';
+  document.querySelector('.pf-name-view').style.display = 'flex';
+
+  // ตั้งค่า UI
+  document.querySelector('.pf-head h3').textContent = '👤 โปรไฟล์สมาชิก';
+  document.getElementById('profile-name-display').textContent = member.name || '—';
+
+  const preview = document.getElementById('profile-pic-preview');
+  const empty   = document.getElementById('profile-pic-empty');
+  if(member.pictureUrl){
+    preview.src = member.pictureUrl;
+    preview.style.display = 'block';
+    empty.style.display = 'none';
+  } else {
+    preview.style.display = 'none';
+    empty.style.display = 'flex';
+  }
+
+  // Render stats grid
+  const g = document.getElementById('pf-stats-grid');
+  if(g){
+    const wins = Math.max(0, member.wins || 0);
+    const losses = Math.max(0, member.losses || 0);
+    const played = Math.max(0, member.played || 0);
+    const pts = Math.max(0, member.points || 0);
+    const wr = played > 0 ? Math.round(wins / played * 100) : 0;
+    const lv = typeof calcLevel === 'function' ? calcLevel(pts) : 0;
+    g.innerHTML = `
+      <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
+      <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">ชนะ</div></div>
+      <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">แพ้</div></div>
+      <div class="pf-stat played"><div class="v">${played}</div><div class="l">เล่น</div></div>
+      <div class="pf-stat wr"><div class="v">${wr}%</div><div class="l">อัตราชนะ</div></div>
+      <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+    `;
+  }
+
+  document.getElementById('profile-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // โหลด chart ของสมาชิกนั้น
+  try{
+    const snap = await db.collection('scores')
+      .where('playerId', '==', playerId)
+      .limit(500)
+      .get();
+    const events = snap.docs.map(d => {
+      const x = d.data();
+      const t = x.createdAt?.toDate ? x.createdAt.toDate() : new Date(x.createdAt || 0);
+      return { date: t, result: x.result };
+    }).filter(e => e.date && !isNaN(e.date.getTime()) && (e.result === 'win' || e.result === 'lose'));
+    events.sort((a, b) => a.date - b.date);
+    renderWinRateChart(events);
+  }catch(e){
+    console.warn('viewMember chart', e);
+    const svg = document.getElementById('pf-chart-winrate');
+    const em = document.getElementById('pf-chart-winrate-empty');
+    if(svg) svg.innerHTML = '';
+    if(em){ em.style.display = 'block'; }
+  }
+}
+
 /** โหลดประวัติของ user ปัจจุบัน + render กราฟอัตราชนะ */
 async function loadAndRenderProfileStats(){
   if(!currentUser?.id) return;
@@ -1727,9 +1808,8 @@ function renderWinRateChart(events){
   }
   if(empty) empty.style.display = 'none';
 
-  // ── จัดกลุ่มตามวัน + cumulative win rate ณ สิ้นวันนั้น ──
   const dateKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const dayMap = new Map(); // dateKey → {date, cumWins, cumGames, pct}
+  const dayMap = new Map();
   let cumWins = 0, cumGames = 0;
   for(const e of events){
     cumGames++;
@@ -1741,10 +1821,10 @@ function renderWinRateChart(events){
       pct: Math.round(cumWins / cumGames * 100)
     });
   }
-  const days = Array.from(dayMap.values()); // เรียงตามที่ insert (= chronological)
+  const days = Array.from(dayMap.values());
   const n = days.length;
 
-  const W = 320, H = 180, PAD_L = 32, PAD_R = 14, PAD_T = 12, PAD_B = 26;
+  const W = 320, H = 200, PAD_L = 32, PAD_R = 14, PAD_T = 18, PAD_B = 30;
   const innerW = W - PAD_L - PAD_R;
   const innerH = H - PAD_T - PAD_B;
 
@@ -1752,67 +1832,92 @@ function renderWinRateChart(events){
   const yAt = (pct) => PAD_T + (1 - pct/100)*innerH;
   const coords = days.map((d, i) => [xAt(i), yAt(d.pct)]);
 
-  const linePath = coords.map((c, i) => (i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
-  const areaPath = linePath
-    + ` L ${coords[n-1][0].toFixed(1)},${(H - PAD_B).toFixed(1)}`
-    + ` L ${coords[0][0].toFixed(1)},${(H - PAD_B).toFixed(1)} Z`;
+  // Catmull-Rom → cubic bezier for smooth curves
+  function smoothPath(pts){
+    if(pts.length < 2) return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    if(pts.length === 2) return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+    const tension = 0.3;
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for(let i = 0; i < pts.length - 1; i++){
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const cp1x = p1[0] + (p2[0] - p0[0]) * tension;
+      const cp1y = p1[1] + (p2[1] - p0[1]) * tension;
+      const cp2x = p2[0] - (p3[0] - p1[0]) * tension;
+      const cp2y = p2[1] - (p3[1] - p1[1]) * tension;
+      d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
+  }
 
-  // Gridlines + Y-axis labels: 0, 25, 50, 75, 100
+  const linePath = smoothPath(coords);
+  const areaPath = linePath
+    + ` L${coords[n-1][0].toFixed(1)},${(H - PAD_B).toFixed(1)}`
+    + ` L${coords[0][0].toFixed(1)},${(H - PAD_B).toFixed(1)} Z`;
+
   const gridLines = [0, 25, 50, 75, 100].map(pct => {
     const y = yAt(pct);
     const isHalf = pct === 50;
     return `
       <line x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}"
-            stroke="${isHalf ? '#fbbf2450' : '#3a3d48'}" stroke-width="${isHalf ? 1 : 0.5}"
-            stroke-dasharray="${isHalf ? '4,3' : '2,3'}"/>
-      <text x="${PAD_L - 5}" y="${(y+3).toFixed(1)}" text-anchor="end" fill="${isHalf ? '#fbbf24' : '#6b7280'}"
-            font-size="9" font-family="IBM Plex Mono, monospace" font-weight="${isHalf?'700':'500'}">${pct}%</text>
+            stroke="${isHalf ? 'var(--gold)' : 'var(--line)'}" stroke-width="${isHalf ? 0.8 : 0.4}"
+            stroke-dasharray="${isHalf ? '6,4' : '3,4'}" opacity="${isHalf ? 0.5 : 0.4}"/>
+      <text x="${PAD_L - 5}" y="${(y+3).toFixed(1)}" text-anchor="end" fill="${isHalf ? 'var(--gold)' : 'var(--ink-mute)'}"
+            font-size="9" font-family="IBM Plex Mono, monospace" font-weight="${isHalf?'700':'400'}" opacity="${isHalf ? 0.8 : 0.5}">${pct}%</text>
     `;
   }).join('');
 
   const lastRate = days[n-1].pct;
-  const lastColor = lastRate >= 70 ? '#4ade80' : lastRate >= 40 ? '#fbbf24' : '#f87171';
+  const lineColor = lastRate >= 70 ? '#34d399' : lastRate >= 40 ? '#fbbf24' : '#fb7185';
+  const areaTopColor = lastRate >= 70 ? '#34d399' : lastRate >= 40 ? '#fbbf24' : '#fb7185';
 
-  // จุดทุกวัน (แต่ละจุดมีสีตามเทียบกับ 50%)
   const dots = coords.map((c, i) => {
-    const color = days[i].pct >= 50 ? '#4ade80' : '#f87171';
-    return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${n<=30?'3':'2'}" fill="${color}"/>`;
+    const isLast = i === n - 1;
+    if(isLast) return '';
+    const color = days[i].pct >= 50 ? '#34d399' : '#fb7185';
+    const r = n <= 15 ? 3 : n <= 30 ? 2.5 : 0;
+    if(r === 0) return '';
+    return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${r}" fill="${color}" opacity="0.7"/>`;
   }).join('');
 
-  // X-axis date labels: ขึ้นต้น + ล่าสุด (ถ้าวันแยะ จะรกถ้าโชว์ทุกวัน)
   const fmtDate = (d) => `${d.getDate()}/${d.getMonth()+1}`;
   const startLabel = fmtDate(days[0].date);
   const endLabel = fmtDate(days[n-1].date);
-  // กลาง: ถ้ามี ≥ 4 วัน
   let midLabel = '';
   if(n >= 4){
     const mid = Math.floor(n/2);
-    const x = xAt(mid);
-    midLabel = `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">${fmtDate(days[mid].date)}</text>`;
+    midLabel = `<text x="${xAt(mid).toFixed(1)}" y="${H - 8}" text-anchor="middle" fill="var(--ink-mute)" font-size="9" font-family="DM Sans, sans-serif" opacity="0.6">${fmtDate(days[mid].date)}</text>`;
   }
 
+  const uid = Math.random().toString(36).slice(2,8);
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.innerHTML = `
     <defs>
-      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${lastColor}" stop-opacity="0.3"/>
-        <stop offset="100%" stop-color="${lastColor}" stop-opacity="0.02"/>
+      <linearGradient id="aG${uid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${areaTopColor}" stop-opacity="0.25"/>
+        <stop offset="50%" stop-color="${areaTopColor}" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="${areaTopColor}" stop-opacity="0"/>
       </linearGradient>
-      <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="gl${uid}"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="ds${uid}"><feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="${lineColor}" flood-opacity="0.4"/></filter>
     </defs>
     ${gridLines}
-    <path d="${areaPath}" fill="url(#areaGrad)"/>
-    <path d="${linePath}" fill="none" stroke="${lastColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+    <path d="${areaPath}" fill="url(#aG${uid})"/>
+    <path d="${linePath}" fill="none" stroke="${lineColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#ds${uid})"/>
     ${dots}
-    <circle cx="${coords[n-1][0].toFixed(1)}" cy="${coords[n-1][1].toFixed(1)}" r="6" fill="${lastColor}" stroke="var(--bg-card2)" stroke-width="2.5" filter="url(#glow)"/>
-    <text x="${(coords[n-1][0]).toFixed(1)}" y="${(coords[n-1][1]-12).toFixed(1)}" text-anchor="end" fill="${lastColor}" font-size="14" font-family="IBM Plex Mono, monospace" font-weight="800">${lastRate}%</text>
-    <text x="${PAD_L}" y="${H - 6}" fill="var(--ink-mute)" font-size="10" font-family="DM Sans, sans-serif" font-weight="700">${startLabel}</text>
+    <circle cx="${coords[n-1][0].toFixed(1)}" cy="${coords[n-1][1].toFixed(1)}" r="7" fill="${lineColor}" opacity="0.15" filter="url(#gl${uid})"/>
+    <circle cx="${coords[n-1][0].toFixed(1)}" cy="${coords[n-1][1].toFixed(1)}" r="5" fill="${lineColor}" stroke="var(--bg-card)" stroke-width="2"/>
+    <text x="${(coords[n-1][0] - 4).toFixed(1)}" y="${(coords[n-1][1]-14).toFixed(1)}" text-anchor="end" fill="${lineColor}" font-size="15" font-family="IBM Plex Mono, monospace" font-weight="800">${lastRate}%</text>
+    <text x="${PAD_L}" y="${H - 8}" fill="var(--ink-mute)" font-size="9" font-family="DM Sans, sans-serif" font-weight="600" opacity="0.6">${startLabel}</text>
     ${midLabel}
-    <text x="${W - PAD_R}" y="${H - 6}" text-anchor="end" fill="${lastColor}" font-size="10" font-family="DM Sans, sans-serif" font-weight="700">${endLabel}</text>
+    <text x="${W - PAD_R}" y="${H - 8}" text-anchor="end" fill="${lineColor}" font-size="9" font-family="DM Sans, sans-serif" font-weight="700">${endLabel}</text>
   `;
 
-  // Big label in legend area
   if(rateLabel){
-    rateLabel.innerHTML = `<span style="color:${lastColor};font-weight:800">${lastRate}% · ${cumWins}/${cumGames}</span>`;
+    rateLabel.innerHTML = `<span style="color:${lineColor};font-weight:800">${lastRate}% · ${cumWins}/${cumGames}</span>`;
   }
 }
 
@@ -1825,7 +1930,15 @@ function closeProfileEdit(){
   document.getElementById('profile-modal').style.display = 'none';
   document.body.style.overflow = '';
   _pendingPicData = null;
-  document.getElementById('profile-pic-input').value = ''; // reset file input
+  document.getElementById('profile-pic-input').value = '';
+  // Restore own-profile mode (undo viewMemberProfile hiding)
+  const picEditBtn = document.querySelector('.pf-pic-edit-btn');
+  const nameEditBtn = document.querySelector('.pf-name-edit-btn');
+  const themeSection = document.getElementById('pf-theme-selector')?.closest('.pf-stats-section');
+  if(picEditBtn) picEditBtn.style.display = '';
+  if(nameEditBtn) nameEditBtn.style.display = '';
+  if(themeSection) themeSection.style.display = '';
+  document.querySelector('.pf-head h3').textContent = '👤 โปรไฟล์';
 }
 
 /** จัดการ file input change — resize + preview */
