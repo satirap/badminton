@@ -708,18 +708,15 @@ section.view.active{display:block}
         <input type="text" id="profile-name-input" maxlength="40" autocomplete="off"/>
       </div>
 
-      <!-- ── Stats section ── -->
+      <!-- ── Stats section: ดูแต่อัตราชนะตามเวลา ── -->
       <div class="pf-stats-section">
-        <div class="pf-stats-head">📊 สถิติของฉัน</div>
-        <div class="pf-stats-grid" id="pf-stats-grid">
-          <!-- filled by JS -->
-        </div>
+        <div class="pf-stats-head">📊 พัฒนาการอัตราการชนะ</div>
         <div class="pf-chart-wrap">
           <div class="pf-chart-title">
-            <span>อัตราการชนะ <small style="text-transform:none;letter-spacing:0;color:var(--ink-mute);font-weight:600">— ดูพัฒนาการ</small></span>
-            <span class="legend"><span class="lp">% ชนะ</span></span>
+            <span>% ชนะสะสมตามวันที่เล่น</span>
+            <span class="legend" id="pf-current-rate"></span>
           </div>
-          <svg class="pf-chart-svg" id="pf-chart-winrate" viewBox="0 0 320 160" preserveAspectRatio="none" style="height:160px"></svg>
+          <svg class="pf-chart-svg" id="pf-chart-winrate" viewBox="0 0 320 180" preserveAspectRatio="none" style="height:180px"></svg>
           <div class="pf-chart-empty" id="pf-chart-winrate-empty" style="display:none">ยังไม่มีประวัติเกม<br><span style="font-size:11px">เล่นสัก 2-3 เกมแล้วกลับมาดูใหม่</span></div>
         </div>
       </div>
@@ -1468,31 +1465,9 @@ function openProfileEdit(){
   loadAndRenderProfileStats().catch(e => console.warn('profile stats', e));
 }
 
-/** โหลดประวัติของ user ปัจจุบัน + render สถิติ + กราฟ */
+/** โหลดประวัติของ user ปัจจุบัน + render กราฟอัตราชนะ */
 async function loadAndRenderProfileStats(){
   if(!currentUser?.id) return;
-  // ใช้ค่าสะสมจาก allRankings ก่อน (real-time)
-  const me = (typeof allRankings !== 'undefined') ? allRankings.find(r => r.id === currentUser.id) : null;
-  const totalPts  = Math.max(0, me?.points || 0);
-  const wins      = Math.max(0, me?.wins   || 0);
-  const losses    = Math.max(0, me?.losses || 0);
-  const played    = Math.max(0, me?.played || 0);
-  const winRate   = played > 0 ? Math.round(wins/played*100) : 0;
-  const lv        = calcLevel(totalPts);
-  const tier      = levelTier(lv);
-
-  // Stats grid
-  const grid = document.getElementById('pf-stats-grid');
-  if(grid){
-    grid.innerHTML = `
-      <div class="pf-stat lv"><div class="v" style="color:${['#9ca3af','#c8f135','#fbbf24','#fb923c','#f87171','#c084fc'][tier]}">Lv ${lv}</div><div class="l">เลเวล</div></div>
-      <div class="pf-stat pts"><div class="v">${totalPts.toLocaleString()}</div><div class="l">คะแนน</div></div>
-      <div class="pf-stat played"><div class="v">${played}</div><div class="l">เกม</div></div>
-      <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">ชนะ</div></div>
-      <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">แพ้</div></div>
-      <div class="pf-stat wr"><div class="v">${winRate}%</div><div class="l">อัตราชนะ</div></div>
-    `;
-  }
 
   // โหลด scores history — ไม่ใช้ orderBy (กัน composite index requirement) sort client-side
   try{
@@ -1519,78 +1494,104 @@ async function loadAndRenderProfileStats(){
   }
 }
 
-/** Line chart: cumulative win-rate % over time
- *  X: ลำดับเกม (game #1, #2, ...)
- *  Y: % ชนะ (cumulative) = ชนะสะสม / เกมสะสม × 100
- *  เส้นแนว 50% (เสมอ) เป็นจุดอ้างอิง — เหนือ 50% = พัฒนา, ต่ำกว่า = ต้องฝึก
+/** Line chart: cumulative win-rate % grouped by date
+ *  X: วันที่ (เรียงตามรอบที่เล่น — 1 จุด/วัน)
+ *  Y: % ชนะสะสม ณ สิ้นวันนั้น = ชนะสะสมรวมทุกวันก่อนหน้า + วันนี้ / เกมรวม × 100
+ *  เส้นแนว 50% (เสมอ) เป็นจุดอ้างอิง — เหนือ = พัฒนา, ต่ำกว่า = ต้องฝึก
  */
 function renderWinRateChart(events){
-  const svg = document.getElementById('pf-chart-winrate');
+  const svg   = document.getElementById('pf-chart-winrate');
   const empty = document.getElementById('pf-chart-winrate-empty');
+  const rateLabel = document.getElementById('pf-current-rate');
   if(!svg) return;
   if(!events || events.length === 0){
     svg.innerHTML = '';
     if(empty) empty.style.display = 'block';
+    if(rateLabel) rateLabel.textContent = '';
     return;
   }
   if(empty) empty.style.display = 'none';
 
-  // คำนวณ % ชนะสะสม
-  let wins = 0;
-  const rates = events.map((e, i) => {
-    if(e.result === 'win') wins++;
-    return Math.round(wins / (i+1) * 100);
-  });
+  // ── จัดกลุ่มตามวัน + cumulative win rate ณ สิ้นวันนั้น ──
+  const dateKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const dayMap = new Map(); // dateKey → {date, cumWins, cumGames, pct}
+  let cumWins = 0, cumGames = 0;
+  for(const e of events){
+    cumGames++;
+    if(e.result === 'win') cumWins++;
+    const k = dateKey(e.date);
+    dayMap.set(k, {
+      date: new Date(e.date.getFullYear(), e.date.getMonth(), e.date.getDate()),
+      cumWins, cumGames,
+      pct: Math.round(cumWins / cumGames * 100)
+    });
+  }
+  const days = Array.from(dayMap.values()); // เรียงตามที่ insert (= chronological)
+  const n = days.length;
 
-  const W = 320, H = 160, PAD_L = 30, PAD_R = 10, PAD_T = 12, PAD_B = 22;
+  const W = 320, H = 180, PAD_L = 32, PAD_R = 14, PAD_T = 12, PAD_B = 26;
   const innerW = W - PAD_L - PAD_R;
   const innerH = H - PAD_T - PAD_B;
-  const n = rates.length;
 
-  // Coords: x ตามลำดับเกม, y ตาม % (0-100)
   const xAt = (i) => n > 1 ? PAD_L + (i/(n-1))*innerW : PAD_L + innerW/2;
   const yAt = (pct) => PAD_T + (1 - pct/100)*innerH;
-  const coords = rates.map((p, i) => [xAt(i), yAt(p)]);
+  const coords = days.map((d, i) => [xAt(i), yAt(d.pct)]);
 
   const linePath = coords.map((c, i) => (i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
   const areaPath = linePath
     + ` L ${coords[n-1][0].toFixed(1)},${(H - PAD_B).toFixed(1)}`
     + ` L ${coords[0][0].toFixed(1)},${(H - PAD_B).toFixed(1)} Z`;
 
-  // Gridlines + labels: 0, 50, 100
+  // Gridlines + Y-axis labels: 0, 25, 50, 75, 100
   const gridLines = [0, 25, 50, 75, 100].map(pct => {
     const y = yAt(pct);
     const isHalf = pct === 50;
     return `
       <line x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W - PAD_R}" y2="${y.toFixed(1)}"
-            stroke="${isHalf ? '#fbbf2440' : '#3a3d48'}" stroke-width="${isHalf ? 1 : 0.5}"
+            stroke="${isHalf ? '#fbbf2450' : '#3a3d48'}" stroke-width="${isHalf ? 1 : 0.5}"
             stroke-dasharray="${isHalf ? '4,3' : '2,3'}"/>
       <text x="${PAD_L - 5}" y="${(y+3).toFixed(1)}" text-anchor="end" fill="${isHalf ? '#fbbf24' : '#6b7280'}"
-            font-size="9" font-family="IBM Plex Mono, monospace" font-weight="${isHalf?'700':'400'}">${pct}%</text>
+            font-size="9" font-family="IBM Plex Mono, monospace" font-weight="${isHalf?'700':'500'}">${pct}%</text>
     `;
   }).join('');
 
-  const lastRate = rates[n-1];
+  const lastRate = days[n-1].pct;
   const lastColor = lastRate >= 70 ? '#4ade80' : lastRate >= 40 ? '#fbbf24' : '#f87171';
 
-  // จุดเฉพาะถ้าน้อยไม่เกิน 60 เกม (กัน UI รก)
-  const dots = n <= 60
-    ? coords.map((c, i) => {
-        const color = events[i].result === 'win' ? '#4ade80' : '#f87171';
-        return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="2.5" fill="${color}"/>`;
-      }).join('')
-    : '';
+  // จุดทุกวัน (แต่ละจุดมีสีตามเทียบกับ 50%)
+  const dots = coords.map((c, i) => {
+    const color = days[i].pct >= 50 ? '#4ade80' : '#f87171';
+    return `<circle cx="${c[0].toFixed(1)}" cy="${c[1].toFixed(1)}" r="${n<=30?'3':'2'}" fill="${color}"/>`;
+  }).join('');
+
+  // X-axis date labels: ขึ้นต้น + ล่าสุด (ถ้าวันแยะ จะรกถ้าโชว์ทุกวัน)
+  const fmtDate = (d) => `${d.getDate()}/${d.getMonth()+1}`;
+  const startLabel = fmtDate(days[0].date);
+  const endLabel = fmtDate(days[n-1].date);
+  // กลาง: ถ้ามี ≥ 4 วัน
+  let midLabel = '';
+  if(n >= 4){
+    const mid = Math.floor(n/2);
+    const x = xAt(mid);
+    midLabel = `<text x="${x.toFixed(1)}" y="${H - 6}" text-anchor="middle" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">${fmtDate(days[mid].date)}</text>`;
+  }
 
   svg.innerHTML = `
     ${gridLines}
     <path d="${areaPath}" fill="${lastColor}25"/>
-    <path d="${linePath}" fill="none" stroke="${lastColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${linePath}" fill="none" stroke="${lastColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots}
-    <circle cx="${coords[n-1][0].toFixed(1)}" cy="${coords[n-1][1].toFixed(1)}" r="4" fill="${lastColor}"/>
-    <text x="${(coords[n-1][0]).toFixed(1)}" y="${(coords[n-1][1]-8).toFixed(1)}" text-anchor="end" fill="${lastColor}" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="800">${lastRate}%</text>
-    <text x="${PAD_L}" y="${H - 5}" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">เกมที่ 1</text>
-    <text x="${W - PAD_R}" y="${H - 5}" text-anchor="end" fill="#6b7280" font-size="9" font-family="DM Sans, sans-serif">เกมที่ ${n}</text>
+    <circle cx="${coords[n-1][0].toFixed(1)}" cy="${coords[n-1][1].toFixed(1)}" r="5" fill="${lastColor}" stroke="#0c0d10" stroke-width="2"/>
+    <text x="${(coords[n-1][0]).toFixed(1)}" y="${(coords[n-1][1]-10).toFixed(1)}" text-anchor="end" fill="${lastColor}" font-size="13" font-family="IBM Plex Mono, monospace" font-weight="800">${lastRate}%</text>
+    <text x="${PAD_L}" y="${H - 6}" fill="#9ca3af" font-size="10" font-family="DM Sans, sans-serif" font-weight="700">${startLabel}</text>
+    ${midLabel}
+    <text x="${W - PAD_R}" y="${H - 6}" text-anchor="end" fill="${lastColor}" font-size="10" font-family="DM Sans, sans-serif" font-weight="700">${endLabel}</text>
   `;
+
+  // Big label in legend area
+  if(rateLabel){
+    rateLabel.innerHTML = `<span style="color:${lastColor};font-weight:800">${lastRate}% · ${cumWins}/${cumGames}</span>`;
+  }
 }
 
 function formatChartDate(d){
