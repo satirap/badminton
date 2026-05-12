@@ -240,12 +240,17 @@ section.view.active{display:block}
 .my-lv-badge.lv-t4{background:#ef444420;color:#f87171;border-color:#ef444455}
 .my-lv-badge.lv-t5{background:#a855f720;color:#c084fc;border-color:#a855f755}
 
-/* Edit profile link in my-label */
+/* Edit profile — เด่นใต้ชื่อ */
+.my-edit-row{margin:3px 0 5px}
 .my-edit-link{
-  color:var(--accent);cursor:pointer;font-weight:700;
-  text-decoration:none;-webkit-tap-highlight-color:transparent;margin-left:4px;
+  display:inline-block;font-size:12px;font-weight:800;
+  color:var(--accent);cursor:pointer;
+  background:#c8f13515;border:1px solid #c8f13540;
+  padding:3px 10px;border-radius:100px;
+  text-decoration:none;-webkit-tap-highlight-color:transparent;
+  transition:background .15s;letter-spacing:.01em;
 }
-.my-edit-link:hover{text-decoration:underline}
+.my-edit-link:hover,.my-edit-link:active{background:#c8f13530}
 
 /* ── Profile edit modal ── */
 .pf-overlay{
@@ -544,7 +549,8 @@ section.view.active{display:block}
             <img id="my-pic" src="" alt="" style="display:none"/>
             <div>
               <div class="my-name" id="my-name">—<span class="my-lv-badge" id="my-lv-badge" style="display:none"></span></div>
-              <div class="my-label" id="my-label">คะแนนของฉัน (ระบบเชื่อใจ) · <a class="my-edit-link" onclick="openProfileEdit()">✏️ แก้ไขโปรไฟล์</a></div>
+              <div class="my-edit-row"><a class="my-edit-link" onclick="openProfileEdit()">✏️ แก้ไขโปรไฟล์</a></div>
+              <div class="my-label" id="my-label">คะแนนของฉัน · ระบบเชื่อใจ</div>
             </div>
           </div>
           <div class="my-pts-wrap">
