@@ -1060,10 +1060,11 @@ async function dbGetAllData(){
   const yearStart  = new Date(now.getFullYear(), 0, 1);
   const curMonth   = now.getMonth(); // 0-11
 
-  const [playersSnap, dailySnap, yearSnap] = await Promise.all([
+  const [playersSnap, dailySnap, yearSnap, allScoresSnap] = await Promise.all([
     db.collection('players').orderBy('totalPoints','desc').get(),
     db.collection('scores').where('createdAt','>=',dayStart).get(),
     db.collection('scores').where('createdAt','>=',yearStart).get(),
+    db.collection('scores').get(),
   ]);
 
   // Player map  {lineUserId → player data}
@@ -1071,16 +1072,29 @@ async function dbGetAllData(){
   const playerMap = {};
   players.forEach(p => { playerMap[p.id] = p; });
 
+  // ── Aggregate all-time wins/losses from scores (accurate, not stale player doc) ──
+  const allTimeAgg = {};
+  allScoresSnap.docs.forEach(d => {
+    const s = d.data();
+    if(!allTimeAgg[s.playerId]) allTimeAgg[s.playerId] = { wins:0, losses:0, played:0 };
+    if(s.result === 'win')            { allTimeAgg[s.playerId].wins++;   allTimeAgg[s.playerId].played++; }
+    else if(s.result === 'lose')      { allTimeAgg[s.playerId].losses++; allTimeAgg[s.playerId].played++; }
+    else if(s.result === 'undo-win')  { allTimeAgg[s.playerId].wins--;   allTimeAgg[s.playerId].played--; }
+    else if(s.result === 'undo-lose') { allTimeAgg[s.playerId].losses--; allTimeAgg[s.playerId].played--; }
+  });
+
   // ── All-time rankings (ทำเนียบสมาชิก) — แสดงทุกคนรวมถึงคนที่ยังไม่มีคะแนน ──
   const rankings = players
-    .map(p => ({
-      ...p,
-      // clamp ที่ 0 ทุกค่า — กัน player doc ที่มีค่าติดลบค้างอยู่
-      points:  Math.max(0, p.totalPoints || 0),
-      played:  Math.max(0, p.played  || 0),
-      wins:    Math.max(0, p.wins    || 0),
-      losses:  Math.max(0, p.losses  || 0),
-    }))
+    .map(p => {
+      const agg = allTimeAgg[p.id] || { wins:0, losses:0, played:0 };
+      return {
+        ...p,
+        points:  Math.max(0, p.totalPoints || 0),
+        played:  Math.max(0, agg.played),
+        wins:    Math.max(0, agg.wins),
+        losses:  Math.max(0, agg.losses),
+      };
+    })
     .sort(rankCmp);
 
   // ── Daily rankings ──
