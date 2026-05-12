@@ -1938,7 +1938,7 @@ async function viewMemberProfile(playerId){
   try{
     const snap = await db.collection('scores')
       .where('playerId', '==', playerId)
-      .limit(500)
+      .limit(200)
       .get();
     const allDocs = snap.docs.map(d => {
       const x = d.data();
@@ -1990,7 +1990,7 @@ async function loadAndRenderProfileStats(){
   try{
     const snap = await db.collection('scores')
       .where('playerId', '==', currentUser.id)
-      .limit(500)
+      .limit(200)
       .get();
     console.log('[profile] scores docs:', snap.size);
     const allDocs = snap.docs.map(d => {
@@ -2791,7 +2791,7 @@ async function saveProfileEdit(){
       if(newPic){ dp.src = newPic; dp.style.display = 'block'; }
       else dp.style.display = 'none';
     }
-    if(typeof loadAllData === 'function') loadAllData().catch(()=>{});
+    renderAll();
   }catch(err){
     console.error('saveProfile', err);
     toast('บันทึกไม่สำเร็จ: ' + (err.message || 'ลองใหม่'));
