@@ -35,6 +35,9 @@
   --bronze:    #fb923c;
   --radius:    16px;
   --radius-sm: 12px;
+  --zebra:     #ffffff08;
+  --zebra-active: #ffffff12;
+  --wr-bar-bg: #3a3d48;
 }
 /* ── Theme: Sakura (Pink Pastel) ── */
 [data-theme="sakura"] {
@@ -42,20 +45,23 @@
   --bg-card:   #ffffff;
   --bg-card2:  #fff5f8;
   --bg-input:  #fff0f4;
-  --ink:       #4a1942;
-  --ink-soft:  #7a3b6e;
-  --ink-mute:  #b06a9f;
-  --line:      #f5c2d7;
-  --accent:    #e91e8c;
-  --green:     #10b981;
+  --ink:       #2d0a28;
+  --ink-soft:  #5c1f50;
+  --ink-mute:  #8a4578;
+  --line:      #f0b0cc;
+  --accent:    #d6187f;
+  --green:     #047857;
   --green-bg:  #d1fae5;
   --green-txt: #065f46;
-  --red:       #ef4444;
+  --red:       #dc2626;
   --red-bg:    #fee2e2;
   --red-txt:   #991b1b;
-  --gold:      #d97706;
-  --silver:    #6b7280;
-  --bronze:    #c2410c;
+  --gold:      #b45309;
+  --silver:    #4b5563;
+  --bronze:    #9a3412;
+  --zebra:     #f8d7e8;
+  --zebra-active: #f0c0d8;
+  --wr-bar-bg: #f0c0d8;
 }
 [data-theme="sakura"] .pf-overlay{background:#fff0f5f0}
 [data-theme="sakura"] .tab{color:var(--ink-mute)}
@@ -64,27 +70,44 @@
 [data-theme="sakura"] .pf-pic-edit-btn:hover,
 [data-theme="sakura"] .pf-name-edit-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
 [data-theme="sakura"] .pf-theme-card.active::after{background:var(--accent);color:#fff}
+[data-theme="sakura"] .rk-tbl .rk-badge.lv-t0{background:#6b728018;color:#4b5563;border-color:#6b728040}
+[data-theme="sakura"] .rk-tbl .rk-badge.lv-t1{background:#16a34a18;color:#15803d;border-color:#16a34a40}
+[data-theme="sakura"] .rk-tbl .rk-badge.lv-t2{background:#ca8a0418;color:#a16207;border-color:#ca8a0440}
+[data-theme="sakura"] .rk-tbl .rk-badge.lv-t3{background:#ea580c18;color:#c2410c;border-color:#ea580c40}
+[data-theme="sakura"] .rk-tbl .rk-badge.lv-t4{background:#dc262618;color:#b91c1c;border-color:#dc262640}
+[data-theme="sakura"] .rk-tbl .rk-badge.lv-t5{background:#7c3aed18;color:#6d28d9;border-color:#7c3aed40}
+[data-theme="sakura"] .rk-tbl .rk-badge.tk{background:#ca8a0418;color:#a16207;border-color:#ca8a0430}
+[data-theme="sakura"] .my-lv-badge.lv-t0{background:#6b728018;color:#4b5563;border-color:#6b728040}
+[data-theme="sakura"] .my-lv-badge.lv-t1{background:#16a34a18;color:#15803d;border-color:#16a34a40}
+[data-theme="sakura"] .my-lv-badge.lv-t2{background:#ca8a0418;color:#a16207;border-color:#ca8a0440}
+[data-theme="sakura"] .my-lv-badge.lv-t3{background:#ea580c18;color:#c2410c;border-color:#ea580c40}
+[data-theme="sakura"] .my-lv-badge.lv-t4{background:#dc262618;color:#b91c1c;border-color:#dc262640}
+[data-theme="sakura"] .my-lv-badge.lv-t5{background:#7c3aed18;color:#6d28d9;border-color:#7c3aed40}
+[data-theme="sakura"] .header .user-clickable:active{background:#00000008}
 
 /* ── Theme: Light (Clean Contrast) ── */
 [data-theme="light"] {
   --bg:        #f4f5f7;
   --bg-card:   #ffffff;
-  --bg-card2:  #f8f9fb;
-  --bg-input:  #f0f1f4;
-  --ink:       #1a1a2e;
-  --ink-soft:  #3d3d5c;
-  --ink-mute:  #6b7280;
-  --line:      #d1d5db;
-  --accent:    #4f46e5;
-  --green:     #10b981;
+  --bg-card2:  #f0f1f5;
+  --bg-input:  #e8e9ee;
+  --ink:       #111827;
+  --ink-soft:  #1f2937;
+  --ink-mute:  #4b5563;
+  --line:      #c5c9d2;
+  --accent:    #4338ca;
+  --green:     #047857;
   --green-bg:  #d1fae5;
   --green-txt: #065f46;
-  --red:       #ef4444;
+  --red:       #dc2626;
   --red-bg:    #fee2e2;
   --red-txt:   #991b1b;
-  --gold:      #d97706;
-  --silver:    #6b7280;
-  --bronze:    #c2410c;
+  --gold:      #b45309;
+  --silver:    #4b5563;
+  --bronze:    #9a3412;
+  --zebra:     #e8eaef;
+  --zebra-active: #dcdfe6;
+  --wr-bar-bg: #cbd5e1;
 }
 [data-theme="light"] .pf-overlay{background:#f4f5f7f0}
 [data-theme="light"] .tab{color:var(--ink-mute)}
@@ -93,6 +116,20 @@
 [data-theme="light"] .pf-pic-edit-btn:hover,
 [data-theme="light"] .pf-name-edit-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
 [data-theme="light"] .pf-theme-card.active::after{background:var(--accent);color:#fff}
+[data-theme="light"] .rk-tbl .rk-badge.lv-t0{background:#6b728018;color:#4b5563;border-color:#6b728040}
+[data-theme="light"] .rk-tbl .rk-badge.lv-t1{background:#16a34a18;color:#15803d;border-color:#16a34a40}
+[data-theme="light"] .rk-tbl .rk-badge.lv-t2{background:#ca8a0418;color:#a16207;border-color:#ca8a0440}
+[data-theme="light"] .rk-tbl .rk-badge.lv-t3{background:#ea580c18;color:#c2410c;border-color:#ea580c40}
+[data-theme="light"] .rk-tbl .rk-badge.lv-t4{background:#dc262618;color:#b91c1c;border-color:#dc262640}
+[data-theme="light"] .rk-tbl .rk-badge.lv-t5{background:#7c3aed18;color:#6d28d9;border-color:#7c3aed40}
+[data-theme="light"] .rk-tbl .rk-badge.tk{background:#ca8a0418;color:#a16207;border-color:#ca8a0430}
+[data-theme="light"] .my-lv-badge.lv-t0{background:#6b728018;color:#4b5563;border-color:#6b728040}
+[data-theme="light"] .my-lv-badge.lv-t1{background:#16a34a18;color:#15803d;border-color:#16a34a40}
+[data-theme="light"] .my-lv-badge.lv-t2{background:#ca8a0418;color:#a16207;border-color:#ca8a0440}
+[data-theme="light"] .my-lv-badge.lv-t3{background:#ea580c18;color:#c2410c;border-color:#ea580c40}
+[data-theme="light"] .my-lv-badge.lv-t4{background:#dc262618;color:#b91c1c;border-color:#dc262640}
+[data-theme="light"] .my-lv-badge.lv-t5{background:#7c3aed18;color:#6d28d9;border-color:#7c3aed40}
+[data-theme="light"] .header .user-clickable:active{background:#00000008}
 
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -254,8 +291,8 @@ section.view.active{display:block}
 }
 .rk-tbl tbody tr:last-child td{border-bottom:none}
 /* Zebra striping — แถวคู่สีอ่อน ๆ ช่วยแยกชื่อสมาชิก */
-.rk-tbl tbody tr:nth-child(even) td{background:#ffffff05}
-.rk-tbl tbody tr:active td{background:#ffffff10}
+.rk-tbl tbody tr:nth-child(even) td{background:var(--zebra, #ffffff08)}
+.rk-tbl tbody tr:active td{background:var(--zebra-active, #ffffff12)}
 .rk-tbl .rk-pos{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-mute);text-align:center;font-weight:700}
 .rk-tbl .rk-pos .medal{font-size:18px}
 .rk-tbl .rk-player{display:flex;align-items:center;gap:7px;min-width:0;padding-left:4px}
@@ -398,11 +435,11 @@ section.view.active{display:block}
 }
 .pf-stat .l{font-size:10px;color:var(--ink-mute);margin-top:3px;font-weight:700}
 .pf-stat.pts .v{color:var(--accent)}
-.pf-stat.wins .v{color:#4ade80}
-.pf-stat.losses .v{color:#f87171}
+.pf-stat.wins .v{color:var(--green)}
+.pf-stat.losses .v{color:var(--red)}
 .pf-stat.played .v{color:var(--ink)}
-.pf-stat.wr .v{color:#fbbf24}
-.pf-stat.lv .v{color:#fbbf24;font-size:14px;font-family:'DM Sans',sans-serif}
+.pf-stat.wr .v{color:var(--gold)}
+.pf-stat.lv .v{color:var(--gold);font-size:14px;font-family:'DM Sans',sans-serif}
 
 /* ── Profile view-only name ── */
 .pf-name-view{
@@ -493,10 +530,10 @@ section.view.active{display:block}
 .monthly-raffle-info .icon{font-size:14px;margin-right:4px}
 .rk-tbl .rk-pts{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--accent);text-align:center}
 .rk-tbl .rk-played{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-soft);text-align:center;font-weight:600}
-.rk-tbl .rk-wins{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#4ade80;text-align:center;font-weight:700}
-.rk-tbl .rk-losses{font-family:'IBM Plex Mono',monospace;font-size:13px;color:#f87171;text-align:center;font-weight:700}
+.rk-tbl .rk-wins{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--green);text-align:center;font-weight:700}
+.rk-tbl .rk-losses{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--red);text-align:center;font-weight:700}
 .rk-tbl .rk-wr{display:flex;align-items:center;gap:4px;white-space:nowrap;padding-right:4px}
-.rk-tbl .rk-wr-bar{height:5px;background:#3a3d48;border-radius:3px;flex:1;overflow:hidden;min-width:18px}
+.rk-tbl .rk-wr-bar{height:5px;background:var(--wr-bar-bg);border-radius:3px;flex:1;overflow:hidden;min-width:18px}
 .rk-tbl .rk-wr-fill{height:100%;border-radius:3px}
 .rk-tbl .rk-wr-txt{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);font-weight:700}
 
@@ -1522,7 +1559,9 @@ function rkTblRowHtml(r, mode){
   const played  = Math.max(0, r.played || 0);
   const pts     = Math.max(0, r.points || 0);
   const wr      = played > 0 ? Math.round(wins/played*100) : 0;
-  const wrColor = wr>=70?'#4ade80':wr>=40?'#fbbf24':wr>0?'#ef4444':'#3a3d48';
+  const t = document.documentElement.getAttribute('data-theme') || '';
+  const isLight = t === 'sakura' || t === 'light';
+  const wrColor = wr>=70?(isLight?'#047857':'#4ade80'):wr>=40?(isLight?'#b45309':'#fbbf24'):wr>0?(isLight?'#dc2626':'#ef4444'):'var(--wr-bar-bg)';
   // ── Badge ตาม mode ──
   //   ranks    → Lv N (สี tier-based: gray→green→gold→orange→red→purple)
   //   monthly  → 🎫 N สิทธิ์
@@ -1651,12 +1690,12 @@ function renderProfileStatsGrid(){
   const wr = played > 0 ? Math.round(wins / played * 100) : 0;
   const lv = typeof calcLevel === 'function' ? calcLevel(pts) : 0;
   g.innerHTML = `
-    <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
-    <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">ชนะ</div></div>
-    <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">แพ้</div></div>
-    <div class="pf-stat played"><div class="v">${played}</div><div class="l">เล่น</div></div>
-    <div class="pf-stat wr"><div class="v">${wr}%</div><div class="l">อัตราชนะ</div></div>
-    <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+    <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">⭐ คะแนน</div></div>
+    <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">✅ ชนะ</div></div>
+    <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">❌ แพ้</div></div>
+    <div class="pf-stat played"><div class="v">${played}</div><div class="l">🏸 เล่น</div></div>
+    <div class="pf-stat wr"><div class="v">${wr}%</div><div class="l">📊 อัตราชนะ</div></div>
+    <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">🏅 ระดับ</div></div>
   `;
 }
 
@@ -1710,10 +1749,12 @@ async function viewMemberProfile(playerId){
   const nameEditBtn = document.querySelector('.pf-name-edit-btn');
   const nameEditRow = document.getElementById('profile-name-edit-row');
   const themeSection = document.getElementById('pf-theme-selector')?.closest('.pf-stats-section');
+  const picHint = document.querySelector('.pf-pic-hint');
   if(picEditBtn) picEditBtn.style.display = 'none';
   if(nameEditBtn) nameEditBtn.style.display = 'none';
   if(nameEditRow) nameEditRow.style.display = 'none';
   if(themeSection) themeSection.style.display = 'none';
+  if(picHint) picHint.style.display = 'none';
   document.querySelector('.pf-name-view').style.display = 'flex';
 
   // ตั้งค่า UI
@@ -1741,12 +1782,12 @@ async function viewMemberProfile(playerId){
     const wr = played > 0 ? Math.round(wins / played * 100) : 0;
     const lv = typeof calcLevel === 'function' ? calcLevel(pts) : 0;
     g.innerHTML = `
-      <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
-      <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">ชนะ</div></div>
-      <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">แพ้</div></div>
-      <div class="pf-stat played"><div class="v">${played}</div><div class="l">เล่น</div></div>
-      <div class="pf-stat wr"><div class="v">${wr}%</div><div class="l">อัตราชนะ</div></div>
-      <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+      <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">⭐ คะแนน</div></div>
+      <div class="pf-stat wins"><div class="v">${wins}</div><div class="l">✅ ชนะ</div></div>
+      <div class="pf-stat losses"><div class="v">${losses}</div><div class="l">❌ แพ้</div></div>
+      <div class="pf-stat played"><div class="v">${played}</div><div class="l">🏸 เล่น</div></div>
+      <div class="pf-stat wr"><div class="v">${wr}%</div><div class="l">📊 อัตราชนะ</div></div>
+      <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">🏅 ระดับ</div></div>
     `;
   }
 
@@ -1780,12 +1821,12 @@ async function viewMemberProfile(playerId){
     const lv = typeof calcLevel === 'function' ? calcLevel(pts) : 0;
     if(g){
       g.innerHTML = `
-        <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
-        <div class="pf-stat wins"><div class="v">${scWins}</div><div class="l">ชนะ</div></div>
-        <div class="pf-stat losses"><div class="v">${scLosses}</div><div class="l">แพ้</div></div>
-        <div class="pf-stat played"><div class="v">${scPlayed}</div><div class="l">เล่น</div></div>
-        <div class="pf-stat wr"><div class="v">${scWr}%</div><div class="l">อัตราชนะ</div></div>
-        <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+        <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">⭐ คะแนน</div></div>
+        <div class="pf-stat wins"><div class="v">${scWins}</div><div class="l">✅ ชนะ</div></div>
+        <div class="pf-stat losses"><div class="v">${scLosses}</div><div class="l">❌ แพ้</div></div>
+        <div class="pf-stat played"><div class="v">${scPlayed}</div><div class="l">🏸 เล่น</div></div>
+        <div class="pf-stat wr"><div class="v">${scWr}%</div><div class="l">📊 อัตราชนะ</div></div>
+        <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">🏅 ระดับ</div></div>
       `;
     }
     const events = allDocs
@@ -1834,12 +1875,12 @@ async function loadAndRenderProfileStats(){
     const sg = document.getElementById('pf-stats-grid');
     if(sg){
       sg.innerHTML = `
-        <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">คะแนน</div></div>
-        <div class="pf-stat wins"><div class="v">${scWins}</div><div class="l">ชนะ</div></div>
-        <div class="pf-stat losses"><div class="v">${scLosses}</div><div class="l">แพ้</div></div>
-        <div class="pf-stat played"><div class="v">${scPlayed}</div><div class="l">เล่น</div></div>
-        <div class="pf-stat wr"><div class="v">${scWr}%</div><div class="l">อัตราชนะ</div></div>
-        <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
+        <div class="pf-stat pts"><div class="v">${pts}</div><div class="l">⭐ คะแนน</div></div>
+        <div class="pf-stat wins"><div class="v">${scWins}</div><div class="l">✅ ชนะ</div></div>
+        <div class="pf-stat losses"><div class="v">${scLosses}</div><div class="l">❌ แพ้</div></div>
+        <div class="pf-stat played"><div class="v">${scPlayed}</div><div class="l">🏸 เล่น</div></div>
+        <div class="pf-stat wr"><div class="v">${scWr}%</div><div class="l">📊 อัตราชนะ</div></div>
+        <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">🏅 ระดับ</div></div>
       `;
     }
     // Chart uses only win/lose events (for trend line)
@@ -2006,9 +2047,11 @@ function closeProfileEdit(){
   const picEditBtn = document.querySelector('.pf-pic-edit-btn');
   const nameEditBtn = document.querySelector('.pf-name-edit-btn');
   const themeSection = document.getElementById('pf-theme-selector')?.closest('.pf-stats-section');
+  const picHint = document.querySelector('.pf-pic-hint');
   if(picEditBtn) picEditBtn.style.display = '';
   if(nameEditBtn) nameEditBtn.style.display = '';
   if(themeSection) themeSection.style.display = '';
+  if(picHint) picHint.style.display = '';
   document.querySelector('.pf-head h3').textContent = '👤 โปรไฟล์';
 }
 
