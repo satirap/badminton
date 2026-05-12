@@ -35,8 +35,8 @@
   --bronze:    #fb923c;
   --radius:    16px;
   --radius-sm: 12px;
-  --zebra:     #ffffff08;
-  --zebra-active: #ffffff12;
+  --zebra:     #ffffff05;
+  --zebra-active: #ffffff0a;
   --wr-bar-bg: #3a3d48;
 }
 /* ── Theme: Sakura (Pink Pastel) ── */
@@ -59,8 +59,8 @@
   --gold:      #b45309;
   --silver:    #4b5563;
   --bronze:    #9a3412;
-  --zebra:     #f8d7e8;
-  --zebra-active: #f0c0d8;
+  --zebra:     #fdf2f8;
+  --zebra-active: #fce7f3;
   --wr-bar-bg: #f0c0d8;
 }
 [data-theme="sakura"] .pf-overlay{background:#fff0f5f0}
@@ -105,8 +105,8 @@
   --gold:      #b45309;
   --silver:    #4b5563;
   --bronze:    #9a3412;
-  --zebra:     #e8eaef;
-  --zebra-active: #dcdfe6;
+  --zebra:     #f3f4f6;
+  --zebra-active: #e9ebf0;
   --wr-bar-bg: #cbd5e1;
 }
 [data-theme="light"] .pf-overlay{background:#f4f5f7f0}
@@ -344,6 +344,62 @@ section.view.active{display:block}
 }
 .header .user-clickable:active{background:#ffffff10}
 .header .user-clickable:hover .uname{color:var(--accent)}
+
+/* ── Admin button ── */
+.admin-btn{
+  background:none;border:1.5px solid var(--line);border-radius:8px;
+  padding:4px 8px;font-size:16px;cursor:pointer;line-height:1;
+  transition:all .15s;
+}
+.admin-btn:active{transform:scale(.92)}
+.admin-list{list-style:none;padding:0;margin:0}
+.admin-list li{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--line);
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);
+}
+.admin-list li:last-child{border-bottom:none}
+.admin-list .admin-name{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.admin-list .admin-you{font-size:11px;color:var(--accent);font-weight:800;margin-left:6px}
+.admin-remove-btn{
+  background:var(--red-bg);color:var(--red);border:none;border-radius:8px;
+  padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+}
+.admin-remove-btn:active{opacity:.7}
+.admin-invite-box{
+  background:var(--bg-input);border:1.5px solid var(--line);border-radius:10px;
+  padding:12px;margin-top:12px;
+}
+.admin-invite-box .invite-label{font-size:12px;color:var(--ink-mute);font-weight:700;margin-bottom:6px}
+.admin-invite-box .invite-link{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);
+  word-break:break-all;line-height:1.4;
+}
+.admin-invite-box .invite-actions{display:flex;gap:8px;margin-top:10px}
+.admin-invite-box .invite-actions button{
+  flex:1;padding:8px;border:none;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
+}
+.admin-copy-btn{background:var(--accent);color:#000}
+.admin-regen-btn{background:var(--bg-card2);color:var(--ink);border:1.5px solid var(--line) !important}
+
+/* ── Share daily button ── */
+.share-daily-btn{
+  display:block;width:100%;margin:16px 0 0;padding:14px;
+  background:var(--bg-card);border:1.5px solid var(--line);border-radius:var(--radius-sm);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.share-daily-btn:active{background:var(--bg-card2);transform:scale(.98)}
+.share-action-btn{
+  flex:1;padding:12px;border:none;border-radius:var(--radius-sm);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+  transition:all .15s;
+}
+.share-action-btn:active{transform:scale(.97)}
+.share-action-btn.line-btn{background:#06C755;color:#fff}
+.share-action-btn.save-btn{background:var(--bg-card2);color:var(--ink);border:1.5px solid var(--line)}
 
 /* ── Profile edit modal ── */
 .pf-overlay{
@@ -728,6 +784,7 @@ section.view.active{display:block}
           <span class="uname" id="display-name">—</span>
           <img id="display-pic" src="" alt="profile" style="display:none" />
         </div>
+        <button class="admin-btn" id="admin-header-btn" onclick="openAdminPanel()" style="display:none" title="Admin">⚙️</button>
         <button class="logout" id="btn-logout">ออก</button>
       </div>
     </header>
@@ -782,6 +839,9 @@ section.view.active{display:block}
       </div>
 
       <div class="rank-list" id="daily-list"></div>
+      <button class="share-daily-btn" id="share-daily-btn" onclick="openShareCard()" style="display:none">
+        📤 แชร์ผลประจำวัน
+      </button>
     </section>
 
     <!-- ---- VIEW: MONTHLY ---- -->
@@ -841,6 +901,53 @@ section.view.active{display:block}
   <p style="text-align:center;color:#5c5b57;font-size:11px;padding:24px 0 8px;font-family:'IBM Plex Mono',monospace">v2.0 · firebase</p>
 
 </main>
+
+<!-- ===== Admin panel modal ===== -->
+<div class="pf-overlay" id="admin-modal" style="display:none" onclick="if(event.target===this)closeAdminPanel()">
+  <div class="pf-panel" style="max-width:400px">
+    <div class="pf-head">
+      <h3>⚙️ จัดการ Admin</h3>
+      <button class="pf-close" onclick="closeAdminPanel()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="pf-body">
+      <div class="pf-stats-section">
+        <div class="pf-stats-head">👥 รายชื่อ Admin</div>
+        <ul class="admin-list" id="admin-list"></ul>
+      </div>
+      <div class="pf-stats-section">
+        <div class="pf-stats-head">🔗 ลิงก์เชิญ Admin</div>
+        <div class="admin-invite-box">
+          <div class="invite-label">ส่งลิงก์นี้ให้คนที่ต้องการแต่งตั้งเป็น Admin</div>
+          <div class="invite-link" id="admin-invite-link">—</div>
+          <div class="invite-actions">
+            <button class="admin-copy-btn" onclick="copyAdminInvite()">📋 คัดลอกลิงก์</button>
+            <button class="admin-regen-btn" onclick="regenAdminKey()">🔄 สร้างใหม่</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pf-foot">
+      <button class="pf-cancel" onclick="closeAdminPanel()" style="flex:1">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Share modal ===== -->
+<div class="pf-overlay" id="share-modal" style="display:none" onclick="if(event.target===this)closeShareCard()">
+  <div class="pf-panel" style="max-width:380px">
+    <div class="pf-head">
+      <h3>📤 แชร์ผลประจำวัน</h3>
+      <button class="pf-close" onclick="closeShareCard()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="pf-body" style="padding:12px">
+      <canvas id="share-canvas" style="width:100%;border-radius:12px"></canvas>
+    </div>
+    <div class="pf-foot" style="gap:8px">
+      <button class="share-action-btn line-btn" onclick="shareToLine()">💬 แชร์ LINE</button>
+      <button class="share-action-btn save-btn" onclick="saveShareImage()">💾 บันทึกรูป</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== Profile modal ===== -->
 <div class="pf-overlay" id="profile-modal" style="display:none" onclick="if(event.target===this)closeProfileEdit()">
@@ -934,6 +1041,9 @@ const db = firebase.firestore();
 // STATE
 // =================================================================
 let currentUser        = null;
+let isAdmin            = false;
+let adminIds           = [];
+let adminInviteKey     = '';
 let allRankings        = [];
 let allDailyRankings   = [];
 let allMonthlyRankings = [];
@@ -1292,6 +1402,7 @@ async function _backgroundRefresh(){
       if(p && currentUser.pictureUrl){ p.src = currentUser.pictureUrl; p.style.display='block'; }
     }
     await loadAllData();
+    await loadAdminConfig();
   }catch(e){ console.error('background refresh', e); }
 }
 
@@ -1473,6 +1584,8 @@ function renderDaily(){
   c.innerHTML = allDailyRankings.length === 0
     ? '<div class="empty">ยังไม่มีเกมวันนี้<br><small style="font-size:13px;font-family:\'DM Sans\',sans-serif;font-style:normal">สแกน QR ที่สนามเพื่อเริ่มบันทึก</small></div>'
     : withRanks(allDailyRankings).map(rankRowHtml).join('');
+  const shareBtn = document.getElementById('share-daily-btn');
+  if(shareBtn) shareBtn.style.display = (isAdmin && allDailyRankings.length > 0) ? 'block' : 'none';
 }
 
 function renderMonthly(){
@@ -2033,6 +2146,446 @@ function renderWinRateChart(events, correctStats){
   }
 }
 
+// =================================================================
+// ADMIN SYSTEM
+// =================================================================
+function generateKey(len){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let key = '';
+  for(let i = 0; i < (len||16); i++) key += chars[Math.floor(Math.random()*chars.length)];
+  return key;
+}
+
+async function loadAdminConfig(){
+  try{
+    const snap = await db.collection('config').doc('admins').get();
+    if(snap.exists){
+      const data = snap.data();
+      adminIds = data.ids || [];
+      adminInviteKey = data.inviteKey || '';
+    } else {
+      adminIds = [];
+      adminInviteKey = '';
+    }
+    isAdmin = !!(currentUser && adminIds.includes(currentUser.id));
+    updateAdminUI();
+  }catch(e){
+    console.warn('loadAdminConfig', e);
+  }
+}
+
+async function handleBecomeAdmin(key){
+  if(!currentUser?.id) return;
+  try{
+    const snap = await db.collection('config').doc('admins').get();
+    if(!snap.exists){
+      // First admin — no config yet, create it
+      const newKey = generateKey();
+      await db.collection('config').doc('admins').set({
+        ids: [currentUser.id],
+        inviteKey: newKey,
+        createdAt: new Date()
+      });
+      adminIds = [currentUser.id];
+      adminInviteKey = newKey;
+      isAdmin = true;
+      updateAdminUI();
+      toast('🎉 คุณเป็น Admin คนแรก!');
+      return;
+    }
+    const data = snap.data();
+    if(data.inviteKey && key === data.inviteKey){
+      if(data.ids && data.ids.includes(currentUser.id)){
+        toast('คุณเป็น Admin อยู่แล้ว');
+        isAdmin = true;
+        adminIds = data.ids;
+        adminInviteKey = data.inviteKey;
+        updateAdminUI();
+        return;
+      }
+      const newIds = [...(data.ids || []), currentUser.id];
+      await db.collection('config').doc('admins').update({ ids: newIds });
+      adminIds = newIds;
+      adminInviteKey = data.inviteKey;
+      isAdmin = true;
+      updateAdminUI();
+      toast('🎉 คุณได้เป็น Admin แล้ว!');
+    } else {
+      toast('ลิงก์เชิญไม่ถูกต้องหรือหมดอายุ');
+    }
+  }catch(e){
+    console.error('handleBecomeAdmin', e);
+    toast('เกิดข้อผิดพลาด');
+  }
+}
+
+async function removeAdmin(id){
+  if(!isAdmin || !currentUser) return;
+  if(id === currentUser.id){
+    if(!confirm('คุณต้องการถอดตัวเองออกจาก Admin?')) return;
+  }
+  try{
+    const newIds = adminIds.filter(a => a !== id);
+    await db.collection('config').doc('admins').update({ ids: newIds });
+    adminIds = newIds;
+    isAdmin = adminIds.includes(currentUser.id);
+    updateAdminUI();
+    renderAdminList();
+    toast('✓ ลบ Admin แล้ว');
+  }catch(e){
+    console.error('removeAdmin', e);
+    toast('ลบไม่สำเร็จ');
+  }
+}
+
+async function regenAdminKey(){
+  if(!isAdmin) return;
+  if(!confirm('สร้างลิงก์ใหม่? ลิงก์เก่าจะใช้ไม่ได้')) return;
+  try{
+    const newKey = generateKey();
+    await db.collection('config').doc('admins').update({ inviteKey: newKey });
+    adminInviteKey = newKey;
+    renderAdminInviteLink();
+    toast('✓ สร้างลิงก์ใหม่แล้ว');
+  }catch(e){
+    console.error('regenAdminKey', e);
+  }
+}
+
+function getInviteUrl(){
+  const base = window.location.origin + window.location.pathname;
+  return base + '?become-admin=' + adminInviteKey;
+}
+
+function copyAdminInvite(){
+  const url = getInviteUrl();
+  navigator.clipboard.writeText(url).then(() => toast('✓ คัดลอกลิงก์แล้ว')).catch(() => {
+    prompt('คัดลอกลิงก์:', url);
+  });
+}
+
+function updateAdminUI(){
+  const btn = document.getElementById('admin-header-btn');
+  if(btn) btn.style.display = isAdmin ? '' : 'none';
+  const shareBtn = document.getElementById('share-daily-btn');
+  if(shareBtn) shareBtn.style.display = (isAdmin && allDailyRankings.length > 0) ? 'block' : 'none';
+}
+
+function openAdminPanel(){
+  if(!isAdmin) return;
+  renderAdminList();
+  renderAdminInviteLink();
+  document.getElementById('admin-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeAdminPanel(){
+  document.getElementById('admin-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderAdminList(){
+  const ul = document.getElementById('admin-list');
+  if(!ul) return;
+  if(adminIds.length === 0){
+    ul.innerHTML = '<li style="color:var(--ink-mute);font-style:italic">ยังไม่มี Admin</li>';
+    return;
+  }
+  const playerMap = {};
+  allRankings.forEach(r => { playerMap[r.id] = r; });
+  ul.innerHTML = adminIds.map(id => {
+    const p = playerMap[id];
+    const name = p ? escHtml(p.name) : id.slice(0,8) + '…';
+    const isMe = currentUser && id === currentUser.id;
+    return `<li>
+      <span class="admin-name">${name}${isMe ? '<span class="admin-you">(คุณ)</span>' : ''}</span>
+      <button class="admin-remove-btn" onclick="removeAdmin('${id}')">ลบ</button>
+    </li>`;
+  }).join('');
+}
+
+function renderAdminInviteLink(){
+  const el = document.getElementById('admin-invite-link');
+  if(el) el.textContent = getInviteUrl();
+}
+
+// =================================================================
+// SHARE DAILY RESULTS
+// =================================================================
+function openShareCard(){
+  renderShareCanvas();
+  document.getElementById('share-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeShareCard(){
+  document.getElementById('share-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function renderShareCanvas(){
+  const canvas = document.getElementById('share-canvas');
+  if(!canvas) return;
+  const W = 720;
+  const daily = withRanks(allDailyRankings);
+  const monthly = withRanks(allMonthlyRankings);
+  const rowH = 52;
+  const dailyH = Math.max(daily.length * rowH, 60);
+  const top5 = monthly.slice(0, 5);
+  const monthlyH = top5.length * 44;
+  const H = 200 + dailyH + (top5.length > 0 ? 90 + monthlyH : 0) + 50;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0f1118');
+  bg.addColorStop(0.5, '#151820');
+  bg.addColorStop(1, '#0c0d12');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Decorative accent line top
+  const topLine = ctx.createLinearGradient(0, 0, W, 0);
+  topLine.addColorStop(0, '#c8f13500');
+  topLine.addColorStop(0.3, '#c8f135');
+  topLine.addColorStop(0.7, '#c8f135');
+  topLine.addColorStop(1, '#c8f13500');
+  ctx.fillStyle = topLine;
+  ctx.fillRect(0, 0, W, 3);
+
+  let y = 36;
+
+  // Title
+  ctx.font = '800 28px "DM Sans", sans-serif';
+  ctx.fillStyle = '#f5f3ee';
+  ctx.textAlign = 'center';
+  ctx.fillText('🏸 ก๊วนอยากตี ต้องได้ตี', W/2, y);
+  y += 14;
+
+  // Subtitle line
+  ctx.font = '500 13px "DM Sans", sans-serif';
+  ctx.fillStyle = '#8e8c85';
+  ctx.fillText('ผลการแข่งขันประจำวัน', W/2, y + 18);
+  y += 40;
+
+  // Date
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  ctx.font = '700 16px "DM Sans", sans-serif';
+  ctx.fillStyle = '#c8f135';
+  ctx.fillText(dateStr, W/2, y);
+  y += 30;
+
+  // Divider
+  drawDivider(ctx, 40, W-40, y, '#c8f13540');
+  y += 20;
+
+  // Daily header
+  ctx.textAlign = 'left';
+  ctx.font = '800 18px "DM Sans", sans-serif';
+  ctx.fillStyle = '#f5f3ee';
+  ctx.fillText('📊 ผลประจำวัน', 40, y);
+  y += 24;
+
+  if(daily.length === 0){
+    ctx.font = '500 14px "DM Sans", sans-serif';
+    ctx.fillStyle = '#8e8c85';
+    ctx.textAlign = 'center';
+    ctx.fillText('ยังไม่มีเกมวันนี้', W/2, y + 10);
+    y += 40;
+  } else {
+    // Table header
+    ctx.font = '700 11px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#8e8c85';
+    ctx.textAlign = 'left';
+    ctx.fillText('#', 44, y);
+    ctx.fillText('ผู้เล่น', 80, y);
+    ctx.textAlign = 'center';
+    ctx.fillText('ชนะ', 420, y);
+    ctx.fillText('แพ้', 490, y);
+    ctx.fillText('เล่น', 555, y);
+    ctx.textAlign = 'right';
+    ctx.fillText('คะแนน', 680, y);
+    y += 8;
+    drawDivider(ctx, 40, W-40, y, '#2e303850');
+    y += 14;
+
+    daily.forEach((r, i) => {
+      // Zebra
+      if(i % 2 === 1){
+        ctx.fillStyle = '#ffffff06';
+        ctx.fillRect(36, y - 14, W - 72, rowH);
+      }
+
+      const rank = r._rank;
+      const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+      const wins = Math.max(0, r.wins||0);
+      const losses = Math.max(0, r.losses||0);
+      const played = Math.max(0, r.played||0);
+      const pts = Math.max(0, r.points||0);
+
+      // Rank
+      ctx.textAlign = 'center';
+      if(medal){
+        ctx.font = '20px serif';
+        ctx.fillText(medal, 56, y + 8);
+      } else {
+        ctx.font = '700 14px "IBM Plex Mono", monospace';
+        ctx.fillStyle = '#8e8c85';
+        ctx.fillText(String(rank), 56, y + 6);
+      }
+
+      // Name
+      ctx.textAlign = 'left';
+      ctx.font = '700 15px "DM Sans", sans-serif';
+      ctx.fillStyle = '#f5f3ee';
+      const name = (r.name || '—').length > 14 ? (r.name||'—').slice(0,14)+'…' : (r.name||'—');
+      ctx.fillText(name, 80, y + 6);
+
+      // Wins
+      ctx.textAlign = 'center';
+      ctx.font = '700 15px "IBM Plex Mono", monospace';
+      ctx.fillStyle = '#4ade80';
+      ctx.fillText(String(wins), 420, y + 6);
+
+      // Losses
+      ctx.fillStyle = '#f87171';
+      ctx.fillText(String(losses), 490, y + 6);
+
+      // Played
+      ctx.fillStyle = '#8e8c85';
+      ctx.font = '600 13px "IBM Plex Mono", monospace';
+      ctx.fillText(String(played), 555, y + 6);
+
+      // Points
+      ctx.textAlign = 'right';
+      ctx.font = '800 17px "IBM Plex Mono", monospace';
+      ctx.fillStyle = '#c8f135';
+      ctx.fillText(String(pts), 680, y + 6);
+
+      y += rowH;
+    });
+    y += 10;
+  }
+
+  // Monthly section
+  if(top5.length > 0){
+    drawDivider(ctx, 40, W-40, y, '#2e303850');
+    y += 24;
+
+    const monName = THAI_MONTHS_FULL[now.getMonth()];
+    const yr2 = (now.getFullYear() + 543) % 100;
+    ctx.textAlign = 'left';
+    ctx.font = '800 18px "DM Sans", sans-serif';
+    ctx.fillStyle = '#f5f3ee';
+    ctx.fillText(`📅 สถิติเดือน ${monName} ${String(yr2).padStart(2,'0')}`, 40, y);
+    y += 24;
+
+    // Top 5
+    ctx.font = '700 11px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#8e8c85';
+    ctx.textAlign = 'left';
+    ctx.fillText('#', 44, y);
+    ctx.fillText('ผู้เล่น', 80, y);
+    ctx.textAlign = 'center';
+    ctx.fillText('ชนะ', 420, y);
+    ctx.fillText('แพ้', 490, y);
+    ctx.textAlign = 'right';
+    ctx.fillText('คะแนน', 680, y);
+    y += 8;
+    drawDivider(ctx, 40, W-40, y, '#2e303850');
+    y += 14;
+
+    top5.forEach((r, i) => {
+      if(i % 2 === 1){
+        ctx.fillStyle = '#ffffff06';
+        ctx.fillRect(36, y - 14, W - 72, 44);
+      }
+      const rank = r._rank;
+      const medal = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+      const wins = Math.max(0, r.wins||0);
+      const losses = Math.max(0, r.losses||0);
+      const pts = Math.max(0, r.points||0);
+
+      ctx.textAlign = 'center';
+      if(medal){
+        ctx.font = '18px serif';
+        ctx.fillText(medal, 56, y + 6);
+      } else {
+        ctx.font = '700 13px "IBM Plex Mono", monospace';
+        ctx.fillStyle = '#8e8c85';
+        ctx.fillText(String(rank), 56, y + 4);
+      }
+
+      ctx.textAlign = 'left';
+      ctx.font = '600 14px "DM Sans", sans-serif';
+      ctx.fillStyle = '#c9c7c0';
+      const name = (r.name||'—').length > 14 ? (r.name||'—').slice(0,14)+'…' : (r.name||'—');
+      ctx.fillText(name, 80, y + 5);
+
+      ctx.textAlign = 'center';
+      ctx.font = '700 14px "IBM Plex Mono", monospace';
+      ctx.fillStyle = '#4ade80';
+      ctx.fillText(String(wins), 420, y + 5);
+      ctx.fillStyle = '#f87171';
+      ctx.fillText(String(losses), 490, y + 5);
+
+      ctx.textAlign = 'right';
+      ctx.font = '800 15px "IBM Plex Mono", monospace';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText(String(pts), 680, y + 5);
+
+      y += 44;
+    });
+  }
+
+  // Footer
+  y = H - 30;
+  ctx.textAlign = 'center';
+  ctx.font = '500 11px "DM Sans", sans-serif';
+  ctx.fillStyle = '#4a4d55';
+  ctx.fillText('ก๊วนอยากตี ต้องได้ตี · สแกน QR เพื่อเข้าร่วม', W/2, y);
+}
+
+function drawDivider(ctx, x1, x2, y, color){
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x1, y);
+  ctx.lineTo(x2, y);
+  ctx.stroke();
+}
+
+async function shareToLine(){
+  const canvas = document.getElementById('share-canvas');
+  if(!canvas) return;
+  try{
+    if(typeof liff !== 'undefined' && liff.isLoggedIn() && liff.shareTargetPicker){
+      const dataUrl = canvas.toDataURL('image/png');
+      await liff.shareTargetPicker([{
+        type: 'image',
+        originalContentUrl: dataUrl,
+        previewImageUrl: dataUrl
+      }]);
+      toast('✓ แชร์สำเร็จ');
+    } else {
+      saveShareImage();
+    }
+  }catch(e){
+    console.warn('share error', e);
+    saveShareImage();
+  }
+}
+
+function saveShareImage(){
+  const canvas = document.getElementById('share-canvas');
+  if(!canvas) return;
+  const link = document.createElement('a');
+  link.download = 'badminton-daily.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  toast('✓ บันทึกรูปแล้ว');
+}
+
 function formatChartDate(d){
   if(!d) return '';
   return `${d.getDate()}/${d.getMonth()+1}`;
@@ -2432,6 +2985,17 @@ async function boot(){
   }
 
   await loginWithLIFF(resultParam);
+
+  // Load admin config
+  if(currentUser){
+    await loadAdminConfig();
+    // Handle ?become-admin=KEY
+    const becomeAdminKey = urlParams.get('become-admin');
+    if(becomeAdminKey !== null){
+      await handleBecomeAdmin(becomeAdminKey);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }
 
   // หลัง login: ถ้ามี ?tab= ใน URL → switch
   if(tabParam && currentUser && !resultParam){
