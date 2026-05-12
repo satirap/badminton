@@ -1759,15 +1759,21 @@ async function viewMemberProfile(playerId){
       .where('playerId', '==', playerId)
       .limit(500)
       .get();
-    const events = snap.docs.map(d => {
+    const allDocs = snap.docs.map(d => {
       const x = d.data();
       const t = x.createdAt?.toDate ? x.createdAt.toDate() : new Date(x.createdAt || 0);
       return { date: t, result: x.result };
-    }).filter(e => e.date && !isNaN(e.date.getTime()) && (e.result === 'win' || e.result === 'lose'));
-    events.sort((a, b) => a.date - b.date);
-    // Sync stats grid with scores data so numbers match the chart
-    const scWins = events.filter(e => e.result === 'win').length;
-    const scLosses = events.filter(e => e.result === 'lose').length;
+    }).filter(e => e.date && !isNaN(e.date.getTime()));
+    // Aggregate stats with undo handling (matches ranking table logic)
+    let scWins = 0, scLosses = 0;
+    allDocs.forEach(e => {
+      if(e.result === 'win')           scWins++;
+      else if(e.result === 'lose')     scLosses++;
+      else if(e.result === 'undo-win') scWins--;
+      else if(e.result === 'undo-lose') scLosses--;
+    });
+    scWins = Math.max(0, scWins);
+    scLosses = Math.max(0, scLosses);
     const scPlayed = scWins + scLosses;
     const scWr = scPlayed > 0 ? Math.round(scWins / scPlayed * 100) : 0;
     const pts = Math.max(0, member.points || 0);
@@ -1782,6 +1788,9 @@ async function viewMemberProfile(playerId){
         <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
       `;
     }
+    const events = allDocs
+      .filter(e => e.result === 'win' || e.result === 'lose')
+      .sort((a, b) => a.date - b.date);
     renderWinRateChart(events);
   }catch(e){
     console.warn('viewMember chart', e);
@@ -1803,16 +1812,21 @@ async function loadAndRenderProfileStats(){
       .limit(500)
       .get();
     console.log('[profile] scores docs:', snap.size);
-    const events = snap.docs.map(d => {
+    const allDocs = snap.docs.map(d => {
       const x = d.data();
       const t = x.createdAt?.toDate ? x.createdAt.toDate() : new Date(x.createdAt || 0);
       return { date: t, result: x.result };
-    }).filter(e => e.date && !isNaN(e.date.getTime()) && (e.result === 'win' || e.result === 'lose'));
-    events.sort((a, b) => a.date - b.date);
-    console.log('[profile] events count:', events.length);
-    // Sync stats grid with scores data so numbers match the chart
-    const scWins = events.filter(e => e.result === 'win').length;
-    const scLosses = events.filter(e => e.result === 'lose').length;
+    }).filter(e => e.date && !isNaN(e.date.getTime()));
+    // Aggregate stats with undo handling (matches ranking table logic)
+    let scWins = 0, scLosses = 0;
+    allDocs.forEach(e => {
+      if(e.result === 'win')           scWins++;
+      else if(e.result === 'lose')     scLosses++;
+      else if(e.result === 'undo-win') scWins--;
+      else if(e.result === 'undo-lose') scLosses--;
+    });
+    scWins = Math.max(0, scWins);
+    scLosses = Math.max(0, scLosses);
     const scPlayed = scWins + scLosses;
     const scWr = scPlayed > 0 ? Math.round(scWins / scPlayed * 100) : 0;
     const pts = Math.max(0, currentUser.totalPoints || currentUser.points || 0);
@@ -1828,6 +1842,11 @@ async function loadAndRenderProfileStats(){
         <div class="pf-stat lv"><div class="v">Lv ${lv}</div><div class="l">ระดับ</div></div>
       `;
     }
+    // Chart uses only win/lose events (for trend line)
+    const events = allDocs
+      .filter(e => e.result === 'win' || e.result === 'lose')
+      .sort((a, b) => a.date - b.date);
+    console.log('[profile] events count:', events.length);
     renderWinRateChart(events);
   }catch(e){
     console.error('[profile] load failed:', e);
