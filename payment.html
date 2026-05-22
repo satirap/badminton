@@ -979,8 +979,8 @@ body{min-height:100dvh}
                 <span></span>
               </div>
               <div id="court-list" class="court-items">
-                <div class="court-item" data-court-id="1">
-                  <input class="court-name" type="text" value="1" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                <div class="court-item" data-court-id="3">
+                  <input class="court-name" type="text" value="3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
                   <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
@@ -1186,7 +1186,7 @@ function newSession(){
     status:      'open',
     // ── Court Breakdown (ใหม่) — แต่ละคอร์ทมีชั่วโมงแยก
     courtRate:     220,  // default ค่าคอร์ท/ชม.
-    courts:        [{name: '1', hours: 2}],  // court breakdown array (numeric naming: 1, 2, 3... or actual court numbers: 4, 5, 6)
+    courts:        [{name: '3', hours: 2}],  // court breakdown array (default: 3, then 4, 5, 6...)
     courtFee:      0,    // = total court-hours × courtRate
     shuttlePrice:  75,   // default ค่าลูก/ลูก
     shuttleCount:  0,
@@ -1413,7 +1413,7 @@ function mergeRemoteIntoSession(d){
     }
   };
   if(d.courts        !== undefined){
-    session.courts = Array.isArray(d.courts) ? d.courts : [{name: '1', hours: 2}];
+    session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
     setSetupInputsFromSession(); // Rebuild court items
   }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
@@ -2860,8 +2860,7 @@ document.getElementById('new-member-name').addEventListener('keydown', e => {
 // Court breakdown operations
 function addNewCourt(){
   const list = document.getElementById('court-list');
-  const n = list.children.length + 1;
-  const name = String(n); // 1, 2, 3, ...
+  const name = String(3 + list.children.length); // 4, 5, 6, ... (เพิ่มจากคอร์ท 3 ที่เริ่มต้น)
   const item = document.createElement('div');
   item.className = 'court-item';
   item.dataset.courtId = name;
@@ -2940,8 +2939,8 @@ function setSetupInputsFromSession(){
   const courtList = document.getElementById('court-list');
   if(courtList){
     courtList.innerHTML = '';
-    const courts = session.courts || [{name: '1', hours: 2}];
-    (Array.isArray(courts) ? courts : [{name: '1', hours: 2}]).forEach(c => {
+    const courts = session.courts || [{name: '3', hours: 2}];
+    (Array.isArray(courts) ? courts : [{name: '3', hours: 2}]).forEach(c => {
       const item = document.createElement('div');
       item.className = 'court-item';
       item.dataset.courtId = c.name;
