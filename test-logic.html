@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<title>🧪 Test Logic — ระบบคะแนนแบด</title>
+<style>
+:root{--bg:#0c0d10;--card:#16181d;--ink:#f5f3ee;--mute:#8e8c85;--ok:#4ade80;--bad:#f87171;--accent:#c8f135;--line:#2e3038}
+*{box-sizing:border-box;font-family:'SF Mono',Menlo,monospace}
+body{background:var(--bg);color:var(--ink);margin:0;padding:24px;font-size:13px;line-height:1.55}
+h1{font-size:22px;color:var(--accent);margin:0 0 4px}
+h2{font-size:14px;color:var(--accent);margin:24px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.summary{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px;margin:16px 0;font-size:15px}
+.summary strong{color:var(--accent);font-size:18px}
+.case{padding:8px 12px;border-left:3px solid var(--line);margin:4px 0;background:#0006;border-radius:0 6px 6px 0}
+.case.ok{border-left-color:var(--ok)}
+.case.bad{border-left-color:var(--bad);background:#f871711a}
+.case .label{color:var(--ink);font-weight:700}
+.case .check{color:var(--ok);margin-right:6px}
+.case.bad .check{color:var(--bad)}
+.case .detail{color:var(--mute);margin-left:22px;font-size:11px}
+.case.bad .detail{color:var(--bad);font-weight:600}
+pre{color:var(--mute);font-size:11px;margin:2px 0;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<h1>🧪 Test Logic — ระบบคะแนนแบด</h1>
+<p style="color:var(--mute);margin:0">ทดสอบ core functions โดยไม่แตะ Firestore จริง · logic ดึงตรงจาก index.html</p>
+<div id="summary" class="summary"></div>
+<div id="results"></div>
+
+<script>
+/* ============================================================
+   FUNCTIONS UNDER TEST — คัดลอกตรงจาก index.html
+   ============================================================ */
+
+function winRatePct(r){
+  const played = Math.max(0, r.played || 0);
+  if(played <= 0) return 0;
+  const wins = Math.max(0, r.wins || 0);
+  return Math.round(wins / played * 100);
+}
+
+function rankCmp(a, b){
+  const dp = (b.points||0) - (a.points||0);
+  if(dp !== 0) return dp;
+  return winRatePct(b) - winRatePct(a);
+}
+
+function withRanks(list){
+  const out = [];
+  for(let i = 0; i < list.length; i++){
+    if(i === 0){
+      out.push({ ...list[i], _rank: 1 });
+    } else {
+      const prev = out[i-1];
+      const tied = list[i].points === prev.points
+                && winRatePct(list[i]) === winRatePct(prev);
+      out.push({ ...list[i], _rank: tied ? prev._rank : i + 1 });
+    }
+  }
+  return out;
+}
+
+// Simulate dbGetAllData's daily aggregation
+function aggregateDailyFromScores(scores, playerMap){
+  const dailyAgg = {};
+  scores.forEach(s => {
+    if(!dailyAgg[s.playerId]) dailyAgg[s.playerId] = { points:0, wins:0, losses:0, played:0 };
+    dailyAgg[s.playerId].points += s.points;
+    if(s.result === 'win')             { dailyAgg[s.playerId].wins++;   dailyAgg[s.playerId].played++; }
+    else if(s.result === 'lose')       { dailyAgg[s.playerId].losses++; dailyAgg[s.playerId].played++; }
+    else if(s.result === 'undo-win')   { dailyAgg[s.playerId].wins--;   dailyAgg[s.playerId].played--; }
+    else if(s.result === 'undo-lose')  { dailyAgg[s.playerId].losses--; dailyAgg[s.playerId].played--; }
+  });
+  return Object.entries(dailyAgg)
+    .map(([id, stats]) => {
+      const clamped = {
+        points: Math.max(0, stats.points),
+        wins:   Math.max(0, stats.wins),
+        losses: Math.max(0, stats.losses),
+        played: Math.max(0, stats.played),
+      };
+      return { ...(playerMap[id] || { id, name: id }), ...clamped };
+    })
+    .filter(p => p.played > 0 || p.points > 0)
+    .sort(rankCmp);
+}
+
+// Simulate applyOptimisticUpdate's updateList
+function updateList(list, currentUser, playerId, result, pts, dropZero){
+  const deltaPlayed = (result === 'win' || result === 'lose') ? 1
+                    : (result === 'undo-win' || result === 'undo-lose') ? -1 : 0;
+  const deltaWins   = result === 'win' ? 1 : result === 'undo-win' ? -1 : 0;
+  const deltaLoss   = result === 'lose' ? 1 : result === 'undo-lose' ? -1 : 0;
+
+  const idx = list.findIndex(r => r.id === playerId);
+  if(idx !== -1){
+    const newPlayed = Math.max(0, (list[idx].played || 0) + deltaPlayed);
+    const newPoints = Math.max(0, (list[idx].points || 0) + pts);
+    if(dropZero && newPlayed <= 0 && newPoints <= 0){
+      list.splice(idx, 1);
+    } else {
+      list[idx] = {
+        ...list[idx],
+        points: newPoints,
+        played: newPlayed,
+        wins:   Math.max(0, (list[idx].wins   || 0) + deltaWins),
+        losses: Math.max(0, (list[idx].losses || 0) + deltaLoss),
+      };
+    }
+  } else if(deltaPlayed > 0){
+    list.push({
+      ...currentUser,
+      points: pts, played: 1,
+      wins:   deltaWins > 0 ? 1 : 0,
+      losses: deltaLoss > 0 ? 1 : 0,
+    });
+  }
+  list.sort(rankCmp);
+}
+
+// Simulate server-side today-count guard
+function computeTodayCount(scores, playerId){
+  let w=0, l=0;
+  scores.forEach(s => {
+    if(s.playerId !== playerId) return;
+    if(s.result === 'win')            w++;
+    else if(s.result === 'lose')      l++;
+    else if(s.result === 'undo-win')  w--;
+    else if(s.result === 'undo-lose') l--;
+  });
+  return { wins:w, losses:l };
+}
+
+/* ============================================================
+   TEST HARNESS
+   ============================================================ */
+const results = [];
+let passed = 0, failed = 0;
+
+function test(name, fn){
+  try{
+    const detail = fn();
+    results.push({ok:true, name, detail: detail || 'OK'});
+    passed++;
+  }catch(e){
+    results.push({ok:false, name, detail: e.message});
+    failed++;
+  }
+}
+
+function eq(actual, expected, msg){
+  const a = JSON.stringify(actual), e = JSON.stringify(expected);
+  if(a !== e) throw new Error((msg?msg+' · ':'')+`expected ${e}, got ${a}`);
+  return `✓ ${msg||''} = ${e}`.trim();
+}
+
+function truthy(cond, msg){
+  if(!cond) throw new Error(msg || 'expected truthy');
+  return '✓ '+msg;
+}
+
+/* ============================================================
+   TESTS
+   ============================================================ */
+
+// ─── winRatePct ─────────────────────────────────────────────
+test('winRatePct: normal case (6W / 9 played = 67%)', () => {
+  return eq(winRatePct({wins:6, played:9}), 67);
+});
+
+test('winRatePct: 0 played → 0%', () => {
+  return eq(winRatePct({wins:0, played:0}), 0);
+});
+
+test('winRatePct: negative played clamped → 0%', () => {
+  return eq(winRatePct({wins:3, played:-2}), 0);
+});
+
+test('winRatePct: negative wins clamped → 0%', () => {
+  return eq(winRatePct({wins:-5, played:10}), 0);
+});
+
+test('winRatePct: 100% win rate', () => {
+  return eq(winRatePct({wins:5, played:5}), 100);
+});
+
+// ─── rankCmp ────────────────────────────────────────────────
+test('rankCmp: higher points wins', () => {
+  const sorted = [{points:10,wins:1,played:2},{points:20,wins:1,played:2}].sort(rankCmp);
+  return eq(sorted[0].points, 20);
+});
+
+test('rankCmp: equal points, higher win-rate wins', () => {
+  const A = {points:21, wins:6, played:9};  // 67%
+  const B = {points:21, wins:7, played:12}; // 58%
+  const sorted = [A, B].sort(rankCmp);
+  return eq(sorted[0].wins, 6, 'A (67%) beats B (58%)');
+});
+
+test('rankCmp: equal points + equal win-rate → stable', () => {
+  const A = {points:21, wins:6, played:9, id:'A'};
+  const B = {points:21, wins:6, played:9, id:'B'};
+  const sorted = [A, B].sort(rankCmp);
+  return eq(rankCmp(A,B), 0);
+});
+
+// ─── withRanks ──────────────────────────────────────────────
+test('withRanks: simple ordering', () => {
+  const ranked = withRanks([
+    {points:21, wins:6, played:9},
+    {points:18, wins:5, played:8},
+    {points:15, wins:4, played:7},
+  ]);
+  return eq(ranked.map(r => r._rank), [1,2,3]);
+});
+
+test('withRanks: tie when points AND win-rate equal', () => {
+  const ranked = withRanks([
+    {points:21, wins:6, played:9, id:'A'},  // 67%
+    {points:21, wins:6, played:9, id:'B'},  // 67%
+    {points:15, wins:4, played:7, id:'C'},
+  ]);
+  return eq(ranked.map(r => r._rank), [1,1,3], '2 ties at rank 1, next is rank 3');
+});
+
+test('withRanks: same points different win-rate → different ranks', () => {
+  const ranked = withRanks([
+    {points:21, wins:6, played:9, id:'A'},   // 67%
+    {points:21, wins:4, played:9, id:'B'},   // 44%
+  ]);
+  return eq(ranked.map(r => r._rank), [1,2]);
+});
+
+// ─── Daily aggregation with clamping + filter ──────────────
+test('daily: single +ชนะ → player appears with 3 pts', () => {
+  const scores = [{playerId:'A', result:'win', points:3}];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A',name:'Alice'}});
+  return eq({len:daily.length, pts:daily[0].points, w:daily[0].wins, l:daily[0].losses}, {len:1,pts:3,w:1,l:0});
+});
+
+test('daily: +ชนะ then -ชนะ → player dropped (played=0, points=0)', () => {
+  const scores = [
+    {playerId:'A', result:'win',       points: 3},
+    {playerId:'A', result:'undo-win',  points:-3},
+  ];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A',name:'Alice'}});
+  return eq(daily.length, 0, 'dropped from daily');
+});
+
+test('daily: 3 +ชนะ then 3 -ชนะ → dropped', () => {
+  const scores = [];
+  for(let i=0;i<3;i++) scores.push({playerId:'A', result:'win', points:3});
+  for(let i=0;i<3;i++) scores.push({playerId:'A', result:'undo-win', points:-3});
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  return eq(daily.length, 0, 'dropped when fully canceled');
+});
+
+test('daily: 3 +ชนะ then 1 -ชนะ → visible with 6 pts, 2W, 2 played', () => {
+  const scores = [
+    ...[1,2,3].map(()=>({playerId:'A', result:'win', points:3})),
+    {playerId:'A', result:'undo-win', points:-3},
+  ];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  return eq({pts:daily[0].points, w:daily[0].wins, p:daily[0].played}, {pts:6,w:2,p:2});
+});
+
+test('daily: extra undos clamped at 0 (corrupt data scenario)', () => {
+  // 1 real win, but 5 undo-wins (someone spammed undo when they shouldn't)
+  const scores = [
+    {playerId:'A', result:'win', points:3},
+    ...[1,2,3,4,5].map(()=>({playerId:'A', result:'undo-win', points:-3})),
+  ];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  // After clamping: points=Math.max(0,-12)=0, wins=Math.max(0,-4)=0, played=Math.max(0,-4)=0
+  // → filtered out
+  return eq(daily.length, 0, 'corrupt data → dropped, no negatives exposed');
+});
+
+test('daily: mixed win+lose+undos', () => {
+  // 3 wins + 2 loses - 1 undo-win = 2 wins, 2 losses, 4 played, (9+2-3)=8 pts
+  const scores = [
+    {playerId:'A', result:'win',       points: 3},
+    {playerId:'A', result:'win',       points: 3},
+    {playerId:'A', result:'win',       points: 3},
+    {playerId:'A', result:'lose',      points: 1},
+    {playerId:'A', result:'lose',      points: 1},
+    {playerId:'A', result:'undo-win',  points:-3},
+  ];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  return eq({pts:daily[0].points, w:daily[0].wins, l:daily[0].losses, p:daily[0].played}, {pts:8,w:2,l:2,p:4});
+});
+
+test('daily: 2 players, correct ranking by win-rate tiebreak', () => {
+  const scores = [
+    // A: 3 wins, 0 losses → 9 pts, 100%
+    {playerId:'A', result:'win', points:3},
+    {playerId:'A', result:'win', points:3},
+    {playerId:'A', result:'win', points:3},
+    // B: 3 wins, 6 losses → 15 pts, 33%
+    {playerId:'B', result:'win', points:3},
+    {playerId:'B', result:'win', points:3},
+    {playerId:'B', result:'win', points:3},
+    ...[1,2,3,4,5,6].map(()=>({playerId:'B', result:'lose', points:1})),
+  ];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'},B:{id:'B'}});
+  return eq(daily.map(d => d.id), ['B','A'], 'B 15pt > A 9pt (points dominate)');
+});
+
+// ─── Optimistic update (updateList) ────────────────────────
+test('optimistic: + adds row if new', () => {
+  const list = [];
+  updateList(list, {id:'A',name:'Alice'}, 'A', 'win', 3, true);
+  return eq({len:list.length, pts:list[0].points, w:list[0].wins}, {len:1,pts:3,w:1});
+});
+
+test('optimistic: - clamps and drops when reaches 0', () => {
+  const list = [{id:'A',name:'Alice',points:3,wins:1,losses:0,played:1}];
+  updateList(list, {id:'A'}, 'A', 'undo-win', -3, true);
+  return eq(list.length, 0, 'row removed');
+});
+
+test('optimistic: - without drop (all-time view)', () => {
+  const list = [{id:'A',name:'Alice',points:3,wins:1,losses:0,played:1}];
+  updateList(list, {id:'A'}, 'A', 'undo-win', -3, false);
+  return eq({len:list.length, pts:list[0].points, w:list[0].wins, p:list[0].played}, {len:1,pts:0,w:0,p:0});
+});
+
+test('optimistic: + after drop re-adds', () => {
+  const list = [];
+  // Start: empty
+  updateList(list, {id:'A',name:'Alice'}, 'A', 'win', 3, true);
+  updateList(list, {id:'A',name:'Alice'}, 'A', 'undo-win', -3, true);
+  // Now empty (dropped)
+  updateList(list, {id:'A',name:'Alice'}, 'A', 'win', 3, true);
+  return eq({len:list.length, pts:list[0].points}, {len:1,pts:3});
+});
+
+test('optimistic: many + then many -, always clamps at 0', () => {
+  const list = [];
+  const u = {id:'A',name:'Alice'};
+  // +5 wins
+  for(let i=0;i<5;i++) updateList(list, u, 'A', 'win', 3, true);
+  // -10 wins (5 excess, simulating bad client)
+  for(let i=0;i<10;i++) updateList(list, u, 'A', 'undo-win', -3, true);
+  // After 5 valid undos, list should be empty
+  return eq(list.length, 0, 'row gone after fully canceled');
+});
+
+// ─── Server-side guard ─────────────────────────────────────
+test('server guard: no wins today → reject undo-win', () => {
+  const scores = []; // no scores today
+  const today = computeTodayCount(scores, 'A');
+  truthy(today.wins <= 0, 'todayWins=0');
+  return `todayWins=${today.wins} → guard blocks undo-win`;
+});
+
+test('server guard: 3 wins + 3 undo-wins = 0 today → reject another undo', () => {
+  const scores = [
+    ...[1,2,3].map(()=>({playerId:'A', result:'win'})),
+    ...[1,2,3].map(()=>({playerId:'A', result:'undo-win'})),
+  ];
+  const today = computeTodayCount(scores, 'A');
+  truthy(today.wins === 0, `todayWins=${today.wins}`);
+  return 'guard correctly sees net=0 → rejects next undo';
+});
+
+test('server guard: 5 wins, 2 undos → 3 remaining, allow up to 3 more', () => {
+  const scores = [
+    ...[1,2,3,4,5].map(()=>({playerId:'A', result:'win'})),
+    ...[1,2].map(()=>({playerId:'A', result:'undo-win'})),
+  ];
+  const today = computeTodayCount(scores, 'A');
+  return eq(today.wins, 3, 'can undo 3 more wins');
+});
+
+test('server guard: independent win / lose counts', () => {
+  const scores = [
+    {playerId:'A', result:'win'},
+    {playerId:'A', result:'win'},
+    {playerId:'A', result:'lose'},
+  ];
+  const today = computeTodayCount(scores, 'A');
+  return eq(today, {wins:2, losses:1});
+});
+
+// ─── Integration: realistic daily flow ─────────────────────
+test('flow: Alice plays 3W-1L, misclicks once, undoes', () => {
+  const scores = [];
+  // Alice plays real games: 3 win + 1 lose
+  scores.push({playerId:'A', result:'win',  points:3});
+  scores.push({playerId:'A', result:'win',  points:3});
+  scores.push({playerId:'A', result:'lose', points:1});
+  scores.push({playerId:'A', result:'win',  points:3});
+  // Misclick: extra win
+  scores.push({playerId:'A', result:'win',  points:3});
+  // Realize mistake, undo it (server guard checks: todayWins=4, allows)
+  const guard1 = computeTodayCount(scores, 'A');
+  truthy(guard1.wins > 0, 'guard allows undo');
+  scores.push({playerId:'A', result:'undo-win', points:-3});
+
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  return eq({pts:daily[0].points, w:daily[0].wins, l:daily[0].losses, p:daily[0].played}, {pts:10,w:3,l:1,p:4}, 'Alice: 10pt, 3W-1L');
+});
+
+test('flow: user reduces to 0 → row disappears → click + → reappears', () => {
+  let scores = [];
+  const u = {id:'A', name:'Alice'};
+  let list = [];
+
+  // + win
+  scores.push({playerId:'A', result:'win', points:3});
+  updateList(list, u, 'A', 'win', 3, true);
+  truthy(list.length === 1, 'visible after +');
+
+  // - win (to 0)
+  scores.push({playerId:'A', result:'undo-win', points:-3});
+  updateList(list, u, 'A', 'undo-win', -3, true);
+  truthy(list.length === 0, 'gone after -');
+
+  // + again
+  scores.push({playerId:'A', result:'win', points:3});
+  updateList(list, u, 'A', 'win', 3, true);
+  truthy(list.length === 1, 'back after + again');
+  truthy(list[0].points === 3, 'points reset to 3, not 0 or 6');
+
+  // Verify aggregation matches optimistic
+  const agg = aggregateDailyFromScores(scores, {A:u});
+  return eq({optimisticPts:list[0].points, aggPts:agg[0].points}, {optimisticPts:3, aggPts:3}, 'optimistic == aggregation');
+});
+
+// ─── All-time vs monthly consistency ───────────────────────
+test('all-time: clamps negatives from corrupt player doc', () => {
+  const players = [
+    {id:'A', name:'Corrupt', totalPoints:-10, wins:-5, losses:3, played:-2},
+    {id:'B', name:'Normal',  totalPoints: 15, wins: 5, losses:2, played: 7},
+  ];
+  const rankings = players.map(p => ({
+    ...p,
+    points: Math.max(0, p.totalPoints || 0),
+    played: Math.max(0, p.played  || 0),
+    wins:   Math.max(0, p.wins    || 0),
+    losses: Math.max(0, p.losses  || 0),
+  })).sort(rankCmp);
+  return eq(rankings.map(r => ({id:r.id,pts:r.points})), [{id:'B',pts:15},{id:'A',pts:0}], 'A clamped to 0, B on top');
+});
+
+test('consistency: monthly and all-time agree when recalced', () => {
+  // Assume Recalc fixed player A based on scores
+  const scores = [
+    {playerId:'A', result:'win', points:3},
+    {playerId:'A', result:'win', points:3},
+    {playerId:'A', result:'lose', points:1},
+  ];
+  // Monthly (aggregated from scores)
+  const monthly = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  // Simulated all-time (player doc after Recalc — clamped sums)
+  const allTime = {
+    points: Math.max(0, 3+3+1),
+    wins:   Math.max(0, 2),
+    losses: Math.max(0, 1),
+    played: Math.max(0, 3),
+  };
+  return eq({mPts:monthly[0].points, mW:monthly[0].wins, aPts:allTime.points, aW:allTime.wins}, {mPts:7,mW:2,aPts:7,aW:2}, 'both show 7 pts, 2W');
+});
+
+test('consistency: after undo, monthly and all-time drift fixed by clamping', () => {
+  // User did 1 win + 3 undo-wins (2 bogus). Scores-based aggregation nets to -6pts.
+  // Player doc should have been updated by transactions: after 1st undo, wins=0;
+  // subsequent undos should have been blocked server-side.
+  // So player doc: points=0, wins=0, losses=0, played=0 (after 1 valid undo)
+  const scores = [
+    {playerId:'A', result:'win', points:3},
+    {playerId:'A', result:'undo-win', points:-3},
+    // The next two wouldn't actually happen (server blocks) — but let's simulate leftover data
+    {playerId:'A', result:'undo-win', points:-3},
+    {playerId:'A', result:'undo-win', points:-3},
+  ];
+  const daily = aggregateDailyFromScores(scores, {A:{id:'A'}});
+  truthy(daily.length === 0 || daily[0].points >= 0, 'never negative in daily');
+  truthy(daily.every(d => d.wins >= 0 && d.losses >= 0 && d.played >= 0), 'all stats non-negative');
+  return daily.length === 0 ? 'dropped (clean)' : `visible but clamped: ${JSON.stringify(daily[0])}`;
+});
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const total = passed + failed;
+const summaryEl = document.getElementById('summary');
+summaryEl.innerHTML = failed === 0
+  ? `<strong style="color:var(--ok)">✅ ALL TESTS PASSED</strong> — ${passed}/${total} cases`
+  : `<strong style="color:var(--bad)">❌ ${failed} FAILED</strong> · ${passed} passed · ${total} total`;
+
+const byGroup = {};
+const groupFor = (name) => {
+  if(name.startsWith('winRatePct')) return '1. winRatePct()';
+  if(name.startsWith('rankCmp')) return '2. rankCmp() — sort order';
+  if(name.startsWith('withRanks')) return '3. withRanks() — tie detection';
+  if(name.startsWith('daily')) return '4. Daily aggregation + clamp + filter';
+  if(name.startsWith('optimistic')) return '5. Optimistic updates (applyOptimisticUpdate)';
+  if(name.startsWith('server guard')) return '6. Server-side undo guard';
+  if(name.startsWith('flow')) return '7. Integration flows';
+  if(name.startsWith('consistency') || name.startsWith('all-time')) return '8. Cross-view consistency';
+  return 'Other';
+};
+results.forEach(r => {
+  const g = groupFor(r.name);
+  if(!byGroup[g]) byGroup[g] = [];
+  byGroup[g].push(r);
+});
+
+const resEl = document.getElementById('results');
+Object.keys(byGroup).forEach(g => {
+  const h = document.createElement('h2');
+  h.textContent = g;
+  resEl.appendChild(h);
+  byGroup[g].forEach(r => {
+    const d = document.createElement('div');
+    d.className = 'case ' + (r.ok ? 'ok':'bad');
+    d.innerHTML = `<div><span class="check">${r.ok?'✓':'✗'}</span><span class="label">${r.name}</span></div><div class="detail">${r.detail}</div>`;
+    resEl.appendChild(d);
+  });
+});
+</script>
+</body>
+</html>

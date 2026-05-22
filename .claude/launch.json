@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "badminton-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8899"
+      ],
+      "port": 8899,
+      "cwd": "/Users/satirap/Desktop/01 PROJECTS/Web เก็บคะแนนแบด"
+    }
+  ]
+}
