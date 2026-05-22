@@ -20,13 +20,13 @@
   --ink:     #f5f3ee;
   --soft:    #c9c7c0;
   --mute:    #8e8c85;
-  --accent:  #c8f135;
-  --green:   #22c55e;
-  --gbg:     #14532d;
-  --gtxt:    #bbf7d0;
-  --blue:    #3b82f6;
-  --bbg:     #1e3a5f;
-  --btxt:    #bfdbfe;
+  --accent:  #A4D65E;
+  --green:   #9CCC65;
+  --gbg:     #2E7D32;
+  --gtxt:    #C8E6A0;
+  --blue:    #7CB342;
+  --bbg:     #3E8B41;
+  --btxt:    #C8E6A0;
   --red:     #ef4444;
   --radius:  14px;
   --rsm:     10px;
@@ -176,7 +176,7 @@ body{min-height:100dvh}
 }
 .section-head-count{
   font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
-  color:var(--accent);background:#c8f13518;border:1px solid var(--accent)60;
+  color:var(--accent);background:#A4D65E18;border:1px solid var(--accent)60;
   padding:3px 10px;border-radius:100px;
 }
 
@@ -283,7 +283,7 @@ body{min-height:100dvh}
   cursor:pointer;transition:all .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.btn-save:active{background:#c8f13510}
+.btn-save:active{background:#A4D65E10}
 .btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-clear{
   width:100%;padding:14px;border-radius:var(--radius);
@@ -307,8 +307,8 @@ body{min-height:100dvh}
   font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
   padding:3px 10px;border-radius:20px;
 }
-.hc-badge.complete{background:#c8f13520;color:var(--accent);border:1px solid var(--accent)40}
-.hc-badge.open{background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2440}
+.hc-badge.complete{background:#A4D65E20;color:var(--accent);border:1px solid var(--accent)40}
+.hc-badge.open{background:#FBC02D20;color:#FBC02D;border:1px solid #FBC02D40}
 .history-card .hc-stats{
   display:flex;gap:16px;margin-bottom:12px;
 }
@@ -388,7 +388,7 @@ body{min-height:100dvh}
 .vm-sum-item{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center}
 .vm-sum-item.cash{border-color:var(--green)50}
 .vm-sum-item.transfer{border-color:var(--blue)50}
-.vm-sum-item.unpaid{border-color:#fbbf2450}
+.vm-sum-item.unpaid{border-color:#FBC02D50}
 .vm-sum-num{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;color:var(--ink)}
 .vm-sum-item.cash .vm-sum-num{color:var(--gtxt)}
 .vm-sum-item.transfer .vm-sum-num{color:var(--btxt)}
@@ -411,7 +411,7 @@ body{min-height:100dvh}
 }
 .vm-player .vp-status.cash{background:var(--gbg);color:var(--gtxt);border:1px solid var(--green)80}
 .vm-player .vp-status.transfer{background:var(--bbg);color:var(--btxt);border:1px solid var(--blue)80}
-.vm-player .vp-status.unpaid{background:transparent;color:#fcd34d;border:1px solid #fbbf2460}
+.vm-player .vp-status.unpaid{background:transparent;color:#fcd34d;border:1px solid #FBC02D60}
 
 /* ── Empty state ── */
 .empty{
@@ -613,8 +613,8 @@ body{min-height:100dvh}
 }
 .stp-field.need-fill label{color:#F57F17;font-weight:900}
 @keyframes nudge{
-  0%,100%{box-shadow:0 0 0 0 #fbbf2400}
-  50%{box-shadow:0 0 0 4px #fbbf2440}
+  0%,100%{box-shadow:0 0 0 0 #FBC02D00}
+  50%{box-shadow:0 0 0 4px #FBC02D40}
 }
 
 .setup-totals{
@@ -634,23 +634,33 @@ body{min-height:100dvh}
 
 /* ราคาที่จะแจ้ง (override) */
 .stp-override{
-  background:#c8f13510;border:1.5px solid var(--accent);
-  border-radius:12px;padding:12px 14px;margin-top:10px;
+  background:linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%);
+  border:2px solid #A4D65E;
+  border-radius:14px;padding:16px 18px;margin-top:12px;
+  box-shadow:0 4px 12px rgba(164, 214, 94, 0.15), 0 2px 6px rgba(85, 139, 47, 0.08);
 }
-.ov-label{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:8px}
-.ov-label small{font-weight:500;color:var(--soft);margin-left:4px}
-.ov-row{display:flex;align-items:center;gap:8px}
+.ov-label{font-size:14px;font-weight:900;color:#1B5E20;margin-bottom:10px;text-transform:uppercase;letter-spacing:.02em}
+.ov-label small{font-weight:700;color:#9CCC65;margin-left:6px;font-size:12px}
+.ov-row{display:flex;align-items:center;gap:10px}
 .ov-row input{
-  flex:1;background:var(--input);border:1.5px solid var(--accent);border-radius:8px;
-  padding:10px 14px;color:var(--accent);
-  font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:800;
+  flex:1;background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
+  border:2px solid #A4D65E;border-radius:10px;
+  padding:12px 16px;color:#1B5E20;
+  font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:900;
   text-align:right;outline:none;
+  transition:all .2s ease;
+  box-shadow:0 2px 8px rgba(164, 214, 94, 0.1);
+}
+.ov-row input:focus{
+  border-color:#9CCC65;
+  background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
+  box-shadow:0 4px 16px rgba(164, 214, 94, 0.25);
 }
 .ov-row input::-webkit-outer-spin-button,
 .ov-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.ov-unit{font-size:13px;font-weight:700;color:var(--accent)}
-.ov-hint{font-size:11px;color:var(--mute);margin-top:6px;font-style:italic}
-.ov-hint.active{color:var(--accent);font-style:normal;font-weight:700}
+.ov-unit{font-size:14px;font-weight:900;color:#A4D65E}
+.ov-hint{font-size:12px;color:#9CCC65;margin-top:8px;font-weight:600}
+.ov-hint.active{color:#558B2F;font-weight:800}
 
 /* กองกลาง row */
 .gongklang-row{
@@ -727,7 +737,7 @@ body{min-height:100dvh}
   font-size:13px;font-weight:700;line-height:1.5;text-align:center;
 }
 .mismatch-banner.warn{
-  background:#fbbf2418;color:#fbbf24;border:1.5px solid #fbbf2480;
+  background:#FBC02D18;color:#FBC02D;border:1.5px solid #FBC02D80;
 }
 .mismatch-banner.ok{
   background:#22c55e18;color:#bbf7d0;border:1.5px solid #22c55e80;
@@ -913,10 +923,10 @@ body{min-height:100dvh}
   <div id="view-collect">
 
     <!-- Edit-mode banner: แสดงเฉพาะตอนแก้ไขรอบที่จบแล้ว -->
-    <div id="edit-complete-banner" style="display:none;background:#fbbf24;color:#1f2937;padding:12px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:14px;text-align:center;line-height:1.5">
+    <div id="edit-complete-banner" style="display:none;background:#FBC02D;color:#1f2937;padding:12px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:14px;text-align:center;line-height:1.5">
       <div>✅ รอบนี้จบแล้ว · กำลังแก้ไข</div>
       <div style="font-weight:500;font-size:11px;opacity:.85;margin-top:2px">บันทึกอัตโนมัติทุกครั้งที่แก้ · สถานะ "จ่ายครบ" คงเดิม</div>
-      <button onclick="exitEditMode()" style="margin-top:10px;background:#1f2937;color:#fbbf24;border:none;border-radius:8px;padding:8px 18px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">
+      <button onclick="exitEditMode()" style="margin-top:10px;background:#1f2937;color:#FBC02D;border:none;border-radius:8px;padding:8px 18px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">
         ✓ เสร็จแล้ว · ออกจากการแก้ไข
       </button>
     </div>
@@ -1970,7 +1980,7 @@ async function loadHistory(){
           ${badge}
         </div>
         ${isComplete ? `
-        <div style="background:#c8f13518;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <div style="background:#A4D65E18;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
           <span style="font-size:13px;color:var(--soft);font-weight:600">💰 ยอดเก็บได้รอบนี้</span>
           <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollected)} ฿</span>
         </div>` : ''}
@@ -2067,7 +2077,7 @@ function renderViewModal(d){
     <div class="vm-block">
       <div class="vm-block-head">📊 สรุปการจ่าย</div>
       ${isCompleteView ? `
-      <div style="background:#c8f13520;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
+      <div style="background:#A4D65E20;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-size:14px;font-weight:700;color:var(--accent)">💰 ยอดเก็บได้รอบนี้</span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollectedView)} ฿</span>
       </div>` : ''}
@@ -2192,7 +2202,7 @@ function buildPaymentFlex(d){
       type:'box', layout:'vertical', paddingAll:'16px',
       backgroundColor:'#16181d',
       contents:[
-        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#c8f135', weight:'bold', size:'md' },
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#A4D65E', weight:'bold', size:'md' },
         { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
       ]
     },
@@ -2210,7 +2220,7 @@ function buildPaymentFlex(d){
         // Per-person highlight
         {
           type:'box', layout:'vertical',
-          backgroundColor:'#c8f135', cornerRadius:'10px', paddingAll:'14px',
+          backgroundColor:'#A4D65E', cornerRadius:'10px', paddingAll:'14px',
           margin:'md',
           contents:[
             { type:'text', text:`💸 เฉลี่ยต่อคน (${total} คน)`, color:'#1a1a1a', size:'xs', weight:'bold', align:'center' },
@@ -2327,7 +2337,7 @@ function buildPriceFlex(s, opts){
     header:{
       type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
       contents:[
-        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#A4D65E', weight:'bold', size:'lg' },
         { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
       ]
     },
@@ -2338,7 +2348,7 @@ function buildPriceFlex(s, opts){
         ...costRows,
         // Per-person highlight
         {
-          type:'box', layout:'vertical', backgroundColor:'#c8f135',
+          type:'box', layout:'vertical', backgroundColor:'#A4D65E',
           cornerRadius:'12px', paddingAll:'16px', margin:'lg',
           contents:[
             { type:'text', text:'💸 ราคาต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
@@ -2352,7 +2362,7 @@ function buildPriceFlex(s, opts){
           margin:'sm', spacing:'sm',
           contents:[
             { type:'text', text:'💰 เก็บเข้ากองกลาง', color:'#c9c7c0', size:'sm', weight:'bold', flex:6 },
-            { type:'text', text:`${fmtBaht(gongklang)} บาท`, color:'#c8f135', size:'sm', weight:'bold', align:'end', flex:4 },
+            { type:'text', text:`${fmtBaht(gongklang)} บาท`, color:'#A4D65E', size:'sm', weight:'bold', align:'end', flex:4 },
           ]
         }] : []),
         // QR section
@@ -2419,7 +2429,7 @@ function buildStatusFlex(s){
     header:{
       type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
       contents:[
-        { type:'text', text:'📊 สรุปการจ่ายเงิน', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:'📊 สรุปการจ่ายเงิน', color:'#A4D65E', weight:'bold', size:'lg' },
         { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
       ]
     },
