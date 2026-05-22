@@ -898,6 +898,57 @@ body{min-height:100dvh}
   .player-table{grid-template-columns:repeat(3,1fr)}
 }
 
+/* ════════════════════════════════════════════════════════════
+   SECTION-SPECIFIC COLOR SCHEMES
+   ════════════════════════════════════════════════════════════ */
+
+/* Section 1: Members List - Blue/Dark Blue Theme */
+#section-members {
+  --accent:  #3B82F6;
+  --green:   #1E40AF;
+  --gbg:     #1E3A8A;
+  --gtxt:    #93C5FD;
+}
+#section-members .paste-btn,
+#section-members .add-form .add-btn {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+}
+#section-members .paste-card,
+#section-members .player-list {
+  border-color: #3B82F6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+/* Section 3: Payment Receive - Pink Theme */
+#section-payment {
+  --accent:  #EC4899;
+  --green:   #BE185D;
+  --gbg:     #831843;
+  --gtxt:    #F5A6D3;
+}
+#section-payment .payment-header {
+  border-color: #EC4899;
+}
+#section-payment .pay-btn-big.cash.on {
+  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
+  border-color: #EC4899;
+}
+#section-payment .player-table {
+  background: linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%);
+}
+#section-payment .player-row {
+  border-left-color: #EC4899;
+}
+#section-payment .pay-btn-big {
+  border-color: #EC4899;
+  color: #EC4899;
+  transition: all .2s ease;
+}
+#section-payment .pay-btn-big:active {
+  background: #EC4899;
+  color: #fff;
+}
+
 </style>
 </head>
 <body>
