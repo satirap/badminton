@@ -802,6 +802,54 @@ body{min-height:100dvh}
 /* Edit section in setup card (when a complete session is being edited) */
 .setup-card.locked .stp-field input{color:var(--mute)}
 
+/* Court Breakdown Section (ใหม่) */
+.court-breakdown-section{
+  margin:16px 0 12px;padding:14px 12px;
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--rsm);
+}
+.breakdown-label{
+  font-size:13px;font-weight:700;color:var(--mute);
+  letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:10px;font-family:'IBM Plex Mono',monospace;
+}
+.court-items-wrapper{margin-bottom:10px}
+.breakdown-header{
+  display:grid;grid-template-columns:1fr 80px 36px;gap:8px;
+  font-size:11px;font-weight:700;color:var(--mute);
+  text-transform:uppercase;padding:8px 0;border-bottom:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;
+}
+.court-items{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.court-item{
+  display:grid;grid-template-columns:1fr 80px 36px;gap:8px;align-items:center;
+}
+.court-item .court-name,
+.court-item .court-hours{
+  padding:9px 10px;border:1.5px solid var(--border);
+  background:var(--input);border-radius:var(--rsm);
+  color:var(--ink);font-size:14px;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;outline:none;
+}
+.court-item .court-name{text-align:center}
+.court-item .court-hours{text-align:right}
+.court-item .court-name:focus,
+.court-item .court-hours:focus{border-color:var(--accent)}
+.btn-del-court{
+  padding:8px 0;border:none;background:transparent;
+  color:var(--mute);font-size:18px;cursor:pointer;
+  font-weight:700;transition:color .15s;-webkit-tap-highlight-color:transparent;
+}
+.btn-del-court:active{color:var(--red)}
+.btn-add-court{
+  width:100%;padding:10px;border:1.5px dashed var(--border);
+  background:transparent;border-radius:var(--rsm);
+  color:var(--accent);font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;
+  font-family:inherit;
+}
+.btn-add-court:active{background:var(--border)60;border-color:var(--accent)}
+
 /* iPad layout: payment cards in 2 columns */
 @media (min-width:768px){
   .setup-grid{grid-template-columns:repeat(3,1fr)}
@@ -913,26 +961,35 @@ body{min-height:100dvh}
               </div>
             </div>
             <div class="stp-field">
-              <label>จำนวนคอร์ท</label>
-              <div class="stp-field-row">
-                <input type="number" id="courts" value="1" min="1" step="1" inputmode="numeric"/>
-                <span class="suf">คอร์ท</span>
-              </div>
-            </div>
-            <div class="stp-field">
               <label>ค่าคอร์ท/ชั่วโมง</label>
               <div class="stp-field-row">
-                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric"/>
+                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
                 <span class="suf">฿</span>
               </div>
             </div>
-            <div class="stp-field">
-              <label>จำนวน ชม.</label>
-              <div class="stp-field-row">
-                <input type="number" id="hours" value="2" min="0.5" step="0.5" inputmode="decimal"/>
-                <span class="suf">ชม.</span>
+          </div>
+
+          <!-- Court Breakdown Section (ใหม่) -->
+          <div class="court-breakdown-section">
+            <div class="breakdown-label">🏸 คอร์ท</div>
+            <div class="court-items-wrapper">
+              <div class="breakdown-header">
+                <span>ชื่อ</span>
+                <span>ชั่วโมง</span>
+                <span></span>
+              </div>
+              <div id="court-list" class="court-items">
+                <div class="court-item" data-court-id="3">
+                  <input class="court-name" type="text" value="3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+                </div>
               </div>
             </div>
+            <button class="btn-add-court" onclick="addNewCourt()">+ เพิ่มคอร์ท</button>
+          </div>
+
+          <div class="setup-grid">
             <div class="stp-field">
               <label>ลูกแบด/ลูก</label>
               <div class="stp-field-row">
@@ -1127,15 +1184,14 @@ function newSession(){
     date:        iso,
     dateDisplay: thaiDate(iso),
     status:      'open',
-    // ── ตัวตั้ง: คอร์ท/เรท/ชม. (ใหม่) — courtFee จะ derive จาก 3 ตัวนี้
-    courts:        1,
-    courtRate:     220, // default ค่าคอร์ท/ชม.
-    hours:         2,
-    courtFee:      0,   // = courts × courtRate × hours (สำหรับ compat)
-    shuttlePrice:  75,  // default ค่าลูก/ลูก
+    // ── Court Breakdown (ใหม่) — แต่ละคอร์ทมีชั่วโมงแยก
+    courtRate:     220,  // default ค่าคอร์ท/ชม.
+    courts:        [{name: '3', hours: 2}],  // court breakdown array (default: 3, then 4, 5, 6...)
+    courtFee:      0,    // = total court-hours × courtRate
+    shuttlePrice:  75,   // default ค่าลูก/ลูก
     shuttleCount:  0,
-    memberEstimate: 0,  // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
-    priceOverride: 0,   // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
+    memberEstimate: 0,   // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
+    priceOverride: 0,    // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
     players:       [],
     createdAt:     new Date().toISOString(),
     completedAt:   null,
@@ -1164,16 +1220,26 @@ function getFloatInput(id, def){
   return isNaN(v) || v < 0 ? (def||0) : v;
 }
 
+function getTotalCourtHours(){
+  // Sum all court hours from the breakdown
+  const items = document.querySelectorAll('.court-item .court-hours');
+  let total = 0;
+  items.forEach(input => {
+    const val = parseFloat(input.value) || 0;
+    if(val > 0) total += val;
+  });
+  return total;
+}
+
 function getCostBreakdown(){
-  const courts       = getNumInput('courts') || 1;
   const courtRate    = getNumInput('court-rate');
-  const hours        = getFloatInput('hours', 0);
+  const courtHours   = getTotalCourtHours();
   const shuttlePrice = getNumInput('shuttle-price');
   const shuttleCount = getNumInput('shuttle-count');
-  const courtFee     = courts * courtRate * hours; // ค่าคอร์ททั้งหมด
+  const courtFee     = courtHours * courtRate; // court-hours × rate
   const shuttleCost  = shuttlePrice * shuttleCount;
   const totalCost    = courtFee + shuttleCost;
-  return { courts, courtRate, hours, courtFee, shuttlePrice, shuttleCount, shuttleCost, totalCost };
+  return { courtHours, courtRate, courtFee, shuttlePrice, shuttleCount, shuttleCost, totalCost };
 }
 
 /** จำนวนคนที่ใช้คำนวณราคา — ใช้ member-est เป็นหลัก, fallback ไป players.length */
@@ -1346,9 +1412,11 @@ function mergeRemoteIntoSession(d){
       el.value = (v ?? 0);
     }
   };
-  if(d.courts        !== undefined){ session.courts        = d.courts || 1;  setIfNotFocused('courts', session.courts); }
+  if(d.courts        !== undefined){
+    session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
+    setSetupInputsFromSession(); // Rebuild court items
+  }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
-  if(d.hours         !== undefined){ session.hours         = d.hours || 2;    setIfNotFocused('hours', session.hours); }
   if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
   if(d.shuttleCount  !== undefined){ session.shuttleCount  = d.shuttleCount || 0; setIfNotFocused('shuttle-count', session.shuttleCount); }
   if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
@@ -1396,9 +1464,8 @@ async function cloudSync(){
       dateDisplay:    session.dateDisplay,
       players:        session.players,
       // Cost breakdown
-      courts:         breakdown.courts,
+      courts:         session.courts, // court breakdown array
       courtRate:      breakdown.courtRate,
-      hours:          breakdown.hours,
       courtFee:       breakdown.courtFee,
       shuttlePrice:   breakdown.shuttlePrice,
       shuttleCount:   breakdown.shuttleCount,
@@ -1456,9 +1523,8 @@ async function loadTodayOpenSession(){
       date:        d.date || iso,
       dateDisplay: d.dateDisplay || thaiDate(iso),
       status:      'open',
-      courts:        d.courts || 1,
+      courts:        Array.isArray(d.courts) ? d.courts : [{name: 'A', hours: 2}],
       courtRate:     d.courtRate || 0,
-      hours:         d.hours || 2,
       courtFee:      d.courtFee     || 0,
       shuttlePrice:  d.shuttlePrice || 0,
       shuttleCount:  d.shuttleCount || 0,
@@ -1572,7 +1638,7 @@ function renderSummary(){
   const transN   = session.players.filter(p => p.transfer).length;
   const paidN    = cashN + transN;
   const bd = getCostBreakdown();
-  const { totalCost, courts, courtRate, hours, courtFee, shuttlePrice, shuttleCount, shuttleCost } = bd;
+  const { totalCost, courtHours, courtRate, courtFee, shuttlePrice, shuttleCount, shuttleCost } = bd;
   const pp = getPerPerson();
 
   // ผลรวมจริงตามคน (รองรับเล่นไม่เท่ากัน)
@@ -1598,7 +1664,7 @@ function renderSummary(){
   const perNoteEl      = document.getElementById('per-note');
   if(courtCostEl)    courtCostEl.textContent    = fmtBaht(courtFee);
   if(shuttleCostEl)  shuttleCostEl.textContent  = fmtBaht(shuttleCost);
-  if(courtFormulaEl) courtFormulaEl.textContent = (courts && courtRate && hours) ? `(${courts}×${courtRate}×${hours})` : '';
+  if(courtFormulaEl) courtFormulaEl.textContent = (courtHours && courtRate) ? `${courtHours} court-hours @ ${courtRate}฿` : '';
   if(shuttleFormEl)  shuttleFormEl.textContent  = (shuttlePrice && shuttleCount) ? `(${shuttlePrice}×${shuttleCount})` : '';
   if(costTotalEl)    costTotalEl.textContent    = fmtBaht(totalCost);
   if(costPerEl)      costPerEl.textContent      = fmtBaht(pp);
@@ -2558,9 +2624,8 @@ async function editSession(docId){
       date:        d.date,
       dateDisplay: d.dateDisplay || thaiDate(d.date),
       status:      origStatus,
-      courts:        d.courts || 1,
+      courts:        Array.isArray(d.courts) ? d.courts : [{name: 'A', hours: 2}],
       courtRate:     d.courtRate || 0,
-      hours:         d.hours || 2,
       courtFee:      d.courtFee     || 0,
       shuttlePrice:  d.shuttlePrice || 0,
       shuttleCount:  d.shuttleCount || 0,
@@ -2792,12 +2857,55 @@ document.getElementById('new-member-name').addEventListener('keydown', e => {
   if(e.key === 'Enter') addNewMember();
 });
 
+// Court breakdown operations
+function addNewCourt(){
+  const list = document.getElementById('court-list');
+  const name = String(3 + list.children.length); // 4, 5, 6, ... (เพิ่มจากคอร์ท 3 ที่เริ่มต้น)
+  const item = document.createElement('div');
+  item.className = 'court-item';
+  item.dataset.courtId = name;
+  item.innerHTML = `
+    <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+    <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+    <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+  `;
+  list.appendChild(item);
+  updateCourtCalculation();
+}
+
+function removeCourt(btn){
+  const item = btn.closest('.court-item');
+  if(!confirm('ลบคอร์ท ' + item.dataset.courtId + '?')) return;
+  item.remove();
+  updateCourtCalculation();
+}
+
+function updateCourtCalculation(){
+  const courtHours = getTotalCourtHours();
+  const rate = getNumInput('court-rate');
+  const courtFee = courtHours * rate;
+
+  // 💾 Save current court breakdown to session
+  const courtItems = document.querySelectorAll('.court-item');
+  session.courts = Array.from(courtItems).map(item => ({
+    name: item.querySelector('.court-name')?.value || '?',
+    hours: parseFloat(item.querySelector('.court-hours')?.value) || 0
+  }));
+
+  // Update formula display
+  const formula = document.getElementById('court-formula');
+  if(formula) formula.textContent = `${courtHours} court-hours @ ${rate}฿`;
+
+  const display = document.getElementById('court-cost-display');
+  if(display) display.textContent = fmtBaht(courtFee);
+
+  onCostInputChange();
+}
+
 // Any setup input change → recompute summary + save
 function onCostInputChange(e){
   const b = getCostBreakdown();
-  session.courts        = b.courts;
   session.courtRate     = b.courtRate;
-  session.hours         = b.hours;
   session.courtFee      = b.courtFee;
   session.shuttlePrice  = b.shuttlePrice;
   session.shuttleCount  = b.shuttleCount;
@@ -2812,7 +2920,7 @@ function onCostInputChange(e){
   renderSummary();
   renderTable();
 }
-['member-est','courts','court-rate','hours','shuttle-price','shuttle-count','price-override'].forEach(id => {
+['member-est','court-rate','shuttle-price','shuttle-count','price-override'].forEach(id => {
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', onCostInputChange);
 });
@@ -2821,13 +2929,30 @@ function onCostInputChange(e){
 function setSetupInputsFromSession(){
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = (v ?? 0); };
   set('member-est',     session.memberEstimate || 0);
-  set('courts',         session.courts || 1);
   set('court-rate',     session.courtRate || 0);
-  set('hours',          session.hours || 2);
   set('shuttle-price',  session.shuttlePrice || 0);
   set('shuttle-count',  session.shuttleCount || 0);
   set('court-fee',      session.courtFee || 0);
   set('price-override', session.priceOverride || 0);
+
+  // Render court breakdown items
+  const courtList = document.getElementById('court-list');
+  if(courtList){
+    courtList.innerHTML = '';
+    const courts = session.courts || [{name: '3', hours: 2}];
+    (Array.isArray(courts) ? courts : [{name: '3', hours: 2}]).forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'court-item';
+      item.dataset.courtId = c.name;
+      item.innerHTML = `
+        <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+        <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+        <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+      `;
+      courtList.appendChild(item);
+    });
+  }
+  updateCourtCalculation();
 }
 
 /* ================================================================
