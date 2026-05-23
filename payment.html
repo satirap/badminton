@@ -102,7 +102,7 @@ body{min-height:100dvh}
 .cost-head .c-toggle{
   background:var(--input);border:1.5px solid var(--border);color:var(--ink);
   border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:700;
-  letter-spacing:.06em;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  letter-spacing:.06em;cursor:pointer;display:none;align-items:center;gap:6px;
   -webkit-tap-highlight-color:transparent;
 }
 .cost-head .c-toggle:active{transform:scale(.94)}
@@ -113,9 +113,9 @@ body{min-height:100dvh}
   color:var(--soft);letter-spacing:.02em;margin-top:8px;
 }
 .cost-card .c-summary b{color:var(--accent);font-weight:800}
-.cost-card.collapsed .c-summary{display:block}
+.cost-card.collapsed .c-summary{display:none}
 .cost-card.collapsed .cost-row,
-.cost-card.collapsed .cost-total-row{display:none}
+.cost-card.collapsed .cost-total-row{display:block}
 .cost-row{
   display:grid;grid-template-columns:1fr 96px 36px;align-items:center;gap:10px;
   padding:10px 0;border-bottom:1px dashed var(--border);
@@ -160,10 +160,10 @@ body{min-height:100dvh}
 .summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:900;line-height:1.1;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:4px}
 .summary-bar .s-num .baht{font-size:18px;font-weight:700;opacity:.8;margin-left:2px}
 .summary-bar .s-lbl{font-size:16px;color:var(--mute);margin-top:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px}
-.summary-bar .s-item.cash{background:linear-gradient(135deg, rgba(76,175,80,.15), rgba(76,175,80,.08));border-color:#66BB6A;box-shadow:0 8px 20px rgba(76,175,80,.12)}
-.summary-bar .s-item.cash .s-num{color:#2E7D32}
-.summary-bar .s-item.transfer{background:linear-gradient(135deg, rgba(33,150,243,.15), rgba(33,150,243,.08));border-color:#42A5F5;box-shadow:0 8px 20px rgba(33,150,243,.12)}
-.summary-bar .s-item.transfer .s-num{color:#1565C0}
+.summary-bar .s-item.cash{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
+.summary-bar .s-item.cash .s-num{color:#558B2F}
+.summary-bar .s-item.transfer{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
+.summary-bar .s-item.transfer .s-num{color:#558B2F}
 .summary-bar .s-item.total{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
 .summary-bar .s-item.total .s-num{color:#558B2F}
 
@@ -198,8 +198,8 @@ body{min-height:100dvh}
   min-height:70px;
 }
 .player-row.paid-both{border-color:var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.1), rgba(164,214,94,.05));box-shadow:0 4px 12px rgba(164,214,94,.12)}
-.player-row.paid-cash{border-color:#66BB6A;background:linear-gradient(135deg, rgba(76,175,80,.1), rgba(76,175,80,.05));box-shadow:0 4px 12px rgba(76,175,80,.1)}
-.player-row.paid-transfer{border-color:#42A5F5;background:linear-gradient(135deg, rgba(33,150,243,.1), rgba(33,150,243,.05));box-shadow:0 4px 12px rgba(33,150,243,.1)}
+.player-row.paid-cash{border-color:var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.1), rgba(164,214,94,.05));box-shadow:0 4px 12px rgba(164,214,94,.12)}
+.player-row.paid-transfer{border-color:var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.1), rgba(164,214,94,.05));box-shadow:0 4px 12px rgba(164,214,94,.12)}
 
 .player-row .num{
   font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
@@ -221,8 +221,8 @@ body{min-height:100dvh}
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn:active{transform:scale(.95)}
-.pay-btn.on.cash{background:linear-gradient(135deg, #66BB6A, #4CAF50);border-color:#2E7D32;color:#fff}
-.pay-btn.on.transfer{background:linear-gradient(135deg, #42A5F5, #2196F3);border-color:#1565C0;color:#fff}
+.pay-btn.on.cash{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
+.pay-btn.on.transfer{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
 
 .del-btn{
   width:36px;height:36px;border-radius:10px;border:none;
@@ -469,25 +469,27 @@ body{min-height:100dvh}
   -webkit-tap-highlight-color:transparent;
 }
 .sub-tab.active{
-  color:#fff;
-  box-shadow:0 6px 16px rgba(164,214,94,.25);
+  color:#111;
+  background:var(--accent);
+  box-shadow:0 6px 16px rgba(164,214,94,.4);
+  font-weight:900;
 }
 
 /* Section-specific tab colors */
 #section-members .sub-tab.active{
-  background:linear-gradient(135deg, #3B82F6, #2563EB);
-  color:#fff;
-  box-shadow:0 6px 16px rgba(59,130,246,.25);
+  background:var(--accent);
+  color:#111;
+  box-shadow:0 6px 16px rgba(164,214,94,.4);
 }
 #section-price .sub-tab.active{
-  background:linear-gradient(135deg, #A4D65E, #9CCC65);
-  color:#2D5016;
-  box-shadow:0 6px 16px rgba(164,214,94,.25);
+  background:var(--accent);
+  color:#111;
+  box-shadow:0 6px 16px rgba(164,214,94,.4);
 }
 #section-payment .sub-tab.active{
-  background:linear-gradient(135deg, #EC4899, #DB2777);
-  color:#fff;
-  box-shadow:0 6px 16px rgba(236,72,153,.25);
+  background:var(--accent);
+  color:#111;
+  box-shadow:0 6px 16px rgba(164,214,94,.4);
 }
 
 .sub-tab .badge{
@@ -864,8 +866,8 @@ body{min-height:100dvh}
   min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn-big:active{transform:scale(.97)}
-.pay-btn-big.cash.on{background:var(--gbg);border-color:var(--green);color:var(--gtxt)}
-.pay-btn-big.transfer.on{background:var(--bbg);border-color:var(--blue);color:var(--btxt)}
+.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
+.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
 .pay-btn-big .ic{font-size:24px;line-height:1}
 
 /* Edit section in setup card (when a complete session is being edited) */
@@ -1222,6 +1224,22 @@ body{min-height:100dvh}
       <!-- Mismatch banner: เตือนถ้าจำนวนผู้เล่น ≠ คนที่ใช้คำนวณ -->
       <div id="mismatch-banner" class="mismatch-banner" style="display:none"></div>
 
+      <!-- Payment counters: รับเงินไปกี่คน -->
+      <div class="payment-counters" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:var(--accent);font-family:'IBM Plex Mono',monospace">
+            <span id="payment-cash-count">0</span>
+          </div>
+          <div style="font-size:12px;color:var(--mute);font-weight:700;margin-top:6px">💵 รับเงินสด</div>
+        </div>
+        <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:24px;font-weight:900;color:var(--accent);font-family:'IBM Plex Mono',monospace">
+            <span id="payment-transfer-count">0</span>
+          </div>
+          <div style="font-size:12px;color:var(--mute);font-weight:700;margin-top:6px">📲 รับเงินโอน</div>
+        </div>
+      </div>
+
       <!-- Summary (in baht) -->
       <div class="summary-bar">
         <div class="s-item total">
@@ -1270,7 +1288,10 @@ body{min-height:100dvh}
   <!-- ============ TAB: HISTORY ============ -->
   <div id="view-history" style="display:none">
     <button class="back-btn" onclick="switchTab('collect')">← กลับหน้าเก็บเงิน</button>
-    <h3 style="margin:0 0 12px;font-size:17px;color:var(--ink);font-weight:800">📋 ประวัติการเก็บเงิน</h3>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="font-size:28px">📊</div>
+      <h3 style="margin:0;font-size:17px;color:var(--ink);font-weight:800">ประวัติรับเงิน</h3>
+    </div>
     <div class="history-list" id="history-list">
       <div class="empty">กำลังโหลด...</div>
     </div>
@@ -1888,6 +1909,10 @@ function renderSummary(){
   document.getElementById('sum-cash-baht').innerHTML     = `${fmtBaht(cashB)}<span class="baht">฿</span>`;
   document.getElementById('sum-transfer-baht').innerHTML = `${fmtBaht(transB)}<span class="baht">฿</span>`;
 
+  // Payment counters: update counts of cash and transfer payments
+  document.getElementById('payment-cash-count').textContent = cashN;
+  document.getElementById('payment-transfer-count').textContent = transN;
+
   // Save button: disable when no players
   const saveBtn = document.getElementById('btn-save');
   if(saveBtn){
@@ -1921,17 +1946,14 @@ function renderSummary(){
     }
   }
 
-  // Finish button: แสดงเฉพาะ status='open' + จ่ายครบ
+  // Finish button: แสดงเฉพาะ status='open' - สามารถจบรอบได้ตลอด
   //   - status='complete' → ใช้ปุ่ม "เสร็จแล้ว" ใน banner สีเหลืองแทน
   const finBtn = document.getElementById('btn-complete');
   if(finBtn){
-    const allPaid = total > 0 && paidN >= total;
     const isComplete = session?.status === 'complete';
-    finBtn.style.display = (allPaid && !isComplete) ? 'flex' : 'none';
-    finBtn.disabled = mismatch;
-    finBtn.textContent = mismatch
-      ? `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`
-      : `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
+    finBtn.style.display = !isComplete ? 'flex' : 'none';
+    finBtn.disabled = false;
+    finBtn.textContent = `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
   }
 
   // Edit-mode banner (เฉพาะรอบที่จบแล้วและกำลังแก้ไข)
@@ -1958,8 +1980,7 @@ async function completeSession(){
   const cashN  = session.players.filter(p => p.cash).length;
   const transN = session.players.filter(p => p.transfer).length;
   const paidN  = cashN + transN;
-  if(paidN < session.players.length){ toast('ยังไม่จ่ายครบ'); return; }
-  if(!confirm('จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?')) return;
+  if(!confirm('จบรอบเก็บเงิน?')) return;
 
   const btn = document.getElementById('btn-complete');
   btn.disabled = true;
