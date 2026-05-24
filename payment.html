@@ -1139,6 +1139,16 @@ body{min-height:100dvh}
                   <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
+                <div class="court-item" data-court-id="4">
+                  <input class="court-name" type="text" value="4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+                </div>
+                <div class="court-item" data-court-id="5">
+                  <input class="court-name" type="text" value="5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+                </div>
               </div>
             </div>
             <button class="btn-add-court" onclick="addNewCourt()">+ เพิ่มคอร์ท</button>
@@ -1379,7 +1389,7 @@ function newSession(){
     status:      'open',
     // ── Court Breakdown (ใหม่) — แต่ละคอร์ทมีชั่วโมงแยก
     courtRate:     220,  // default ค่าคอร์ท/ชม.
-    courts:        [{name: '3', hours: 2}],  // court breakdown array (default: 3, then 4, 5, 6...)
+    courts:        [{name: '3', hours: 2}, {name: '4', hours: 2}, {name: '5', hours: 2}],  // court breakdown array (default: 3, 4, 5 with 2 hours each)
     courtFee:      0,    // = total court-hours × courtRate
     shuttlePrice:  75,   // default ค่าลูก/ลูก
     shuttleCount:  0,
