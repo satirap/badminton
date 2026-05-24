@@ -622,6 +622,9 @@ body{min-height:100dvh}
 .setup-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:14px 16px;margin-bottom:16px;
 }
+.setup-grid-4col{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px 16px;margin-bottom:16px;
+}
 .stp-field{
   display:flex;flex-direction:column;gap:8px;
   background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
@@ -936,9 +939,15 @@ body{min-height:100dvh}
   transform:scale(0.98);
 }
 
+/* Mobile layout: 4-column grid becomes 2 columns on small screens */
+@media (max-width:520px){
+  .setup-grid-4col{grid-template-columns:repeat(2,1fr)}
+}
+
 /* iPad layout: payment cards in 2 columns */
 @media (min-width:768px){
-  .setup-grid{grid-template-columns:repeat(3,1fr)}
+  .setup-grid{grid-template-columns:repeat(2,1fr)}
+  .setup-grid-4col{grid-template-columns:repeat(4,1fr)}
   .player-table{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .pay-btn-big{font-size:17px;min-height:68px}
 }
@@ -1111,34 +1120,10 @@ body{min-height:100dvh}
     <!-- ════════════════ Section: คำนวณราคา ════════════════ -->
     <div id="section-price" style="display:none">
       <div class="setup-card" id="setup-card">
-        <div class="setup-head" onclick="toggleSetup()">
+        <div class="setup-head" style="cursor:default;background:linear-gradient(135deg, rgba(164,214,94,.08), rgba(164,214,94,.04));padding:16px;border-radius:12px;margin-bottom:16px">
           <div class="setup-title">💰 ตั้งค่ารอบ</div>
-          <div class="setup-collapsed-summary">
-            <span class="t">รวม <b id="c-sum-total">0฿</b></span>
-            <span class="t">เฉลี่ย <b id="c-sum-per">0฿</b>/คน</span>
-          </div>
-          <button class="setup-toggle" type="button" onclick="event.stopPropagation();toggleSetup()">
-            <span class="chev">▼</span><span id="c-toggle-label">ย่อ</span>
-          </button>
         </div>
         <div class="setup-body">
-          <div class="setup-grid">
-            <div class="stp-field">
-              <label>คนที่จะมา</label>
-              <div class="stp-field-row">
-                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric"/>
-                <span class="suf">คน</span>
-              </div>
-            </div>
-            <div class="stp-field">
-              <label>ค่าคอร์ท/ชั่วโมง</label>
-              <div class="stp-field-row">
-                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
-                <span class="suf">฿</span>
-              </div>
-            </div>
-          </div>
-
           <!-- Court Breakdown Section (ใหม่) -->
           <div class="court-breakdown-section">
             <div class="breakdown-label">🏸 คอร์ท</div>
@@ -1159,7 +1144,22 @@ body{min-height:100dvh}
             <button class="btn-add-court" onclick="addNewCourt()">+ เพิ่มคอร์ท</button>
           </div>
 
-          <div class="setup-grid">
+          <!-- 4-Column Settings Grid -->
+          <div class="setup-grid-4col">
+            <div class="stp-field">
+              <label>ค่าคอร์ท/ชั่วโมง</label>
+              <div class="stp-field-row">
+                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
+                <span class="suf">฿</span>
+              </div>
+            </div>
+            <div class="stp-field">
+              <label>จำนวนผู้เล่น</label>
+              <div class="stp-field-row">
+                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric"/>
+                <span class="suf">คน</span>
+              </div>
+            </div>
             <div class="stp-field">
               <label>ลูกแบด/ลูก</label>
               <div class="stp-field-row">
