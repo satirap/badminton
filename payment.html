@@ -1258,11 +1258,11 @@ body{min-height:100dvh}
         </div>
         <div class="s-item cash">
           <div class="s-num" id="sum-cash-baht">0<span class="baht">฿</span></div>
-          <div class="s-lbl">💵 เงินสด</div>
+          <div class="s-lbl">💵 เงินสด<br><small style="font-size:11px;font-weight:600;color:var(--mute);margin-top:4px;display:block">จำนวนคน <span id="sum-cash-count">0</span></small></div>
         </div>
         <div class="s-item transfer">
           <div class="s-num" id="sum-transfer-baht">0<span class="baht">฿</span></div>
-          <div class="s-lbl">📲 โอน</div>
+          <div class="s-lbl">📲 โอน<br><small style="font-size:11px;font-weight:600;color:var(--mute);margin-top:4px;display:block">จำนวนคน <span id="sum-transfer-count">0</span></small></div>
         </div>
       </div>
 
@@ -1920,8 +1920,8 @@ function renderSummary(){
   document.getElementById('sum-transfer-baht').innerHTML = `${fmtBaht(transB)}<span class="baht">฿</span>`;
 
   // Payment counters: update counts of cash and transfer payments
-  document.getElementById('payment-cash-count').textContent = cashN;
-  document.getElementById('payment-transfer-count').textContent = transN;
+  document.getElementById('sum-cash-count').textContent = cashN;
+  document.getElementById('sum-transfer-count').textContent = transN;
 
   // Save button: disable when no players
   const saveBtn = document.getElementById('btn-save');
