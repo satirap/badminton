@@ -165,7 +165,7 @@ body{min-height:100dvh}
 .summary-bar .s-item.transfer{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
 .summary-bar .s-item.transfer .s-num{display:none}
 .summary-bar .s-item.total{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
-.summary-bar .s-item.total .s-num{color:#558B2F}
+.summary-bar .s-item.total .s-num{color:#1B5E20}
 
 /* ── Player table ── */
 /* ── Section title for member list ── */
@@ -217,7 +217,7 @@ body{min-height:100dvh}
   padding:14px 18px;border-radius:10px;
   font-family:'DM Sans',sans-serif;font-size:18px;font-weight:900;
   border:2px solid transparent;background:linear-gradient(135deg, rgba(200,200,200,.15), rgba(200,200,200,.08));
-  color:var(--mute);cursor:pointer;transition:all .2s;white-space:nowrap;min-width:80px;
+  color:#333;cursor:pointer;transition:all .2s;white-space:nowrap;min-width:80px;
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn:active{transform:scale(.95)}
@@ -908,21 +908,21 @@ body{min-height:100dvh}
 }
 .court-items-wrapper{margin-bottom:12px}
 .breakdown-header{
-  display:grid;grid-template-columns:1fr 100px 36px;gap:10px;
+  display:grid;grid-template-columns:60px 1fr 36px;gap:10px;
   font-size:14px;font-weight:900;color:#1B5E20;
   text-transform:uppercase;padding:10px 0;border-bottom:2px solid #C8E6A0;
   font-family:'DM Sans',sans-serif;letter-spacing:.08em;
 }
 @media (max-width:480px){
-  .breakdown-header{grid-template-columns:1fr 80px 36px;gap:8px;font-size:12px;}
+  .breakdown-header{grid-template-columns:50px 1fr 36px;gap:8px;font-size:12px;}
 }
 .court-items{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .court-item{
-  display:grid;grid-template-columns:1fr 100px 36px;gap:10px;align-items:center;
+  display:grid;grid-template-columns:60px 1fr 36px;gap:10px;align-items:center;
   padding:2px;
 }
 @media (max-width:480px){
-  .court-item{grid-template-columns:1fr 80px 36px;gap:8px;}
+  .court-item{grid-template-columns:50px 1fr 36px;gap:8px;}
 }
 .court-hours-wrapper{
   display:flex;align-items:center;gap:4px;
@@ -944,7 +944,7 @@ body{min-height:100dvh}
   transition:all .2s ease;
   box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
   text-align:center;
-  flex:0 0 60px;
+  min-width:0;
 }
 .court-item .court-name:focus{
   border-color:#A4D65E;
