@@ -1125,7 +1125,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v1.0</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v2.1</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -3211,7 +3211,7 @@ function addNewCourt(){
   item.dataset.courtId = name;
   item.innerHTML = `
     <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-    <input class="court-hours" type="range" value="2" min="0.5" max="8" step="0.5" onchange="updateCourtCalculation()"/>
+    <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
     <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
   `;
   list.appendChild(item);
@@ -3301,7 +3301,7 @@ function setSetupInputsFromSession(){
       item.dataset.courtId = c.name;
       item.innerHTML = `
         <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-        <input class="court-hours" type="range" value="${c.hours || 2}" min="0.5" max="8" step="0.5" onchange="updateCourtCalculation()"/>
+        <input class="court-hours-input" type="number" value="${c.hours || 2}" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
         <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
       `;
       courtList.appendChild(item);
