@@ -704,6 +704,10 @@ body{min-height:100dvh}
   text-align:right;outline:none;
   transition:all .2s ease;
   box-shadow:0 2px 8px rgba(164, 214, 94, 0.1);
+  min-width:0;overflow:hidden;text-overflow:ellipsis;
+}
+@media (max-width:480px){
+  .ov-row input{font-size:20px;padding:10px 12px;}
 }
 .ov-row input:focus{
   border-color:#9CCC65;
@@ -909,10 +913,16 @@ body{min-height:100dvh}
   text-transform:uppercase;padding:10px 0;border-bottom:2px solid #C8E6A0;
   font-family:'DM Sans',sans-serif;letter-spacing:.08em;
 }
+@media (max-width:480px){
+  .breakdown-header{grid-template-columns:1fr 80px 36px;gap:8px;font-size:12px;}
+}
 .court-items{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .court-item{
-  display:grid;grid-template-columns:1fr auto 36px;gap:10px;align-items:center;
+  display:grid;grid-template-columns:1fr 100px 36px;gap:10px;align-items:center;
   padding:2px;
+}
+@media (max-width:480px){
+  .court-item{grid-template-columns:1fr 80px 36px;gap:8px;}
 }
 .court-hours-wrapper{
   display:flex;align-items:center;gap:4px;
@@ -920,6 +930,10 @@ body{min-height:100dvh}
   border:2px solid #C8E6A0;
   border-radius:10px;
   padding:8px;
+  min-width:0;
+}
+@media (max-width:480px){
+  .court-hours-wrapper{padding:6px;gap:2px;}
 }
 .court-item .court-name{
   padding:11px 12px;border:2px solid #C8E6A0;
@@ -944,6 +958,10 @@ body{min-height:100dvh}
   color:#1B5E20;font-size:16px;font-weight:800;
   font-family:'IBM Plex Mono',monospace;outline:none;
   text-align:center;
+  min-width:0;
+}
+@media (max-width:480px){
+  .court-item .court-hours{flex:0 0 50px;font-size:14px;}
 }
 .court-item .court-hours::placeholder{color:#1B5E20}
 .court-item .court-hours::-webkit-outer-spin-button,
@@ -959,6 +977,9 @@ body{min-height:100dvh}
   padding:0;flex-shrink:0;
 }
 .court-hours-btn:active{background:#9CCC65;transform:scale(0.9)}
+@media (max-width:480px){
+  .court-hours-btn{width:24px;height:24px;font-size:16px;}
+}
 .btn-del-court{
   padding:8px 0;border:none;background:transparent;
   color:#1B5E20;font-size:20px;cursor:pointer;
