@@ -31,6 +31,12 @@
   --radius:  14px;
   --rsm:     10px;
 }
+html,body{
+  min-height:100vh;height:100%;position:relative;
+}
+input:focus{
+  position:relative;z-index:1;
+}
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
   font-family:'DM Sans',system-ui,sans-serif;font-size:17px;
@@ -886,8 +892,8 @@ body{min-height:100dvh}
   min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn-big:active{opacity:.85;transform:scale(0.98)}
-.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
-.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
+.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff;transition:background .15s, border-color .15s, color .15s}
+.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff;transition:background .15s, border-color .15s, color .15s}
 .pay-btn-big .ic{font-size:24px;line-height:1}
 
 /* Edit section in setup card (when a complete session is being edited) */
@@ -919,7 +925,7 @@ body{min-height:100dvh}
 .court-items{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .court-item{
   display:grid;grid-template-columns:60px 1fr 36px;gap:10px;align-items:center;
-  padding:2px;
+  padding:2px;min-height:56px;
 }
 @media (max-width:480px){
   .court-item{grid-template-columns:50px 1fr 36px;gap:8px;}
@@ -1125,7 +1131,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v2.1</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v2.2</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
