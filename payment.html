@@ -941,7 +941,7 @@ body{min-height:100dvh}
   border-radius:10px;
   color:#1B5E20;font-size:15px;font-weight:800;
   font-family:'IBM Plex Mono',monospace;outline:none;
-  transition:all .2s ease;
+  transition:border-color .2s ease;
   box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
   text-align:center;
   min-width:0;
@@ -949,7 +949,7 @@ body{min-height:100dvh}
 .court-item .court-name:focus{
   border-color:#A4D65E;
   background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
-  box-shadow:0 4px 12px rgba(164, 214, 94, 0.2);
+  outline:2px solid #A4D65E;outline-offset:2px;
 }
 .court-item .court-hours{
   flex:0 0 60px;
@@ -972,11 +972,11 @@ body{min-height:100dvh}
   width:28px;height:28px;border:none;
   background:#A4D65E;color:#1B5E20;
   border-radius:6px;font-size:18px;font-weight:900;
-  cursor:pointer;transition:all .2s ease;
+  cursor:pointer;transition:background .15s ease;
   display:flex;align-items:center;justify-content:center;
   padding:0;flex-shrink:0;
 }
-.court-hours-btn:active{background:#9CCC65;opacity:0.7}
+.court-hours-btn:active{background:#558B2F}
 @media (max-width:480px){
   .court-hours-btn{width:24px;height:24px;font-size:16px;}
 }
@@ -3193,7 +3193,7 @@ function addNewCourt(){
     <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
     <div class="court-hours-wrapper">
       <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
-      <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+      <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="numeric" onchange="updateCourtCalculation()"/>
       <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
     </div>
     <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
@@ -3287,7 +3287,7 @@ function setSetupInputsFromSession(){
         <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
         <div class="court-hours-wrapper">
           <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
-          <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+          <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="numeric" onchange="updateCourtCalculation()"/>
           <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
         </div>
         <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
