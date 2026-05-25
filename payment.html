@@ -839,10 +839,10 @@ body{min-height:100dvh}
 
 /* ── Player card (large, button-first) ── */
 .player-card{
-  background:var(--card);border:1.5px solid var(--border);
+  background:var(--card);border:2px solid var(--border);
   border-radius:var(--radius);padding:16px;
   display:flex;flex-direction:column;gap:12px;
-  transition:border-color .2s;position:relative;
+  position:relative;min-height:220px;
 }
 .player-card.paid-cash{border-color:var(--green)}
 .player-card.paid-transfer{border-color:var(--blue)}
@@ -881,11 +881,11 @@ body{min-height:100dvh}
   padding:20px 14px;border-radius:var(--radius);
   border:2px solid var(--border);background:var(--input);color:var(--soft);
   font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;
-  cursor:pointer;transition:opacity .15s;
+  cursor:pointer;transition:opacity .15s, transform .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
   min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
-.pay-btn-big:active{opacity:.85}
+.pay-btn-big:active{opacity:.85;transform:scale(0.98)}
 .pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
 .pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
 .pay-btn-big .ic{font-size:24px;line-height:1}
@@ -951,40 +951,29 @@ body{min-height:100dvh}
   background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
   outline:2px solid #A4D65E;outline-offset:2px;
 }
-.court-item .court-hours{
+.court-item .court-hours-input{
   flex:1;min-width:0;
-  padding:0;border:none;
-  background:transparent;
+  padding:11px 12px;border:2px solid #C8E6A0;
+  background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
+  border-radius:10px;
   color:#1B5E20;font-size:16px;font-weight:800;
   font-family:'IBM Plex Mono',monospace;outline:none;
-  -webkit-appearance:none;appearance:none;
-  cursor:pointer;
-  height:6px;
+  text-align:center;
+  transition:border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
 }
 @media (max-width:480px){
-  .court-item .court-hours{height:5px;}
+  .court-item .court-hours-input{padding:10px 8px;font-size:15px;}
 }
-.court-item .court-hours::-webkit-slider-thumb{
-  -webkit-appearance:none;appearance:none;
-  width:24px;height:24px;border-radius:50%;
-  background:#A4D65E;border:2px solid #558B2F;
-  cursor:pointer;box-shadow:0 2px 6px rgba(164, 214, 94, 0.3);
+.court-item .court-hours-input:focus{
+  border-color:#A4D65E;
+  background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
+  outline:2px solid #A4D65E;outline-offset:2px;
+  box-shadow:0 4px 12px rgba(164, 214, 94, 0.2);
 }
-.court-item .court-hours::-moz-range-thumb{
-  width:24px;height:24px;border-radius:50%;
-  background:#A4D65E;border:2px solid #558B2F;
-  cursor:pointer;box-shadow:0 2px 6px rgba(164, 214, 94, 0.3);
-}
-.court-item .court-hours::-webkit-slider-runnable-track{
-  background:linear-gradient(90deg, #C8E6A0 0%, #A4D65E 100%);
-  height:6px;border-radius:3px;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);
-}
-.court-item .court-hours::-moz-range-track{
-  background:linear-gradient(90deg, #C8E6A0 0%, #A4D65E 100%);
-  height:6px;border-radius:3px;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);
-  border:none;
+.court-item .court-hours-input::-webkit-outer-spin-button,
+.court-item .court-hours-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0;
 }
 .court-hours-btn{
   width:28px;height:28px;border:none;
@@ -1110,12 +1099,12 @@ body{min-height:100dvh}
 #section-payment .pay-btn-big {
   border-color: #A4D65E;
   color: #1B5E20;
-  transition: all .2s ease;
+  transition:opacity .15s, transform .15s;
   font-weight: 900;
 }
 #section-payment .pay-btn-big:active {
-  background: #A4D65E;
-  color: #111;
+  opacity:.85;
+  transform:scale(0.98);
 }
 
 </style>
@@ -1136,6 +1125,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v1.0</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1215,17 +1205,17 @@ body{min-height:100dvh}
               <div id="court-list" class="court-items">
                 <div class="court-item" data-court-id="3">
                   <input class="court-name" type="text" value="คอร์ท 3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="range" value="2" min="0.5" max="8" step="0.5" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="4">
                   <input class="court-name" type="text" value="คอร์ท 4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="range" value="2" min="0.5" max="8" step="0.5" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="5">
                   <input class="court-name" type="text" value="คอร์ท 5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="range" value="2" min="0.5" max="8" step="0.5" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
               </div>
@@ -1502,9 +1492,33 @@ function getFloatInput(id, def){
   return isNaN(v) || v < 0 ? (def||0) : v;
 }
 
+/**
+ * Prevent keyboard bounce when typing in court hours input
+ * Blocks default behavior only, lets the value change proceed naturally
+ */
+function preventKeyboardBounce(event){
+  // Allow: backspace, delete, tab, escape, enter
+  if ([8, 9, 27, 13, 46].indexOf(event.keyCode) !== -1 ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+      (event.keyCode === 65 && event.ctrlKey === true) ||
+      (event.keyCode === 67 && event.ctrlKey === true) ||
+      (event.keyCode === 86 && event.ctrlKey === true) ||
+      (event.keyCode === 88 && event.ctrlKey === true) ||
+      (event.keyCode === 90 && event.ctrlKey === true) ||
+      // Allow: home, end, left, right, up, down arrow keys
+      (event.keyCode >= 35 && event.keyCode <= 40)) {
+    return; // These keys are OK, let the input handle them
+  }
+  // For number inputs, allow: 0-9 and decimal point
+  if ((event.shiftKey === false && (event.keyCode >= 48 && event.keyCode <= 57)) ||
+      event.keyCode === 190 || event.keyCode === 110) {
+    return; // Number keys and decimal point are OK
+  }
+}
+
 function getTotalCourtHours(){
   // Sum all court hours from the breakdown
-  const items = document.querySelectorAll('.court-item .court-hours');
+  const items = document.querySelectorAll('.court-item .court-hours-input');
   let total = 0;
   items.forEach(input => {
     const val = parseFloat(input.value) || 0;
