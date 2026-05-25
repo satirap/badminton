@@ -157,13 +157,13 @@ body{min-height:100dvh}
   transition:all .2s;
 }
 .summary-bar .s-item:active{transform:scale(0.98)}
-.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:900;line-height:1.1;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:4px}
+.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:clamp(24px,8vw,40px);font-weight:900;line-height:1.1;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:4px}
 .summary-bar .s-num .baht{font-size:18px;font-weight:700;opacity:.8;margin-left:2px}
 .summary-bar .s-lbl{font-size:16px;color:#558B2F;margin-top:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px}
 .summary-bar .s-item.cash{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
-.summary-bar .s-item.cash .s-num{color:#558B2F}
+.summary-bar .s-item.cash .s-num{display:none}
 .summary-bar .s-item.transfer{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
-.summary-bar .s-item.transfer .s-num{color:#558B2F}
+.summary-bar .s-item.transfer .s-num{display:none}
 .summary-bar .s-item.total{background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
 .summary-bar .s-item.total .s-num{color:#558B2F}
 
@@ -203,7 +203,7 @@ body{min-height:100dvh}
 
 .player-row .num{
   font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
-  color:var(--accent);text-align:center;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+  color:#1B5E20;text-align:center;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg, rgba(164,214,94,.2), rgba(164,214,94,.1));border-radius:12px;
 }
 .player-row .name{
@@ -242,7 +242,7 @@ body{min-height:100dvh}
   color:var(--ink);font-family:'DM Sans',sans-serif;font-size:17px;font-weight:700;
   outline:none;transition:border-color .15s;
 }
-.add-form input::placeholder{color:var(--mute)}
+.add-form input::placeholder{color:#558B2F}
 .add-form input:focus{border-color:var(--accent)}
 .add-form .add-btn{
   padding:15px 19px;border-radius:var(--rsm);
@@ -260,7 +260,7 @@ body{min-height:100dvh}
   box-shadow:0 8px 20px rgba(164,214,94,.12);
 }
 .share-card-head{
-  font-size:13px;font-weight:900;color:#A4D65E;letter-spacing:.1em;
+  font-size:13px;font-weight:900;color:#1B5E20;letter-spacing:.1em;
   text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:12px;
 }
 .btn-share-line{
@@ -292,7 +292,7 @@ body{min-height:100dvh}
 .btn-save{
   width:100%;padding:20px;border-radius:12px;
   border:2px solid var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.15), rgba(164,214,94,.08));
-  color:var(--accent);
+  color:#1B5E20;
   font-family:'DM Sans',sans-serif;font-size:19px;font-weight:900;
   cursor:pointer;transition:all .2s;
   display:flex;align-items:center;justify-content:center;gap:8px;
@@ -505,7 +505,7 @@ body{min-height:100dvh}
   background:var(--card2);border:1.5px solid var(--border);
   border-radius:var(--rsm);padding:13px 16px;margin-bottom:10px;
 }
-.member-summary-strip .left{font-size:14px;color:var(--soft);font-weight:600}
+.member-summary-strip .left{font-size:14px;color:#1B5E20;font-weight:600}
 .member-summary-strip .left b{
   font-size:20px;color:var(--accent);font-weight:800;
   font-family:'IBM Plex Mono',monospace;margin:0 4px;
@@ -525,7 +525,7 @@ body{min-height:100dvh}
   color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
   outline:none;transition:border-color .15s;
 }
-.member-toolbar input::placeholder{color:var(--mute)}
+.member-toolbar input::placeholder{color:#558B2F}
 .member-toolbar input:focus{border-color:var(--accent)}
 
 /* Member grid (selectable chips) */
@@ -589,8 +589,14 @@ body{min-height:100dvh}
 .setup-card{
   background:linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%);
   border:2px solid #A4D65E;
-  border-radius:20px;padding:24px 20px;margin:0 auto 18px;max-width:100%;
+  border-radius:20px;padding:16px 14px;margin:0 auto 12px;max-width:100%;
   box-shadow:0 8px 24px rgba(164, 214, 94, 0.15), 0 4px 12px rgba(85, 139, 47, 0.08);
+}
+@media (min-width:480px){
+  .setup-card{padding:20px 16px;margin:0 auto 14px}
+}
+@media (min-width:640px){
+  .setup-card{padding:24px 20px;margin:0 auto 18px}
 }
 .setup-head{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -601,10 +607,10 @@ body{min-height:100dvh}
 .setup-title{font-size:20px;font-weight:900;color:#1B5E20;flex:0 0 auto;letter-spacing:-0.3px}
 .setup-collapsed-summary{
   display:none;flex:1;text-align:right;
-  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:#558B2F;
+  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:#1B5E20;
 }
 .setup-collapsed-summary .t{margin-left:12px}
-.setup-collapsed-summary b{color:#A4D65E;font-weight:900}
+.setup-collapsed-summary b{color:#1B5E20;font-weight:900}
 .setup-card.collapsed .setup-collapsed-summary{display:flex}
 .setup-toggle{
   background:linear-gradient(135deg, #A4D65E 0%, #9CCC65 100%);border:none;color:#1B5E20;
@@ -623,7 +629,13 @@ body{min-height:100dvh}
   display:grid;grid-template-columns:repeat(2,1fr);gap:14px 16px;margin-bottom:16px;
 }
 .setup-grid-4col{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:14px 16px;margin-bottom:16px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px 12px;margin-bottom:12px;
+}
+@media (min-width:480px){
+  .setup-grid-4col{grid-template-columns:repeat(4,1fr);gap:12px 14px;margin-bottom:14px}
+}
+@media (min-width:640px){
+  .setup-grid-4col{grid-template-columns:repeat(4,1fr);gap:14px 16px;margin-bottom:16px}
 }
 .stp-field{
   display:flex;flex-direction:column;gap:8px;
@@ -633,16 +645,17 @@ body{min-height:100dvh}
   box-shadow:0 2px 8px rgba(164, 214, 94, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.8);
   transition:all .2s ease;
 }
-.stp-field label{font-size:16px;font-weight:900;color:#558B2F;letter-spacing:.02em;text-transform:uppercase}
+.stp-field label{font-size:16px;font-weight:900;color:#1B5E20;letter-spacing:.02em;text-transform:uppercase}
 .stp-field-row{display:flex;align-items:center;gap:10px}
 .stp-field input{
   flex:1;background:transparent;border:none;outline:none;
   color:#1B5E20;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
   padding:0;text-align:left;width:100%;min-width:0;
 }
+.stp-field input::placeholder{color:#1B5E20}
 .stp-field input::-webkit-outer-spin-button,
 .stp-field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.stp-field .suf{font-size:16px;font-weight:900;color:#9CCC65;flex:0 0 auto}
+.stp-field .suf{font-size:16px;font-weight:900;color:#1B5E20;flex:0 0 auto}
 .stp-field:focus-within{
   border-color:#A4D65E;
   background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
@@ -664,14 +677,14 @@ body{min-height:100dvh}
 }
 .stp-row{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
-  font-size:14px;color:#558B2F;font-weight:600;
+  font-size:14px;color:#1B5E20;font-weight:600;
 }
-.stp-row small{color:#9CCC65;font-size:11px;font-weight:700;margin-left:8px;font-family:'IBM Plex Mono',monospace}
+.stp-row small{color:#1B5E20;font-size:11px;font-weight:700;margin-left:8px;font-family:'IBM Plex Mono',monospace}
 .stp-row b{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:900;color:#1B5E20}
 .stp-row.big{font-size:15px;color:#1B5E20;font-weight:800;padding-top:8px;margin-top:4px;border-top:2px dashed #C8E6A0}
 .stp-row.big b{font-size:26px;font-weight:900}
-.stp-row.big.accent{color:#A4D65E}
-.stp-row.big.accent b{font-size:32px;color:#A4D65E;font-weight:900}
+.stp-row.big.accent{color:#1B5E20}
+.stp-row.big.accent b{font-size:32px;color:#1B5E20;font-weight:900}
 
 /* ราคาที่จะแจ้ง (override) */
 .stp-override{
@@ -681,7 +694,7 @@ body{min-height:100dvh}
   box-shadow:0 4px 12px rgba(164, 214, 94, 0.15), 0 2px 6px rgba(85, 139, 47, 0.08);
 }
 .ov-label{font-size:14px;font-weight:900;color:#1B5E20;margin-bottom:10px;text-transform:uppercase;letter-spacing:.02em}
-.ov-label small{font-weight:700;color:#9CCC65;margin-left:6px;font-size:12px}
+.ov-label small{font-weight:700;color:#1B5E20;margin-left:6px;font-size:12px}
 .ov-row{display:flex;align-items:center;gap:10px}
 .ov-row input{
   flex:1;background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
@@ -699,9 +712,9 @@ body{min-height:100dvh}
 }
 .ov-row input::-webkit-outer-spin-button,
 .ov-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.ov-unit{font-size:14px;font-weight:900;color:#A4D65E}
-.ov-hint{font-size:12px;color:#9CCC65;margin-top:8px;font-weight:600}
-.ov-hint.active{color:#558B2F;font-weight:800}
+.ov-unit{font-size:14px;font-weight:900;color:#1B5E20}
+.ov-hint{font-size:12px;color:#1B5E20;margin-top:8px;font-weight:600}
+.ov-hint.active{color:#1B5E20;font-weight:800}
 
 /* กองกลาง row */
 .gongklang-row{
@@ -724,7 +737,7 @@ body{min-height:100dvh}
   background:var(--card);border:1.5px solid var(--border);
   border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;
 }
-.paste-label{font-size:14px;font-weight:800;color:var(--ink);margin-bottom:10px}
+.paste-label{font-size:14px;font-weight:800;color:#1B5E20;margin-bottom:10px}
 .paste-card textarea{
   width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:var(--rsm);
   padding:14px 16px;color:var(--ink);
@@ -732,7 +745,7 @@ body{min-height:100dvh}
   outline:none;resize:vertical;min-height:130px;
 }
 .paste-card textarea:focus{border-color:var(--accent)}
-.paste-card textarea::placeholder{color:var(--mute);font-weight:400}
+.paste-card textarea::placeholder{color:#558B2F;font-weight:400}
 .paste-btn{
   width:100%;margin-top:12px;padding:16px;border:none;border-radius:var(--radius);
   background:var(--accent);color:#111;
@@ -740,7 +753,7 @@ body{min-height:100dvh}
   transition:opacity .15s;-webkit-tap-highlight-color:transparent;
 }
 .paste-btn:active{opacity:.85}
-.paste-hint{font-size:12px;color:var(--mute);margin-top:10px;text-align:center;font-style:italic}
+.paste-hint{font-size:12px;color:#558B2F;margin-top:10px;text-align:center;font-style:italic}
 
 /* ── Player list mini (รายชื่อ tab) ── */
 .player-list{
@@ -755,7 +768,7 @@ body{min-height:100dvh}
   font-size:16px;
 }
 .player-list-item .num{
-  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--mute);
+  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#558B2F;
   text-align:center;
 }
 .player-list-item .name{font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -797,13 +810,13 @@ body{min-height:100dvh}
 
 .big-copy-btn{
   width:100%;margin-top:12px;padding:20px;border:2px solid var(--accent);border-radius:var(--radius);
-  background:linear-gradient(135deg, rgba(164,214,94,.12), rgba(156,204,101,.08));color:var(--accent);
+  background:linear-gradient(135deg, rgba(164,214,94,.12), rgba(156,204,101,.08));color:#558B2F;
   font-family:'DM Sans',sans-serif;font-size:20px;font-weight:900;
   cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
   transition:all .15s;-webkit-tap-highlight-color:transparent;line-height:1.2;
 }
 .big-copy-btn:active{opacity:.85;background:linear-gradient(135deg, rgba(164,214,94,.18), rgba(156,204,101,.12))}
-.big-copy-btn small{font-size:14px;font-weight:700;opacity:.85}
+.big-copy-btn small{font-size:14px;font-weight:800;color:#558B2F}
 
 /* ── Member chip × delete ── */
 .member-chip .del-x{
@@ -869,8 +882,8 @@ body{min-height:100dvh}
   min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn-big:active{transform:scale(.97)}
-.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
-.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
+.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
+.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
 .pay-btn-big .ic{font-size:24px;line-height:1}
 
 /* Edit section in setup card (when a complete session is being edited) */
@@ -885,24 +898,30 @@ body{min-height:100dvh}
   box-shadow:0 2px 8px rgba(164, 214, 94, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 .breakdown-label{
-  font-size:14px;font-weight:900;color:#558B2F;
+  font-size:14px;font-weight:900;color:#1B5E20;
   letter-spacing:.08em;text-transform:uppercase;
   margin-bottom:12px;font-family:'DM Sans',sans-serif;
 }
 .court-items-wrapper{margin-bottom:12px}
 .breakdown-header{
   display:grid;grid-template-columns:1fr 100px 36px;gap:10px;
-  font-size:12px;font-weight:800;color:#9CCC65;
+  font-size:14px;font-weight:900;color:#1B5E20;
   text-transform:uppercase;padding:10px 0;border-bottom:2px solid #C8E6A0;
-  font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;
+  font-family:'DM Sans',sans-serif;letter-spacing:.08em;
 }
 .court-items{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .court-item{
-  display:grid;grid-template-columns:1fr 100px 36px;gap:10px;align-items:center;
+  display:grid;grid-template-columns:1fr auto 36px;gap:10px;align-items:center;
   padding:2px;
 }
-.court-item .court-name,
-.court-item .court-hours{
+.court-hours-wrapper{
+  display:flex;align-items:center;gap:4px;
+  background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
+  border:2px solid #C8E6A0;
+  border-radius:10px;
+  padding:8px;
+}
+.court-item .court-name{
   padding:11px 12px;border:2px solid #C8E6A0;
   background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
   border-radius:10px;
@@ -910,18 +929,39 @@ body{min-height:100dvh}
   font-family:'IBM Plex Mono',monospace;outline:none;
   transition:all .2s ease;
   box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
+  text-align:center;
+  flex:0 0 60px;
 }
-.court-item .court-name{text-align:center}
-.court-item .court-hours{text-align:right}
-.court-item .court-name:focus,
-.court-item .court-hours:focus{
+.court-item .court-name:focus{
   border-color:#A4D65E;
   background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
   box-shadow:0 4px 12px rgba(164, 214, 94, 0.2);
 }
+.court-item .court-hours{
+  flex:0 0 60px;
+  padding:0;border:none;
+  background:transparent;
+  color:#1B5E20;font-size:16px;font-weight:800;
+  font-family:'IBM Plex Mono',monospace;outline:none;
+  text-align:center;
+}
+.court-item .court-hours::placeholder{color:#1B5E20}
+.court-item .court-hours::-webkit-outer-spin-button,
+.court-item .court-hours::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+.court-hours-btn{
+  width:28px;height:28px;border:none;
+  background:#A4D65E;color:#1B5E20;
+  border-radius:6px;font-size:18px;font-weight:900;
+  cursor:pointer;transition:all .2s ease;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;flex-shrink:0;
+}
+.court-hours-btn:active{background:#9CCC65;transform:scale(0.9)}
 .btn-del-court{
   padding:8px 0;border:none;background:transparent;
-  color:#C8E6A0;font-size:20px;cursor:pointer;
+  color:#1B5E20;font-size:20px;cursor:pointer;
   font-weight:800;transition:all .2s ease;-webkit-tap-highlight-color:transparent;
 }
 .btn-del-court:active{color:#E53935;transform:scale(1.2)}
@@ -929,7 +969,7 @@ body{min-height:100dvh}
   width:100%;padding:12px;border:2px dashed #A4D65E;
   background:linear-gradient(135deg, transparent, rgba(164, 214, 94, 0.05));
   border-radius:10px;
-  color:#558B2F;font-size:15px;font-weight:800;
+  color:#1B5E20;font-size:15px;font-weight:800;
   cursor:pointer;transition:all .2s ease;-webkit-tap-highlight-color:transparent;
   font-family:'DM Sans',sans-serif;
 }
@@ -977,7 +1017,7 @@ body{min-height:100dvh}
 #section-members label,
 #section-members .player-name {
   font-weight: 900;
-  color: #558B2F;
+  color: #1B5E20;
 }
 #section-members .paste-btn,
 #section-members .add-form .add-btn {
@@ -1010,7 +1050,7 @@ body{min-height:100dvh}
 #section-payment label,
 #section-payment .s-lbl {
   font-weight: 900;
-  color: #558B2F;
+  color: #1B5E20;
 }
 #section-payment .payment-header {
   border-color: #A4D65E;
@@ -1030,7 +1070,7 @@ body{min-height:100dvh}
 }
 #section-payment .pay-btn-big {
   border-color: #A4D65E;
-  color: #A4D65E;
+  color: #1B5E20;
   transition: all .2s ease;
   font-weight: 900;
 }
@@ -1136,17 +1176,29 @@ body{min-height:100dvh}
               <div id="court-list" class="court-items">
                 <div class="court-item" data-court-id="3">
                   <input class="court-name" type="text" value="3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <div class="court-hours-wrapper">
+                    <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
+                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                    <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
+                  </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="4">
                   <input class="court-name" type="text" value="4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <div class="court-hours-wrapper">
+                    <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
+                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                    <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
+                  </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="5">
                   <input class="court-name" type="text" value="5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <div class="court-hours-wrapper">
+                    <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
+                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                    <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
+                  </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
               </div>
@@ -1166,7 +1218,7 @@ body{min-height:100dvh}
             <div class="stp-field">
               <label>จำนวนผู้เล่น</label>
               <div class="stp-field-row">
-                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric"/>
+                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric" readonly/>
                 <span class="suf">คน</span>
               </div>
             </div>
@@ -1268,7 +1320,7 @@ body{min-height:100dvh}
 
       <div class="section-head-row">
         <div class="section-head-title">👥 สมาชิกวันนี้</div>
-        <div class="section-head-count" id="player-count-badge">0 คน</div>
+        <div class="section-head-count" id="player-count-badge">ผู้เล่น <span id="total-players">0</span> คน · จ่ายแล้ว <span id="paid-count">0</span> คน · ค้าง <span id="unpaid-count">0</span> คน</div>
       </div>
       <div class="player-table" id="player-table"></div>
 
@@ -1844,6 +1896,13 @@ function renderSummary(){
   const { totalCost, courtHours, courtRate, courtFee, shuttlePrice, shuttleCount, shuttleCost } = bd;
   const pp = getPerPerson();
 
+  // ✅ Auto-populate member-est from actual player count
+  const memberEstEl = document.getElementById('member-est');
+  if(memberEstEl && total > 0){
+    memberEstEl.value = total;
+    session.memberEstimate = total;
+  }
+
   // ผลรวมจริงตามคน (รองรับเล่นไม่เท่ากัน)
   let totalB = 0, cashB = 0, transB = 0;
   session.players.forEach(p => {
@@ -1906,9 +1965,14 @@ function renderSummary(){
   const sumP = document.getElementById('c-sum-per');
   if(sumT) sumT.textContent = fmtBaht(totalCost) + '฿';
   if(sumP) sumP.textContent = fmtBaht(pp) + '฿';
-  // badge จำนวนสมาชิก
+  // badge จำนวนสมาชิก + paid/unpaid status
   const countBadge = document.getElementById('player-count-badge');
-  if(countBadge) countBadge.textContent = total + ' คน';
+  if(countBadge){
+    const unpaidN = total - paidN;
+    document.getElementById('total-players').textContent = total;
+    document.getElementById('paid-count').textContent = paidN;
+    document.getElementById('unpaid-count').textContent = unpaidN;
+  }
   const ppInput = document.getElementById('per-person');
   if(ppInput) ppInput.value = pp;
   // sync hidden court-fee เพื่อ compat
@@ -3106,7 +3170,11 @@ function addNewCourt(){
   item.dataset.courtId = name;
   item.innerHTML = `
     <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-    <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+    <div class="court-hours-wrapper">
+      <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
+      <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+      <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
+    </div>
     <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
   `;
   list.appendChild(item);
@@ -3118,6 +3186,16 @@ function removeCourt(btn){
   if(!confirm('ลบคอร์ท ' + item.dataset.courtId + '?')) return;
   item.remove();
   updateCourtCalculation();
+}
+
+function adjustHours(btn, delta){
+  const wrapper = btn.closest('.court-hours-wrapper');
+  const input = wrapper?.querySelector('.court-hours');
+  if(!input) return;
+  let current = parseFloat(input.value) || 0;
+  const newValue = Math.max(0.5, current + delta);
+  input.value = newValue;
+  input.onchange();
 }
 
 function updateCourtCalculation(){
@@ -3186,7 +3264,11 @@ function setSetupInputsFromSession(){
       item.dataset.courtId = c.name;
       item.innerHTML = `
         <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-        <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+        <div class="court-hours-wrapper">
+          <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
+          <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+          <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
+        </div>
         <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
       `;
       courtList.appendChild(item);
