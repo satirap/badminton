@@ -890,8 +890,9 @@ body{min-height:100dvh}
   cursor:pointer;transition:opacity .15s, transform .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
   min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;
 }
-.pay-btn-big:active{opacity:.85;transform:scale(0.98)}
+.pay-btn-big:active{/* Feedback handled by JavaScript to avoid bounce */}
 .pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff;transition:background .15s, border-color .15s, color .15s}
 .pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff;transition:background .15s, border-color .15s, color .15s}
 .pay-btn-big .ic{font-size:24px;line-height:1}
@@ -967,6 +968,7 @@ body{min-height:100dvh}
   text-align:center;
   transition:border-color .2s ease, background .2s ease, box-shadow .2s ease;
   box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
+  touch-action:manipulation;
 }
 @media (max-width:480px){
   .court-item .court-hours-input{padding:10px 8px;font-size:15px;}
@@ -1131,7 +1133,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v2.2</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v2.3</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1496,6 +1498,44 @@ function getNumInput(id){
 function getFloatInput(id, def){
   const v = parseFloat(document.getElementById(id)?.value);
   return isNaN(v) || v < 0 ? (def||0) : v;
+}
+
+/**
+ * Lock scroll when keyboard appears — prevents layout shift
+ */
+function lockScrollOnKeyboard(){
+  document.querySelectorAll('input[type="number"], input[type="text"]').forEach(input => {
+    input.addEventListener('focusin', () => {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.position = 'fixed';
+      document.documentElement.style.width = '100%';
+    });
+    input.addEventListener('focusout', () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.position = '';
+      document.documentElement.style.width = '';
+    });
+  });
+}
+
+/**
+ * Smooth button feedback without bounce
+ */
+function smoothButtonFeedback(){
+  document.querySelectorAll('.pay-btn-big').forEach(btn => {
+    btn.addEventListener('pointerdown', (e) => {
+      btn.style.opacity = '0.85';
+      btn.style.transform = 'scale(0.98)';
+    });
+    btn.addEventListener('pointerup', () => {
+      btn.style.opacity = '';
+      btn.style.transform = '';
+    });
+    btn.addEventListener('pointercancel', () => {
+      btn.style.opacity = '';
+      btn.style.transform = '';
+    });
+  });
 }
 
 /**
@@ -3358,6 +3398,10 @@ function setSetupInputsFromSession(){
   if(!session?.id){
     subscribeToTodayOpenQuery();
   }
+
+  // Initialize smooth interactions (no bounce)
+  lockScrollOnKeyboard();
+  smoothButtonFeedback();
 })();
 </script>
 </body>
