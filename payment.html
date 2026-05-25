@@ -976,7 +976,7 @@ body{min-height:100dvh}
   display:flex;align-items:center;justify-content:center;
   padding:0;flex-shrink:0;
 }
-.court-hours-btn:active{background:#9CCC65;transform:scale(0.9)}
+.court-hours-btn:active{background:#9CCC65;opacity:0.7}
 @media (max-width:480px){
   .court-hours-btn{width:24px;height:24px;font-size:16px;}
 }
@@ -1196,28 +1196,28 @@ body{min-height:100dvh}
               </div>
               <div id="court-list" class="court-items">
                 <div class="court-item" data-court-id="3">
-                  <input class="court-name" type="text" value="3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-name" type="text" value="คอร์ท 3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
                   <div class="court-hours-wrapper">
                     <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
-                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="numeric" onchange="updateCourtCalculation()"/>
                     <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
                   </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="4">
-                  <input class="court-name" type="text" value="4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-name" type="text" value="คอร์ท 4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
                   <div class="court-hours-wrapper">
                     <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
-                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="numeric" onchange="updateCourtCalculation()"/>
                     <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
                   </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="5">
-                  <input class="court-name" type="text" value="5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-name" type="text" value="คอร์ท 5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
                   <div class="court-hours-wrapper">
                     <button class="court-hours-btn" onclick="adjustHours(this, -0.5)">−</button>
-                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                    <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="numeric" onchange="updateCourtCalculation()"/>
                     <button class="court-hours-btn" onclick="adjustHours(this, 0.5)">+</button>
                   </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
