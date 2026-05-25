@@ -878,7 +878,7 @@ body{min-height:100dvh}
 
 /* BIG pay buttons */
 .pc-pay-row{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;
+  display:grid;grid-template-columns:1fr;gap:12px;margin-top:6px;
 }
 .pay-btn-big{
   padding:20px 14px;border-radius:var(--radius);
@@ -892,6 +892,24 @@ body{min-height:100dvh}
 .pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff;transition:background .15s, border-color .15s, color .15s}
 .pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff;transition:background .15s, border-color .15s, color .15s}
 .pay-btn-big .ic{font-size:24px;line-height:1}
+
+/* Pay method dropdown selector */
+.pay-method-select{
+  width:100%;padding:16px 12px;border-radius:var(--radius);
+  border:2px solid var(--border);background:var(--input);color:var(--soft);
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
+  cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;
+  transition:border-color .2s ease, background .2s ease, box-shadow .2s ease;
+  box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
+  min-height:60px;display:flex;align-items:center;
+}
+.pay-method-select:focus{
+  border-color:#558B2F;background:linear-gradient(135deg, #F9FDF5 0%, #F5FDF0 100%);
+  box-shadow:0 0 0 3px rgba(85, 139, 47, 0.15);
+}
+.pay-method-select option{
+  background:#fff;color:#000;padding:8px;
+}
 
 /* Edit section in setup card (when a complete session is being edited) */
 .setup-card.locked .stp-field input{color:var(--mute)}
@@ -1129,7 +1147,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.0</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.1</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1899,6 +1917,32 @@ function togglePay(id, type){
   renderSummary();
 }
 
+function setPayMethod(id, method){
+  console.log('setPayMethod called:', {id, method});
+  const p = session.players.find(p => p.id === id);
+  if(!p){ console.warn('Player not found:', id); return; }
+
+  method = String(method || '').trim();
+  console.log('Processing method:', method, 'Player before:', {cash: p.cash, transfer: p.transfer});
+
+  // Clear both payment methods first
+  p.cash = false;
+  p.transfer = false;
+
+  // Set the selected method
+  if(method === 'cash'){
+    p.cash = true;
+  } else if(method === 'transfer'){
+    p.transfer = true;
+  }
+  // Otherwise empty string = both remain false
+
+  console.log('Player after:', {cash: p.cash, transfer: p.transfer});
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
 /* ================================================================
    RENDER
    ================================================================ */
@@ -1921,12 +1965,11 @@ function renderTable(){
         <div class="pc-amt">${fmtBaht(share)}<small>฿</small></div>
       </div>
       <div class="pc-pay-row">
-        <button class="pay-btn-big cash ${p.cash?'on':''}" onclick="togglePay('${p.id}','cash')">
-          <span class="ic">💵</span><span>เงินสด</span>
-        </button>
-        <button class="pay-btn-big transfer ${p.transfer?'on':''}" onclick="togglePay('${p.id}','transfer')">
-          <span class="ic">📲</span><span>โอน</span>
-        </button>
+        <select class="pay-method-select" onchange="setPayMethod('${p.id}', this.value)" data-player-id="${p.id}">
+          <option value="" ${!p.cash && !p.transfer ? 'selected' : ''}>← เลือกวิธี</option>
+          <option value="cash" ${p.cash ? 'selected' : ''}>💵 เงินสด</option>
+          <option value="transfer" ${p.transfer ? 'selected' : ''}>📲 โอน</option>
+        </select>
       </div>
     </div>`;
   }).join('');
