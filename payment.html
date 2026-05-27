@@ -67,24 +67,29 @@ body{min-height:100dvh}
   .header-card .date-box .date-sub{font-size:11px}
 }
 .history-icon-btn{
-  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;outline:none;
   background:var(--card2);border:1.5px solid var(--border);
   color:var(--ink);font-size:16px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   transition:transform .15s, border-color .15s;-webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
 @media (min-width:520px){
   .history-icon-btn{width:44px;height:44px;border-radius:12px;font-size:20px}
   .header-card .brand-logo{width:46px!important;height:46px!important}
 }
-.history-icon-btn:active{transform:scale(.92);border-color:var(--accent)}
+.history-icon-btn:active{opacity:.75;border-color:var(--accent)}
 .back-btn{
-  width:100%;padding:14px 18px;margin-bottom:12px;
+  width:100%;padding:14px 18px;margin-bottom:12px;outline:none;
   background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);
   color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
   cursor:pointer;display:flex;align-items:center;gap:8px;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
 .back-btn:active{background:var(--card)}
+.back-btn:focus{outline:none}
 
 /* ── Cost breakdown card ── */
 .cost-card{
@@ -103,12 +108,15 @@ body{min-height:100dvh}
 }
 .cost-card.collapsed .cost-head{margin-bottom:0}
 .cost-head .c-toggle{
-  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);outline:none;
   border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:700;
   letter-spacing:.06em;cursor:pointer;display:none;align-items:center;gap:6px;
-  -webkit-tap-highlight-color:transparent;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.cost-head .c-toggle:active{transform:scale(.94)}
+.cost-head .c-toggle:active{opacity:.75}
+.cost-head .c-toggle:focus{outline:none}
 .cost-head .c-toggle .chev{transition:transform .2s;display:inline-block}
 .cost-card.collapsed .c-toggle .chev{transform:rotate(-90deg)}
 .cost-card .c-summary{
@@ -158,11 +166,14 @@ body{min-height:100dvh}
   grid-column:1 / -1;
 }
 .summary-bar .s-item{
-  background:var(--card2);border:2px solid transparent;
+  background:var(--card2);border:2px solid transparent;outline:none;
   border-radius:16px;padding:14px 12px;text-align:center;
-  transition:transform .2s;
+  transition:opacity .15s;cursor:pointer;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.summary-bar .s-item:active{transform:scale(0.98)}
+.summary-bar .s-item:active{opacity:.85}
+.summary-bar .s-item:focus{outline:none}
 .summary-bar .s-item.total{
   grid-column:1 / -1;grid-row:1;
   background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)
@@ -233,11 +244,14 @@ body{min-height:100dvh}
   display:inline-flex;align-items:center;justify-content:center;gap:4px;
   padding:14px 18px;border-radius:10px;
   font-family:'DM Sans',sans-serif;font-size:18px;font-weight:900;
-  border:2px solid transparent;background:linear-gradient(135deg, rgba(200,200,200,.15), rgba(200,200,200,.08));
+  border:2px solid transparent;outline:none;background:linear-gradient(135deg, rgba(200,200,200,.15), rgba(200,200,200,.08));
   color:#333;cursor:pointer;transition:opacity .2s;white-space:nowrap;min-width:80px;
   -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
 .pay-btn:active{opacity:.85}
+.pay-btn:focus{outline:none}
 .pay-btn.on.cash{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
 .pay-btn.on.transfer{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
 
@@ -290,7 +304,7 @@ body{min-height:100dvh}
   box-shadow:0 6px 16px rgba(6,199,85,.25);
 }
 .btn-share-line:last-child{margin-bottom:0}
-.btn-share-line:active{transform:scale(0.98);opacity:.9}
+.btn-share-line:active{opacity:.7}
 .btn-share-line.status{background:linear-gradient(135deg, #A4D65E, #9CCC65);box-shadow:0 6px 16px rgba(164,214,94,.25)}
 .btn-share-line small{font-size:11px;font-weight:600;opacity:.85}
 
@@ -304,7 +318,7 @@ body{min-height:100dvh}
   display:flex;align-items:center;justify-content:center;gap:8px;
   box-shadow:0 8px 20px rgba(164,214,94,.25);
 }
-.btn-complete:active{transform:scale(0.98);opacity:.9}
+.btn-complete:active{opacity:.7}
 .btn-complete:disabled{opacity:.4;cursor:not-allowed}
 .btn-save{
   width:100%;padding:20px;border-radius:12px;
@@ -314,7 +328,7 @@ body{min-height:100dvh}
   cursor:pointer;transition:transform .2s, background .2s;
   display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.btn-save:active{transform:scale(0.98);background:linear-gradient(135deg, rgba(164,214,94,.25), rgba(164,214,94,.15))}
+.btn-save:active{opacity:.75}
 .btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-clear{
   width:100%;padding:20px;border-radius:12px;
@@ -323,7 +337,7 @@ body{min-height:100dvh}
   font-family:'DM Sans',sans-serif;font-size:19px;font-weight:900;
   cursor:pointer;transition:transform .2s, background .2s;
 }
-.btn-clear:active{transform:scale(0.98);background:linear-gradient(135deg, rgba(255,107,107,.2), rgba(255,107,107,.12))}
+.btn-clear:active{opacity:.75}
 
 /* ── History list ── */
 .history-list{display:flex;flex-direction:column;gap:8px}
@@ -559,7 +573,7 @@ body{min-height:100dvh}
   cursor:pointer;transition:transform .15s;text-align:center;line-height:1.25;
   -webkit-tap-highlight-color:transparent;user-select:none;word-break:break-word;
 }
-.member-chip:active{transform:scale(.96)}
+.member-chip:active{opacity:.8}
 .member-chip.selected{
   background:var(--accent);color:#111;border-color:var(--accent);
 }
@@ -637,7 +651,7 @@ body{min-height:100dvh}
   box-shadow:0 4px 12px rgba(164, 214, 94, 0.3);
   transition:transform .2s ease;
 }
-.setup-toggle:active{transform:scale(0.97)}
+.setup-toggle:active{opacity:.8}
 .setup-toggle .chev{transition:transform .2s;display:inline-block}
 .setup-card.collapsed .setup-toggle .chev{transform:rotate(-90deg)}
 .setup-card.collapsed .setup-body{display:none}
@@ -966,7 +980,7 @@ body{min-height:100dvh}
 .court-item .court-name:focus{
   border-color:#A4D65E;
   background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
-  outline:2px solid #A4D65E;outline-offset:2px;
+  box-shadow:0 2px 8px rgba(164, 214, 94, 0.15);
 }
 .court-item .court-hours-input{
   flex:1;min-width:0;
@@ -994,23 +1008,31 @@ body{min-height:100dvh}
   -webkit-appearance:none;margin:0;
 }
 .court-hours-btn{
-  width:28px;height:28px;border:none;
+  width:28px;height:28px;border:none;outline:none;
   background:#A4D65E;color:#1B5E20;
   border-radius:6px;font-size:18px;font-weight:900;
   cursor:pointer;transition:background .15s ease;
   display:flex;align-items:center;justify-content:center;
   padding:0;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
 .court-hours-btn:active{background:#558B2F}
+.court-hours-btn:focus{outline:none}
 @media (max-width:480px){
   .court-hours-btn{width:24px;height:24px;font-size:16px;}
 }
 .btn-del-court{
-  padding:8px 0;border:none;background:transparent;
+  padding:8px 0;border:none;outline:none;background:transparent;
   color:#1B5E20;font-size:20px;cursor:pointer;
-  font-weight:800;transition:color .2s ease, transform .2s ease;-webkit-tap-highlight-color:transparent;
+  font-weight:800;transition:color .2s ease, transform .2s ease;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.btn-del-court:active{color:#E53935;transform:scale(1.2)}
+.btn-del-court:focus{outline:none}
+.btn-del-court:active{color:#E53935;opacity:.6}
 .btn-add-court{
   width:100%;padding:12px;border:2px dashed #A4D65E;
   background:linear-gradient(135deg, transparent, rgba(164, 214, 94, 0.05));
@@ -1223,17 +1245,29 @@ body{min-height:100dvh}
               <div id="court-list" class="court-items">
                 <div class="court-item" data-court-id="3">
                   <input class="court-name" type="text" value="คอร์ท 3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
+                  <div class="court-hours-wrapper">
+                    <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+                    <span class="court-hours-display">2.0</span>
+                    <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+                  </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="4">
                   <input class="court-name" type="text" value="คอร์ท 4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
+                  <div class="court-hours-wrapper">
+                    <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+                    <span class="court-hours-display">2.0</span>
+                    <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+                  </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
                 <div class="court-item" data-court-id="5">
                   <input class="court-name" type="text" value="คอร์ท 5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
+                  <div class="court-hours-wrapper">
+                    <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+                    <span class="court-hours-display">2.0</span>
+                    <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+                  </div>
                   <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
                 </div>
               </div>
@@ -1531,10 +1565,10 @@ function preventKeyboardBounce(event){
 
 function getTotalCourtHours(){
   // Sum all court hours from the breakdown
-  const items = document.querySelectorAll('.court-item .court-hours-input');
+  const items = document.querySelectorAll('.court-item .court-hours-display');
   let total = 0;
-  items.forEach(input => {
-    const val = parseFloat(input.value) || 0;
+  items.forEach(display => {
+    const val = parseFloat(display.textContent) || 0;
     if(val > 0) total += val;
   });
   return total;
@@ -3228,7 +3262,11 @@ function addNewCourt(){
   item.dataset.courtId = name;
   item.innerHTML = `
     <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-    <input class="court-hours-input" type="number" value="2" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
+    <div class="court-hours-wrapper">
+      <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+      <span class="court-hours-display">2.0</span>
+      <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+    </div>
     <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
   `;
   list.appendChild(item);
@@ -3242,14 +3280,14 @@ function removeCourt(btn){
   updateCourtCalculation();
 }
 
-function adjustHours(btn, delta){
+function adjustCourtHours(btn, delta){
   const wrapper = btn.closest('.court-hours-wrapper');
-  const input = wrapper?.querySelector('.court-hours-input');
-  if(!input) return;
-  let current = parseFloat(input.value) || 0;
-  const newValue = Math.max(0.5, current + delta);
-  input.value = newValue;
-  input.onchange();
+  const display = wrapper?.querySelector('.court-hours-display');
+  if(!display) return;
+  let current = parseFloat(display.textContent) || 0;
+  const newValue = Math.max(0.5, Math.min(8, current + delta)); // 0.5 to 8 hours limit
+  display.textContent = newValue.toFixed(1);
+  updateCourtCalculation();
 }
 
 function updateCourtCalculation(){
@@ -3261,7 +3299,7 @@ function updateCourtCalculation(){
   const courtItems = document.querySelectorAll('.court-item');
   session.courts = Array.from(courtItems).map(item => ({
     name: item.querySelector('.court-name')?.value || '?',
-    hours: parseFloat(item.querySelector('.court-hours-input')?.value) || 0
+    hours: parseFloat(item.querySelector('.court-hours-display')?.textContent) || 0
   }));
 
   // Update formula display
@@ -3318,7 +3356,11 @@ function setSetupInputsFromSession(){
       item.dataset.courtId = c.name;
       item.innerHTML = `
         <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-        <input class="court-hours-input" type="number" value="${c.hours || 2}" min="0.5" max="8" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()" onkeydown="preventKeyboardBounce(event)"/>
+        <div class="court-hours-wrapper">
+          <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+          <span class="court-hours-display">${(c.hours || 2).toFixed(1)}</span>
+          <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+        </div>
         <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
       `;
       courtList.appendChild(item);
