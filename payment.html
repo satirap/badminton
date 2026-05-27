@@ -1177,7 +1177,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.2</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.3</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1681,6 +1681,37 @@ function scheduleCloudSync(){
   _syncTimer = setTimeout(() => { cloudSync().catch(e => console.warn('sync', e)); }, 800);
 }
 
+/* ✅ Safety net — ถ้า user refresh/ปิดหน้า ขณะมี pending sync → force flush */
+window.addEventListener('beforeunload', (e) => {
+  if(_syncTimer){
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+    // Synchronous-like attempt to push pending changes before unload
+    cloudSync().catch(() => {});
+    console.log('[beforeunload] Force-flushed pending sync');
+  }
+});
+
+/* ✅ Mobile fallback — pagehide fires reliably on iOS Safari (beforeunload doesn't) */
+window.addEventListener('pagehide', (e) => {
+  if(_syncTimer){
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+    cloudSync().catch(() => {});
+    console.log('[pagehide] Force-flushed pending sync');
+  }
+});
+
+/* ✅ Visibility change — เมื่อ user switch app/tab บน mobile → flush ทันที */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden' && _syncTimer){
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+    cloudSync().catch(() => {});
+    console.log('[visibilitychange] App hidden, force-flushed pending sync');
+  }
+});
+
 /* ── Real-time listener (multi-user) — onSnapshot subscribe ── */
 let _docUnsubscribe = null;
 let _subscribedDocId = null;
@@ -1803,15 +1834,16 @@ function mergeRemoteIntoSession(d){
     }
   };
   if(d.courts !== undefined){
-    // ✅ Don't overwrite courts if user just changed them locally (within last 1s)
+    // ✅ Don't overwrite courts if user just changed them locally (within last 2s)
     const now = Date.now();
-    const recentlyModified = (now - _lastLocalCourtChange) < 1000;
+    const recentlyModified = (now - _lastLocalCourtChange) < 2000;
     if(recentlyModified){
-      console.log('[merge] courts modified locally within 1s, skip merge');
-      return; // ← Skip entire merge to prevent bounce back
+      console.log('[merge] courts modified locally within 2s, skip COURTS only');
+      // ⚠️ FIX: ไม่ return! แค่ skip courts ส่วนอื่น (players ฯลฯ) ต้อง merge
+    } else {
+      session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
+      setSetupInputsFromSession(); // Rebuild court items
     }
-    session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
-    setSetupInputsFromSession(); // Rebuild court items
   }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
   if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
@@ -2013,6 +2045,8 @@ function deletePlayer(id){
   saveDraft();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — destructive action
+  flushSyncNow();
 }
 
 function togglePay(id, type){
@@ -2028,7 +2062,9 @@ function togglePay(id, type){
   // ✅ Surgical update — แค่ toggle class ของ player card นี้ ไม่ rebuild ทั้ง table
   updatePlayerCardUI(id);
   renderSummary(); // safe — แค่ update text ไม่ rebuild player cards
+  // ✅ บันทึกทันที — ไม่รอ debounce (กัน user refresh แล้วหาย)
   saveDraft();
+  flushSyncNow();
 }
 
 /* ================================================================
@@ -3283,6 +3319,8 @@ function addPlayersFromPaste(){
   renderPlayerListMini();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — กัน user refresh แล้วหาย
+  flushSyncNow();
   toast(`เพิ่ม ${names.length} ผู้เล่นแล้ว`);
 }
 
@@ -3340,6 +3378,8 @@ function addNewMember(){
   renderPlayerListMini();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — กัน user refresh แล้วหาย
+  flushSyncNow();
   toast(`เพิ่ม "${name}" แล้ว`);
 }
 
@@ -3392,6 +3432,8 @@ function addNewCourt(){
   `;
   list.appendChild(item);
   updateCourtCalculation();
+  // ✅ บันทึกทันที — ไม่รอ 800ms debounce (กัน user refresh แล้วหาย)
+  flushSyncNow();
 }
 
 function removeCourt(btn){
@@ -3399,6 +3441,14 @@ function removeCourt(btn){
   if(!confirm('ลบคอร์ท ' + item.dataset.courtId + '?')) return;
   item.remove();
   updateCourtCalculation();
+  // ✅ บันทึกทันที — ไม่รอ 800ms debounce (กัน user refresh แล้วหาย)
+  flushSyncNow();
+}
+
+/** ✅ บันทึก cloud ทันที (skip 800ms debounce) — ใช้กับ destructive actions */
+function flushSyncNow(){
+  if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+  cloudSync().catch(e => console.error('[flushSyncNow] failed:', e));
 }
 
 function adjustCourtHours(btn, delta){
@@ -3411,6 +3461,8 @@ function adjustCourtHours(btn, delta){
   // ✅ Mark that user just changed courts locally — prevent listener from overwriting
   _lastLocalCourtChange = Date.now();
   updateCourtCalculation();
+  // ✅ บันทึกทันที — กัน user refresh แล้วหาย
+  flushSyncNow();
 }
 
 function updateCourtCalculation(){
