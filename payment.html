@@ -151,23 +151,35 @@ body{min-height:100dvh}
 
 /* ── Summary bar ── */
 .summary-bar{
-  display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;
-  margin-bottom:18px;
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin-bottom:18px;margin-left:12px;margin-right:12px;
+}
+.summary-bar .s-item.total{
+  grid-column:1 / -1;
 }
 .summary-bar .s-item{
   background:var(--card2);border:2px solid transparent;
-  border-radius:16px;padding:18px 12px;text-align:center;
+  border-radius:16px;padding:14px 12px;text-align:center;
   transition:transform .2s;
 }
 .summary-bar .s-item:active{transform:scale(0.98)}
-.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:clamp(24px,8vw,40px);font-weight:900;line-height:1.1;color:#1B5E20;display:flex;align-items:baseline;justify-content:center;gap:4px}
-.summary-bar .s-num .baht{font-size:18px;font-weight:700;opacity:.8;margin-left:2px}
-.summary-bar .s-lbl{font-size:16px;color:#558B2F;margin-top:12px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px}
-.summary-bar .s-item.cash{background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
+.summary-bar .s-item.total{
+  grid-column:1 / -1;grid-row:1;
+  background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)
+}
+.summary-bar .s-item.cash{
+  grid-column:1;grid-row:2;
+  background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)
+}
+.summary-bar .s-item.transfer{
+  grid-column:2;grid-row:2;
+  background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)
+}
+.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:clamp(18px,5vw,32px);font-weight:900;line-height:1.1;color:#1B5E20;display:flex;align-items:baseline;justify-content:center;gap:4px}
+.summary-bar .s-num .baht{font-size:clamp(12px,3vw,16px);font-weight:700;opacity:.8;margin-left:2px}
+.summary-bar .s-lbl{font-size:clamp(11px,3vw,14px);color:#558B2F;margin-top:8px;font-weight:900;text-transform:uppercase;letter-spacing:0.5px}
 .summary-bar .s-item.cash .s-num{display:flex}
-.summary-bar .s-item.transfer{background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
 .summary-bar .s-item.transfer .s-num{display:flex}
-.summary-bar .s-item.total{background:linear-gradient(135deg, rgba(196,245,130,.35), rgba(200,230,160,.28));border-color:#A4D65E;box-shadow:0 8px 20px rgba(164,214,94,.12)}
 .summary-bar .s-item.total .s-num{color:#1B5E20}
 
 /* ── Player table ── */
@@ -1129,7 +1141,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.4</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.5</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1599,6 +1611,7 @@ function updateAutosaveLabel(mode){
   if(mode==='cloud') el.textContent = `☁️ บันทึกขึ้น cloud แล้ว ${hhmm}`;
   else if(mode==='syncing') el.textContent = `⏳ กำลังบันทึก...`;
   else if(mode==='error') el.textContent = `⚠️ บันทึก cloud ไม่สำเร็จ (local ok)`;
+  else if(mode==='skip') el.textContent = `💾 บันทึก local แล้ว ${hhmm} (รอเพิ่มรายชื่อผู้เล่น ก่อนบันทึก cloud)`;
   else el.textContent = `💾 บันทึก local แล้ว ${hhmm}`;
 }
 
@@ -1721,7 +1734,10 @@ function mergeRemoteIntoSession(d){
 async function cloudSync(){
   if(!session || !session.players) return;
   // ไม่ sync session เปล่า (ยังไม่มีคน)
-  if(session.players.length === 0 && !editingId) return;
+  if(session.players.length === 0 && !editingId) {
+    updateAutosaveLabel('skip');
+    return;
+  }
 
   updateAutosaveLabel('syncing');
   try{
