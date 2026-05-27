@@ -1007,21 +1007,33 @@ body{min-height:100dvh}
 .court-item .court-hours-input::-webkit-inner-spin-button{
   -webkit-appearance:none;margin:0;
 }
+.court-hours-display{
+  flex:1;min-width:0;
+  padding:8px 12px;
+  background:#FFFFFF;border:1px solid #A4D65E;
+  border-radius:6px;
+  color:#1B5E20;font-size:16px;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;
+  text-align:center;
+  display:flex;align-items:center;justify-content:center;
+}
 .court-hours-btn{
-  width:28px;height:28px;border:none;outline:none;
+  width:36px;height:36px;border:1px solid #A4D65E;outline:none;
   background:#A4D65E;color:#1B5E20;
-  border-radius:6px;font-size:18px;font-weight:900;
-  cursor:pointer;transition:background .15s ease;
+  border-radius:8px;font-size:18px;font-weight:900;
+  cursor:pointer;transition:all .15s ease;
   display:flex;align-items:center;justify-content:center;
   padding:0;flex-shrink:0;
   -webkit-tap-highlight-color:transparent;user-select:none;
   touch-action:manipulation;-webkit-user-select:none;
   -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.court-hours-btn:active{background:#558B2F}
+.court-hours-btn:hover{background:#B8E372;box-shadow:0 2px 6px rgba(164, 214, 94, 0.3)}
+.court-hours-btn:active{background:#558B2F;box-shadow:0 1px 3px rgba(164, 214, 94, 0.5)}
 .court-hours-btn:focus{outline:none}
 @media (max-width:480px){
-  .court-hours-btn{width:24px;height:24px;font-size:16px;}
+  .court-hours-btn{width:32px;height:32px;font-size:16px;}
+  .court-hours-display{padding:6px 10px;font-size:15px;}
 }
 .btn-del-court{
   padding:8px 0;border:none;outline:none;background:transparent;
@@ -1165,7 +1177,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.5</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1672,25 +1684,52 @@ function scheduleCloudSync(){
 /* ── Real-time listener (multi-user) — onSnapshot subscribe ── */
 let _docUnsubscribe = null;
 let _subscribedDocId = null;
+let _lastMergedData = null; // track last merged data for change detection
+let _mergeDebounceTimer = null; // debounce frequent listener fires
 
 function subscribeToSession(docId){
   if(!docId) return;
   if(_subscribedDocId === docId) return; // already listening
   unsubscribeFromSession();
   _subscribedDocId = docId;
+  _lastMergedData = null;
   _docUnsubscribe = db.collection('payment_sessions').doc(docId)
     .onSnapshot(snap => {
       if(!snap.exists) return;
       // ✅ Skip own pending writes — มันจะ echo กลับมา แต่เรามี state local อยู่แล้ว
       if(snap.metadata.hasPendingWrites) return;
       const d = snap.data();
-      mergeRemoteIntoSession(d);
-      const lbl = document.getElementById('autosave-label');
-      if(lbl){
-        const t = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
-        lbl.textContent = `🔄 sync จาก cloud · ${t}`;
-      }
-    }, err => { console.warn('snapshot error', err); });
+      // ✅ Debounce + change detection — กันแสดงผล too frequently
+      if(_mergeDebounceTimer) clearTimeout(_mergeDebounceTimer);
+      _mergeDebounceTimer = setTimeout(() => {
+        if(!hasDataChanged(d, _lastMergedData)){
+          console.log('[listener] data unchanged, skip merge');
+          return;
+        }
+        console.log('[listener] data changed, merging...', d);
+        mergeRemoteIntoSession(d);
+        _lastMergedData = JSON.parse(JSON.stringify(d)); // deep copy
+        const lbl = document.getElementById('autosave-label');
+        if(lbl){
+          const t = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+          lbl.textContent = `🔄 sync จาก cloud · ${t}`;
+        }
+      }, 100); // 100ms debounce — รวมหลาย listener fires
+    }, err => { console.error('[snapshot error]', err); });
+}
+
+/** Check if data actually changed — avoid redundant renders */
+function hasDataChanged(newData, oldData){
+  if(!oldData) return true; // first time
+  // เช็คเฉพาะ key ที่สำคัญ
+  const keysToCheck = ['players', 'courts', 'courtRate', 'shuttlePrice', 'shuttleCount', 'memberEstimate', 'priceOverride', 'status'];
+  for(const key of keysToCheck){
+    if(JSON.stringify(newData[key]) !== JSON.stringify(oldData[key])){
+      console.log(`[changed] ${key}: ${JSON.stringify(oldData[key])} → ${JSON.stringify(newData[key])}`);
+      return true;
+    }
+  }
+  return false;
 }
 
 function unsubscribeFromSession(){
@@ -1699,6 +1738,11 @@ function unsubscribeFromSession(){
     _docUnsubscribe = null;
   }
   _subscribedDocId = null;
+  if(_mergeDebounceTimer){
+    clearTimeout(_mergeDebounceTimer);
+    _mergeDebounceTimer = null;
+  }
+  _lastMergedData = null;
 }
 
 /* ── Query listener (multi-user discovery) — รอ doc "open today" ใหม่ ── */
@@ -1787,6 +1831,12 @@ async function cloudSync(){
   }
 
   updateAutosaveLabel('syncing');
+  console.log('[cloudSync] Starting sync', { editingId, playerCount: session.players.length });
+
+  // ✅ Pause listener during sync to prevent bouncing — เหมือน completeSession
+  const wasSubscribed = _docUnsubscribe !== null;
+  if(wasSubscribed) unsubscribeFromSession();
+
   try{
     const cashN   = session.players.filter(p => p.cash).length;
     const transN  = session.players.filter(p => p.transfer).length;
@@ -1835,13 +1885,17 @@ async function cloudSync(){
     };
     if(editingId){
       // doc เดิม — merge:true ไม่แตะ status field (คงค่าเดิม)
+      console.log('[cloudSync] Updating existing doc:', editingId);
       await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
+      console.log('[cloudSync] ✅ Update successful');
     } else {
       // doc ใหม่ — initialize status เป็น 'open'
+      console.log('[cloudSync] Creating new doc');
       payload.status = 'open';
       const ref = await db.collection('payment_sessions').add(payload);
       editingId = ref.id;
       session.id = ref.id;
+      console.log('[cloudSync] ✅ Create successful, docId:', editingId);
       try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
       unsubscribeFromTodayOpenQuery(); // ✅ เป็นเจ้าของ doc แล้ว ไม่ต้องฟัง query
       subscribeToSession(editingId);   // ✅ ฟัง doc ตรง ๆ แทน
@@ -1849,7 +1903,20 @@ async function cloudSync(){
     updateAutosaveLabel('cloud');
   }catch(e){
     updateAutosaveLabel('error');
-    console.error('cloud sync', e);
+    console.error('[cloudSync] ❌ WRITE FAILED:', {
+      name: e.name,
+      message: e.message,
+      code: e.code,
+      stack: e.stack
+    });
+    // Log to console with more detail for troubleshooting
+    console.error('[cloudSync] Full error object:', e);
+  }finally{
+    // ✅ Always re-subscribe after sync completes (success or error)
+    if(wasSubscribed && editingId){
+      console.log('[cloudSync] Re-subscribing to listener');
+      subscribeToSession(editingId);
+    }
   }
 }
 
@@ -1902,10 +1969,15 @@ async function saveSessionNow(){
   const orig = btn.textContent;
   btn.textContent = '⏳ กำลังบันทึก...';
   if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+  console.log('[saveSessionNow] Manual save triggered');
   try{
     await cloudSync();
+    console.log('[saveSessionNow] ✅ Save completed successfully');
     toast('บันทึกแล้ว ☁️');
-  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  }catch(e){
+    console.error('[saveSessionNow] ❌ Save failed:', e);
+    toast('บันทึกไม่สำเร็จ: '+e.message);
+  }
   btn.disabled = false;
   renderSummary(); // restore text
 }
