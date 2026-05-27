@@ -1177,7 +1177,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.3</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.4</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1815,10 +1815,17 @@ function adoptSession(docId, d){
 }
 
 let _lastLocalCourtChange = 0; // ✅ Track when courts were modified locally
+let _lastLocalWrite = 0; // ✅ Track when WE last wrote — skip listener echo
 
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
+  // ✅ Skip listener echo — ถ้าเพิ่งเขียนเอง <2s ที่แล้ว ไม่ต้อง merge (เป็น echo ของ write เรา)
+  const sinceWrite = Date.now() - _lastLocalWrite;
+  if(sinceWrite < 2000){
+    console.log(`[merge] skip listener echo (wrote ${sinceWrite}ms ago)`);
+    return;
+  }
   // player list — main reason สำหรับ multi-user
   if(Array.isArray(d.players)){
     session.players = d.players.map(p => ({
@@ -1942,6 +1949,8 @@ async function cloudSync(){
       subscribeToSession(editingId);   // ✅ ฟัง doc ตรง ๆ แทน
     }
     updateAutosaveLabel('cloud');
+    // ✅ Mark "just wrote" — listener echo within 2s จะถูก skip (กัน DOM rebuild flicker)
+    _lastLocalWrite = Date.now();
     // ✅ Clear local change timestamp after successful sync
     _lastLocalCourtChange = 0;
     console.log('[cloudSync] ✅ Local changes synced, listener can resume');
