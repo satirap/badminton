@@ -205,12 +205,12 @@ body{min-height:100dvh}
   font-size:26px;font-weight:900;color:var(--ink);letter-spacing:.02em;
 }
 .section-head-count{
-  font-family:'IBM Plex Mono',monospace;font-size:clamp(11px,2.5vw,14px);font-weight:700;
-  color:#fff;background:linear-gradient(135deg, var(--accent), var(--green));
-  border:none;padding:8px 12px;border-radius:100px;
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(13px,3.2vw,16px);font-weight:800;
+  color:#1B5E20;background:linear-gradient(135deg, var(--accent), var(--green));
+  border:none;padding:12px 16px;border-radius:12px;
   box-shadow:0 4px 12px rgba(164,214,94,.25);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  display:inline-block;max-width:100%;
+  display:block;width:100%;text-align:center;
+  margin:0 0 16px 0;letter-spacing:.02em;
 }
 
 .player-table{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
@@ -910,15 +910,15 @@ body{min-height:100dvh}
 }
 .pay-btn-big{
   padding:20px 14px;border-radius:var(--radius);
-  border:2px solid var(--border);background:var(--input);color:var(--soft);
+  border:2px solid var(--border);background:var(--input);color:var(--accent);
   font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;
   cursor:pointer;transition:none;
   display:flex;align-items:center;justify-content:center;gap:8px;
   min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn-big:active{opacity:.85}
-.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
-.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#fff}
+.pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#1B5E20}
+.pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#1B5E20}
 .pay-btn-big .ic{font-size:24px;line-height:1}
 
 /* Edit section in setup card (when a complete session is being edited) */
@@ -944,6 +944,7 @@ body{min-height:100dvh}
   text-transform:uppercase;padding:10px 0;border-bottom:2px solid #C8E6A0;
   font-family:'DM Sans',sans-serif;letter-spacing:.08em;
 }
+.breakdown-header > span{text-align:center}
 @media (max-width:480px){
   .breakdown-header{grid-template-columns:50px 1fr 36px;gap:8px;font-size:12px;}
 }
@@ -1150,13 +1151,16 @@ body{min-height:100dvh}
 }
 #section-payment .pay-btn-big {
   border-color: #A4D65E;
-  color: #1B5E20;
-  transition:opacity .15s, transform .15s;
+  color: var(--accent);
+  transition:opacity .15s;
   font-weight: 900;
+}
+#section-payment .pay-btn-big.cash.on,
+#section-payment .pay-btn-big.transfer.on {
+  color: #1B5E20;
 }
 #section-payment .pay-btn-big:active {
   opacity:.85;
-  transform:scale(0.98);
 }
 
 </style>
@@ -1177,7 +1181,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.4</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.7.0</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1313,7 +1317,7 @@ body{min-height:100dvh}
             <div class="stp-field">
               <label>จำนวนลูก</label>
               <div class="stp-field-row">
-                <input type="number" id="shuttle-count" value="0" min="0" step="1" inputmode="numeric"/>
+                <input type="number" id="shuttle-count" placeholder="0" min="0" step="1" inputmode="numeric"/>
                 <span class="suf">ลูก</span>
               </div>
             </div>
@@ -1384,9 +1388,9 @@ body{min-height:100dvh}
       </div>
 
       <div class="section-head-row">
-        <div class="section-head-title">👥 สมาชิกวันนี้</div>
-        <div class="section-head-count" id="player-count-badge">ผู้เล่น <span id="total-players">0</span> คน · จ่ายแล้ว <span id="paid-count">0</span> คน · ค้าง <span id="unpaid-count">0</span> คน</div>
+        <div class="section-head-title">สมาชิกวันนี้</div>
       </div>
+      <div class="section-head-count" id="player-count-badge">ผู้เล่น <span id="total-players">0</span> คน · จ่ายแล้ว <span id="paid-count">0</span> คน · ค้าง <span id="unpaid-count">0</span> คน</div>
       <div class="player-table" id="player-table"></div>
 
       <!-- Share status to LINE -->
@@ -1854,7 +1858,14 @@ function mergeRemoteIntoSession(d){
   }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
   if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
-  if(d.shuttleCount  !== undefined){ session.shuttleCount  = d.shuttleCount || 0; setIfNotFocused('shuttle-count', session.shuttleCount); }
+  if(d.shuttleCount  !== undefined){
+    session.shuttleCount  = d.shuttleCount || 0;
+    // ✅ ถ้า 0 ปล่อยว่าง (กดง่ายขึ้น)
+    const el = document.getElementById('shuttle-count');
+    if(el && document.activeElement !== el){
+      el.value = session.shuttleCount > 0 ? session.shuttleCount : '';
+    }
+  }
   if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
   if(d.priceOverride !== undefined){ session.priceOverride = d.priceOverride || 0; setIfNotFocused('price-override', session.priceOverride); }
   if(d.courtFee !== undefined) session.courtFee = d.courtFee || 0;
@@ -3529,7 +3540,9 @@ function setSetupInputsFromSession(){
   set('member-est',     session.memberEstimate || 0);
   set('court-rate',     session.courtRate || 0);
   set('shuttle-price',  session.shuttlePrice || 0);
-  set('shuttle-count',  session.shuttleCount || 0);
+  // ✅ shuttle-count: ถ้าเป็น 0 ให้ปล่อยว่าง (กด input ง่ายขึ้น)
+  const shuttleEl = document.getElementById('shuttle-count');
+  if(shuttleEl) shuttleEl.value = session.shuttleCount > 0 ? session.shuttleCount : '';
   set('court-fee',      session.courtFee || 0);
   set('price-override', session.priceOverride || 0);
 
