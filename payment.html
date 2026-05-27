@@ -1177,7 +1177,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.1</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.2</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -2025,9 +2025,10 @@ function togglePay(id, type){
     p.transfer = !p.transfer;
     if(p.transfer) p.cash = false; // เลือก transfer → ยกเลิก cash
   }
+  // ✅ Surgical update — แค่ toggle class ของ player card นี้ ไม่ rebuild ทั้ง table
+  updatePlayerCardUI(id);
+  renderSummary(); // safe — แค่ update text ไม่ rebuild player cards
   saveDraft();
-  renderTable();
-  renderSummary();
 }
 
 /* ================================================================
@@ -2044,7 +2045,7 @@ function renderTable(){
               : p.cash ? 'paid-cash'
               : p.transfer ? 'paid-transfer' : '';
     const share = getPlayerShare(p);
-    return `<div class="player-card ${cls}">
+    return `<div class="player-card ${cls}" data-player-id="${p.id}">
       <button class="pc-del" onclick="deletePlayer('${p.id}')" title="ลบ">✕</button>
       <div class="pc-head">
         <div class="pc-num">${i+1}</div>
@@ -2061,6 +2062,42 @@ function renderTable(){
       </div>
     </div>`;
   }).join('');
+}
+
+/** ✅ Surgical update — แค่ toggle class แทนการ rebuild DOM ทั้งหมด */
+function updatePlayerCardUI(playerId){
+  const p = session.players.find(p => p.id === playerId);
+  if(!p) return;
+  const card = document.querySelector(`.player-card[data-player-id="${playerId}"]`);
+  if(!card) return;
+
+  // อัปเดต card class
+  card.classList.remove('paid-both', 'paid-cash', 'paid-transfer');
+  if(p.cash && p.transfer) card.classList.add('paid-both');
+  else if(p.cash) card.classList.add('paid-cash');
+  else if(p.transfer) card.classList.add('paid-transfer');
+
+  // อัปเดต cash button
+  const cashBtn = card.querySelector('.pay-btn-big.cash');
+  if(cashBtn) cashBtn.classList.toggle('on', !!p.cash);
+
+  // อัปเดต transfer button
+  const transferBtn = card.querySelector('.pay-btn-big.transfer');
+  if(transferBtn) transferBtn.classList.toggle('on', !!p.transfer);
+}
+
+/** ✅ Surgical update — อัปเดตยอดเงินของทุก player (ใช้เมื่อ court hours / cost เปลี่ยน) */
+function updateAllPlayerShares(){
+  document.querySelectorAll('.player-card[data-player-id]').forEach(card => {
+    const id = card.dataset.playerId;
+    const p = session.players.find(p => p.id === id);
+    if(!p) return;
+    const amtEl = card.querySelector('.pc-amt');
+    if(amtEl){
+      const share = getPlayerShare(p);
+      amtEl.innerHTML = `${fmtBaht(share)}<small>฿</small>`;
+    }
+  });
 }
 
 function renderSummary(){
@@ -3415,9 +3452,10 @@ function onCostInputChange(e){
   if(e?.target?.id !== 'price-override'){
     refreshAutoOverride();
   }
-  saveDraft();
   renderSummary();
-  renderTable();
+  // ✅ Surgical update — แค่ update ยอดเงินของทุกคน ไม่ rebuild ทั้ง player table
+  updateAllPlayerShares();
+  saveDraft();
 }
 ['member-est','court-rate','shuttle-price','shuttle-count','price-override'].forEach(id => {
   const el = document.getElementById(id);
