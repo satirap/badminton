@@ -197,8 +197,8 @@ body{min-height:100dvh}
 /* ── Section title for member list ── */
 .section-head-row{
   display:flex;align-items:center;justify-content:space-between;
-  margin:20px 0 16px;
-  padding-bottom:14px;
+  margin:12px 0 8px;
+  padding-bottom:8px;
   border-bottom:3px solid var(--accent);
 }
 .section-head-title{
@@ -207,13 +207,13 @@ body{min-height:100dvh}
 .section-head-count{
   font-family:'IBM Plex Mono',monospace;font-size:clamp(13px,3.2vw,16px);font-weight:800;
   color:#1B5E20;background:linear-gradient(135deg, var(--accent), var(--green));
-  border:none;padding:12px 16px;border-radius:12px;
+  border:none;padding:10px 14px;border-radius:12px;
   box-shadow:0 4px 12px rgba(164,214,94,.25);
   display:block;width:100%;text-align:center;
-  margin:0 0 16px 0;letter-spacing:.02em;
+  margin:0 0 12px 0;letter-spacing:.02em;
 }
 
-.player-table{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 
 .player-row{
   display:grid;grid-template-columns:50px 1fr auto auto auto;
@@ -868,58 +868,58 @@ body{min-height:100dvh}
 .member-chip.selected .del-x{background:#1118;color:#fffa}
 .member-chip.selected .del-x:hover{background:#ef4444;color:#fff}
 
-/* ── Player card (large, button-first) ── */
+/* ── Player card (compact, button-first) ── */
 .player-card{
   background:var(--card);border:2px solid var(--border);
-  border-radius:var(--radius);padding:16px;
-  display:flex;flex-direction:column;gap:12px;
-  position:relative;min-height:220px;
+  border-radius:var(--radius);padding:10px 12px;
+  display:flex;flex-direction:column;gap:8px;
+  position:relative;
 }
 .player-card.paid-cash{border-color:var(--green)}
 .player-card.paid-transfer{border-color:var(--blue)}
 .player-card.paid-both{border-color:var(--accent)}
 
 .pc-head{
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:10px;
 }
 .pc-num{
-  font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--mute);
-  width:28px;text-align:center;flex:0 0 auto;
+  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--mute);
+  width:24px;text-align:center;flex:0 0 auto;
 }
 .pc-name{
-  flex:1;font-size:21px;font-weight:800;color:var(--ink);
+  flex:1;font-size:18px;font-weight:800;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
 }
 .pc-amt{
-  font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;color:var(--accent);
+  font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:800;color:var(--accent);
   flex:0 0 auto;white-space:nowrap;
 }
-.pc-amt small{font-size:12px;font-weight:700;opacity:.7;margin-left:2px}
+.pc-amt small{font-size:11px;font-weight:700;opacity:.7;margin-left:2px}
 .pc-del{
-  position:absolute;top:6px;right:6px;
-  width:26px;height:26px;border-radius:50%;border:none;padding:0;
-  background:transparent;color:var(--mute);font-size:14px;cursor:pointer;
+  position:absolute;top:4px;right:4px;
+  width:24px;height:24px;border-radius:50%;border:none;padding:0;
+  background:transparent;color:var(--mute);font-size:13px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   -webkit-tap-highlight-color:transparent;opacity:.5;
 }
 .pc-del:active{background:#ef444420;color:var(--red);opacity:1}
 
-/* BIG pay buttons */
+/* Pay buttons (compact) */
 .pc-pay-row{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;
 }
 .pay-btn-big{
-  padding:20px 14px;border-radius:var(--radius);
+  padding:12px 10px;border-radius:var(--radius);
   border:2px solid var(--border);background:var(--input);color:var(--accent);
-  font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:800;
   cursor:pointer;transition:none;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  min-height:68px;-webkit-tap-highlight-color:transparent;user-select:none;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-height:48px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .pay-btn-big:active{opacity:.85}
 .pay-btn-big.cash.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#1B5E20}
 .pay-btn-big.transfer.on{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#1B5E20}
-.pay-btn-big .ic{font-size:24px;line-height:1}
+.pay-btn-big .ic{font-size:18px;line-height:1}
 
 /* Edit section in setup card (when a complete session is being edited) */
 .setup-card.locked .stp-field input{color:var(--mute)}
@@ -1070,7 +1070,7 @@ body{min-height:100dvh}
   .setup-grid{grid-template-columns:repeat(2,1fr)}
   .setup-grid-4col{grid-template-columns:repeat(4,1fr)}
   .player-table{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  .pay-btn-big{font-size:17px;min-height:68px}
+  .pay-btn-big{font-size:15px;min-height:48px}
 }
 @media (min-width:1100px){
   .player-table{grid-template-columns:repeat(3,1fr)}
@@ -1181,7 +1181,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.7.0</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.7.1</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -2279,12 +2279,8 @@ function renderSummary(){
       mismatchBanner.classList.add('warn');
       mismatchBanner.classList.remove('ok');
       mismatchBanner.style.display = 'block';
-    } else if(memberEstNow > 0 && playerCount > 0){
-      mismatchBanner.innerHTML = `✅ ผู้เล่น <b>${playerCount} คน</b> ตรงกับยอดคำนวณราคา`;
-      mismatchBanner.classList.add('ok');
-      mismatchBanner.classList.remove('warn');
-      mismatchBanner.style.display = 'block';
     } else {
+      // ✅ ไม่มี mismatch → ซ่อน banner เลย (ไม่ต้องบอก OK เพราะ user ใส่คนเองไม่ได้แล้ว)
       mismatchBanner.style.display = 'none';
     }
   }
