@@ -1129,7 +1129,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.3</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.4</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1306,22 +1306,6 @@ body{min-height:100dvh}
     <div id="section-payment" style="display:none">
       <!-- Mismatch banner: เตือนถ้าจำนวนผู้เล่น ≠ คนที่ใช้คำนวณ -->
       <div id="mismatch-banner" class="mismatch-banner" style="display:none"></div>
-
-      <!-- Payment counters: รับเงินไปกี่คน -->
-      <div class="payment-counters" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:24px;font-weight:900;color:var(--accent);font-family:'IBM Plex Mono',monospace">
-            <span id="payment-cash-count">0</span>
-          </div>
-          <div style="font-size:12px;color:var(--mute);font-weight:700;margin-top:6px">💵 รับเงินสด</div>
-        </div>
-        <div style="background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px;text-align:center">
-          <div style="font-size:24px;font-weight:900;color:var(--accent);font-family:'IBM Plex Mono',monospace">
-            <span id="payment-transfer-count">0</span>
-          </div>
-          <div style="font-size:12px;color:var(--mute);font-weight:700;margin-top:6px">📲 รับเงินโอน</div>
-        </div>
-      </div>
 
       <!-- Summary (in baht) -->
       <div class="summary-bar">
