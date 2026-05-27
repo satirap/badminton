@@ -1177,7 +1177,7 @@ body{min-height:100dvh}
       <div class="date-big" id="date-big">—</div>
       <div class="date-sub">วันที่เก็บเงิน</div>
     </div>
-    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6</div>
+    <div id="version-badge" style="font-size:11px;color:#999;padding:4px 8px;background:#f5f5f5;border-radius:4px;font-family:monospace">v3.6.1</div>
     <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
   </div>
 
@@ -1783,6 +1783,8 @@ function adoptSession(docId, d){
   toast('🔄 พบรอบที่เปิดอยู่ · sync แล้ว');
 }
 
+let _lastLocalCourtChange = 0; // ✅ Track when courts were modified locally
+
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
@@ -1800,7 +1802,14 @@ function mergeRemoteIntoSession(d){
       el.value = (v ?? 0);
     }
   };
-  if(d.courts        !== undefined){
+  if(d.courts !== undefined){
+    // ✅ Don't overwrite courts if user just changed them locally (within last 1s)
+    const now = Date.now();
+    const recentlyModified = (now - _lastLocalCourtChange) < 1000;
+    if(recentlyModified){
+      console.log('[merge] courts modified locally within 1s, skip merge');
+      return; // ← Skip entire merge to prevent bounce back
+    }
     session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
     setSetupInputsFromSession(); // Rebuild court items
   }
@@ -1901,6 +1910,9 @@ async function cloudSync(){
       subscribeToSession(editingId);   // ✅ ฟัง doc ตรง ๆ แทน
     }
     updateAutosaveLabel('cloud');
+    // ✅ Clear local change timestamp after successful sync
+    _lastLocalCourtChange = 0;
+    console.log('[cloudSync] ✅ Local changes synced, listener can resume');
   }catch(e){
     updateAutosaveLabel('error');
     console.error('[cloudSync] ❌ WRITE FAILED:', {
@@ -3359,10 +3371,15 @@ function adjustCourtHours(btn, delta){
   let current = parseFloat(display.textContent) || 0;
   const newValue = Math.max(0.5, Math.min(8, current + delta)); // 0.5 to 8 hours limit
   display.textContent = newValue.toFixed(1);
+  // ✅ Mark that user just changed courts locally — prevent listener from overwriting
+  _lastLocalCourtChange = Date.now();
   updateCourtCalculation();
 }
 
 function updateCourtCalculation(){
+  // ✅ Mark that courts were modified locally — prevent listener bounce-back
+  _lastLocalCourtChange = Date.now();
+
   const courtHours = getTotalCourtHours();
   const rate = getNumInput('court-rate');
   const courtFee = courtHours * rate;
