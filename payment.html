@@ -194,10 +194,12 @@ body{min-height:100dvh}
   font-size:26px;font-weight:900;color:var(--ink);letter-spacing:.02em;
 }
 .section-head-count{
-  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:900;
+  font-family:'IBM Plex Mono',monospace;font-size:clamp(11px,2.5vw,14px);font-weight:700;
   color:#fff;background:linear-gradient(135deg, var(--accent), var(--green));
-  border:none;padding:10px 18px;border-radius:100px;
+  border:none;padding:8px 12px;border-radius:100px;
   box-shadow:0 4px 12px rgba(164,214,94,.25);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:inline-block;max-width:100%;
 }
 
 .player-table{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
@@ -813,7 +815,7 @@ body{min-height:100dvh}
   background:#FBC02D18;color:#FBC02D;border:1.5px solid #FBC02D80;
 }
 .mismatch-banner.ok{
-  background:#22c55e18;color:#bbf7d0;border:1.5px solid #22c55e80;
+  background:#22c55e18;color:#1f2937;border:1.5px solid #22c55e80;
 }
 .mismatch-banner b{font-weight:800;font-family:'IBM Plex Mono',monospace}
 
@@ -1400,6 +1402,17 @@ body{min-height:100dvh}
 <div class="toast" id="toast"></div>
 
 <script>
+/* ═══════════════════════════════════════════════════════════════
+   DEV COMMAND — devReload() in console to force refresh cache
+   ═══════════════════════════════════════════════════════════════ */
+window.devReload = function(){
+  console.log('🔄 Clearing cache and reloading...');
+  localStorage.clear();
+  caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+    .then(() => { console.log('✅ Cache cleared'); location.reload(true); })
+    .catch(e => { console.error('Cache clear error:', e); location.reload(true); });
+};
+
 /* ================================================================
    CONFIG
    ================================================================ */
