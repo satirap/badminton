@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<!-- ✅ Prevent browser from caching this HTML file (fix Cmd+Shift+R issue) -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>เก็บเงิน — ก๊วนอยากตี ต้องได้ตี</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1414,8 +1418,8 @@ body{min-height:100dvh}
       <div class="autosave" id="autosave-label"></div>
     </div><!-- /section-payment -->
 
-    <!-- Version badge — ด้านล่างสุดของหน้าแรก -->
-    <div id="version-badge" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em">v3.7.2</div>
+    <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.7.3 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1455,14 +1459,32 @@ body{min-height:100dvh}
 
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   DEV COMMAND — devReload() in console to force refresh cache
+   FORCE RELOAD — แตะ version badge หรือเรียก devReload() ใน console
+   • Unregister service workers (ถ้ามี)
+   • Clear all browser caches
+   • Reload หน้าด้วย cache-busting URL parameter
    ═══════════════════════════════════════════════════════════════ */
-window.devReload = function(){
-  console.log('🔄 Clearing cache and reloading...');
-  localStorage.clear();
-  caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    .then(() => { console.log('✅ Cache cleared'); location.reload(true); })
-    .catch(e => { console.error('Cache clear error:', e); location.reload(true); });
+window.devReload = async function(){
+  console.log('🔄 Force reload — clearing all caches...');
+  try{
+    // 1. Unregister service workers (ถ้ามี)
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      if(regs.length) console.log(`✅ Unregistered ${regs.length} service worker(s)`);
+    }
+    // 2. Clear all caches
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      if(keys.length) console.log(`✅ Cleared ${keys.length} cache(s)`);
+    }
+  }catch(e){ console.warn('Cache clear warning:', e); }
+  // 3. Reload with cache-busting param (forces fresh HTML download)
+  const url = new URL(window.location.href);
+  url.searchParams.set('_v', Date.now());
+  console.log('✅ Reloading with cache-bust URL');
+  window.location.replace(url.toString());
 };
 
 /* ================================================================
