@@ -1415,7 +1415,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — ด้านล่างสุดของหน้าแรก -->
-    <div id="version-badge" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em">v3.7.1</div>
+    <div id="version-badge" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em">v3.7.2</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2351,9 +2351,10 @@ async function completeSession(){
       dateDisplay: session.dateDisplay,
       status:      'complete',
       players:     session.players,
-      courts:        breakdown.courts,
-      courtRate:     breakdown.courtRate,
-      hours:         breakdown.hours,
+      // ✅ FIX: breakdown ไม่มี courts/hours field — ใช้ session.courts และ breakdown.courtHours แทน
+      courts:        Array.isArray(session.courts) ? session.courts : [],
+      courtRate:     breakdown.courtRate || 0,
+      hours:         breakdown.courtHours || 0,
       courtFee:      breakdown.courtFee,
       shuttlePrice:  breakdown.shuttlePrice,
       shuttleCount:  breakdown.shuttleCount,
