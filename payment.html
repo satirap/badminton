@@ -71,19 +71,23 @@ body{min-height:100dvh}
   .header-card .date-box .date-sub{font-size:11px}
 }
 .history-icon-btn{
-  width:38px;height:38px;border-radius:10px;flex-shrink:0;outline:none;
-  background:var(--card2);border:1.5px solid var(--border);
-  color:var(--ink);font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:transform .15s, border-color .15s;-webkit-tap-highlight-color:transparent;
+  flex-shrink:0;outline:none;
+  background:linear-gradient(135deg, var(--accent), var(--green));
+  border:none;color:#1B5E20;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;
+  padding:10px 14px;border-radius:10px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:opacity .15s;-webkit-tap-highlight-color:transparent;
   touch-action:manipulation;-webkit-user-select:none;user-select:none;
   -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  box-shadow:0 4px 12px rgba(164,214,94,.25);
+  white-space:nowrap;letter-spacing:.02em;
 }
 @media (min-width:520px){
-  .history-icon-btn{width:44px;height:44px;border-radius:12px;font-size:20px}
+  .history-icon-btn{font-size:14px;padding:12px 16px}
   .header-card .brand-logo{width:46px!important;height:46px!important}
 }
-.history-icon-btn:active{opacity:.75;border-color:var(--accent)}
+.history-icon-btn:active{opacity:.85}
 .back-btn{
   width:100%;padding:14px 18px;margin-bottom:12px;outline:none;
   background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);
@@ -164,7 +168,7 @@ body{min-height:100dvh}
 /* ── Summary bar ── */
 .summary-bar{
   display:grid;grid-template-columns:1fr 1fr;gap:12px;
-  margin:16px 12px 6px;
+  margin:16px 12px 8px;
 }
 .summary-bar .s-item.total{
   grid-column:1 / -1;
@@ -214,7 +218,7 @@ body{min-height:100dvh}
   border:none;padding:10px 14px;border-radius:12px;
   box-shadow:0 4px 12px rgba(164,214,94,.25);
   display:block;width:100%;text-align:center;
-  margin:6px 0 20px;letter-spacing:.02em;
+  margin:0 0 16px;letter-spacing:.02em;
 }
 
 .player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
@@ -771,6 +775,32 @@ body{min-height:100dvh}
   .sub-tabs.three .sub-tab{padding:13px 8px;font-size:14px;gap:6px}
 }
 
+/* ── Date picker card (รายชื่อ tab) ── */
+.date-picker-card{
+  background:linear-gradient(135deg, rgba(164,214,94,.12), rgba(164,214,94,.05));
+  border:2px solid #A4D65E;
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+  box-shadow:0 4px 12px rgba(164,214,94,.12);
+}
+.date-picker-label{
+  display:block;font-size:14px;font-weight:800;color:#1B5E20;margin-bottom:10px;
+  letter-spacing:.02em;
+}
+.date-picker-card input[type="date"]{
+  width:100%;padding:14px 16px;border:1.5px solid #A4D65E;border-radius:var(--rsm);
+  background:#fff;color:#1B5E20;font-family:'DM Sans',sans-serif;
+  font-size:16px;font-weight:700;outline:none;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.date-picker-card input[type="date"]:focus{border-color:#558B2F}
+.date-picker-display{
+  margin-top:10px;padding:10px 14px;
+  background:#fff;border-radius:8px;
+  font-size:15px;font-weight:800;color:#1B5E20;text-align:center;
+  letter-spacing:.02em;
+}
+
 /* ── Paste card (รายชื่อ tab) ── */
 .paste-card{
   background:var(--card);border:1.5px solid var(--border);
@@ -972,15 +1002,22 @@ body{min-height:100dvh}
   .court-hours-wrapper{padding:6px;gap:2px;}
 }
 .court-item .court-name{
-  padding:11px 12px;border:2px solid #C8E6A0;
+  padding:11px 8px;border:2px solid #C8E6A0;
   background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
   border-radius:10px;
   color:#1B5E20;font-size:15px;font-weight:800;
   font-family:'IBM Plex Mono',monospace;outline:none;
   transition:border-color .2s ease;
   box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
-  text-align:center;
-  min-width:0;
+  text-align:center;text-align-last:center;
+  min-width:0;cursor:pointer;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  touch-action:manipulation;
+}
+.court-item select.court-name{
+  background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231B5E20' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;
+  padding-right:18px;
 }
 .court-item .court-name:focus{
   border-color:#A4D65E;
@@ -1181,11 +1218,7 @@ body{min-height:100dvh}
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
     </div>
-    <div class="date-box">
-      <div class="date-big" id="date-big">—</div>
-      <div class="date-sub">วันที่เก็บเงิน</div>
-    </div>
-    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
+    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
   </div>
 
   <!-- ============ TAB: COLLECT ============ -->
@@ -1219,9 +1252,16 @@ body{min-height:100dvh}
 
     <!-- ════════════════ Section: รายชื่อ ════════════════ -->
     <div id="section-members">
+      <!-- 0. Date picker — เลือกวันที่จัดก๊วน -->
+      <div class="date-picker-card">
+        <label for="session-date-input" class="date-picker-label">📅 เลือกวันที่จัดก๊วน</label>
+        <input type="date" id="session-date-input" onchange="changeSessionDate(this.value)"/>
+        <div class="date-picker-display" id="session-date-display">—</div>
+      </div>
+
       <!-- 1. paste จาก LINE -->
       <div class="paste-card">
-        <div class="paste-label">📋 paste รายชื่อจาก LINE</div>
+        <div class="paste-label">📋 นำเข้ารายชื่อจาก Line</div>
         <textarea id="paste-input" rows="6" placeholder="วางข้อความจาก LINE ที่นี่...&#10;เช่น&#10;1. กิ๊ฟ&#10;2. กฤต&#10;3. โบว์&#10;..." autocomplete="off"></textarea>
         <button class="paste-btn" onclick="addPlayersFromPaste()">📥 เพิ่มผู้เล่น (ทับของเดิม)</button>
         <div class="paste-hint" id="paste-hint">ระบบจะตัด "1.", "2.", emoji header ออกอัตโนมัติ</div>
@@ -1254,41 +1294,15 @@ body{min-height:100dvh}
         <div class="setup-body">
           <!-- Court Breakdown Section (ใหม่) -->
           <div class="court-breakdown-section">
-            <div class="breakdown-label">🏸 คอร์ท</div>
+            <div class="breakdown-label">🏸 คอร์ท <span id="court-count-label" style="font-weight:700;color:#558B2F;font-size:13px;letter-spacing:0">(จองสนามจำนวน <b id="court-count-num">0</b> คอร์ท)</span></div>
             <div class="court-items-wrapper">
               <div class="breakdown-header">
-                <span>ชื่อ</span>
+                <span>คอร์ทเลขที่</span>
                 <span>ชั่วโมง</span>
                 <span></span>
               </div>
               <div id="court-list" class="court-items">
-                <div class="court-item" data-court-id="3">
-                  <input class="court-name" type="text" value="คอร์ท 3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <div class="court-hours-wrapper">
-                    <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
-                    <span class="court-hours-display">2.0</span>
-                    <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
-                  </div>
-                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
-                </div>
-                <div class="court-item" data-court-id="4">
-                  <input class="court-name" type="text" value="คอร์ท 4" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <div class="court-hours-wrapper">
-                    <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
-                    <span class="court-hours-display">2.0</span>
-                    <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
-                  </div>
-                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
-                </div>
-                <div class="court-item" data-court-id="5">
-                  <input class="court-name" type="text" value="คอร์ท 5" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <div class="court-hours-wrapper">
-                    <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
-                    <span class="court-hours-display">2.0</span>
-                    <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
-                  </div>
-                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
-                </div>
+                <!-- ✅ Default courts จะถูก render โดย setSetupInputsFromSession() ตอน boot -->
               </div>
             </div>
             <button class="btn-add-court" onclick="addNewCourt()">+ เพิ่มคอร์ท</button>
@@ -1300,7 +1314,7 @@ body{min-height:100dvh}
               <label>ค่าคอร์ท/ชั่วโมง</label>
               <div class="stp-field-row">
                 <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
-                <span class="suf">฿</span>
+                <span class="suf">บาท</span>
               </div>
             </div>
             <div class="stp-field">
@@ -1311,10 +1325,10 @@ body{min-height:100dvh}
               </div>
             </div>
             <div class="stp-field">
-              <label>ลูกแบด/ลูก</label>
+              <label>ราคาลูกแบด / ลูก</label>
               <div class="stp-field-row">
                 <input type="number" id="shuttle-price" value="75" min="0" step="5" inputmode="numeric"/>
-                <span class="suf">฿</span>
+                <span class="suf">บาท</span>
               </div>
             </div>
             <div class="stp-field">
@@ -1329,30 +1343,30 @@ body{min-height:100dvh}
           <div class="setup-totals">
             <div class="stp-row">
               <span>ค่าคอร์ท <small id="court-formula"></small></span>
-              <span><b id="court-cost-display">0</b> ฿</span>
+              <span><b id="court-cost-display">0</b> บาท</span>
             </div>
             <div class="stp-row">
               <span>ค่าลูก <small id="shuttle-formula"></small></span>
-              <span><b id="shuttle-cost-display">0</b> ฿</span>
+              <span><b id="shuttle-cost-display">0</b> บาท</span>
             </div>
             <div class="stp-row big total">
               <span>รวมทั้งสิ้น</span>
-              <span><b id="cost-total">0</b> ฿</span>
+              <span><b id="cost-total">0</b> บาท</span>
             </div>
             <div class="stp-row big">
               <span>เฉลี่ย/คน <small id="per-note"></small></span>
-              <span><b id="cost-per-person">0</b> ฿</span>
+              <span><b id="cost-per-person">0</b> บาท</span>
             </div>
             <!-- ปรับยอดที่จะแจ้งจริง — auto ปัดเต็ม 10 · พิมพ์ทับเองได้ -->
             <div class="stp-override">
               <div class="ov-label">📢 ราคาที่จะแจ้ง <small>(ปัดเต็ม 10 · พิมพ์ทับได้)</small></div>
               <div class="ov-row">
                 <input type="number" id="price-override" placeholder="0" min="0" step="5" inputmode="numeric"/>
-                <span class="ov-unit">฿/คน</span>
+                <span class="ov-unit">บาท/คน</span>
               </div>
               <div class="ov-hint" id="ov-hint">ระบบปัดขึ้นเต็ม 10 ให้แล้ว · พิมพ์เพื่อปรับเอง</div>
               <div class="gongklang-row" id="gongklang-row" style="display:none">
-                💰 เก็บเข้ากองกลาง: <b id="gongklang-amt">0</b> ฿
+                💰 เก็บเข้ากองกลาง: <b id="gongklang-amt">0</b> บาท
               </div>
             </div>
           </div>
@@ -1390,9 +1404,6 @@ body{min-height:100dvh}
         </div>
       </div>
 
-      <div class="section-head-row">
-        <div class="section-head-title">สมาชิกวันนี้</div>
-      </div>
       <div class="section-head-count" id="player-count-badge">ผู้เล่น <span id="total-players">0</span> คน · จ่ายแล้ว <span id="paid-count">0</span> คน · ค้าง <span id="unpaid-count">0</span> คน</div>
       <div class="player-table" id="player-table"></div>
 
@@ -1419,7 +1430,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.7.4 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.8.2 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2270,7 +2281,13 @@ function renderSummary(){
   const perNoteEl      = document.getElementById('per-note');
   if(courtCostEl)    courtCostEl.textContent    = fmtBaht(courtFee);
   if(shuttleCostEl)  shuttleCostEl.textContent  = fmtBaht(shuttleCost);
-  if(courtFormulaEl) courtFormulaEl.textContent = (courtHours && courtRate) ? `${courtHours} court-hours @ ${courtRate}฿` : '';
+  if(courtFormulaEl) courtFormulaEl.textContent = (courtHours && courtRate) ? `รวมกันทั้งสิ้น ${courtHours} ชั่วโมง × ${courtRate} บาท` : '';
+  // ✅ Update court count label
+  const courtCountNum = document.getElementById('court-count-num');
+  if(courtCountNum){
+    const n = document.querySelectorAll('.court-item').length || (session.courts || []).length || 0;
+    courtCountNum.textContent = n;
+  }
   if(shuttleFormEl)  shuttleFormEl.textContent  = (shuttlePrice && shuttleCount) ? `(${shuttlePrice}×${shuttleCount})` : '';
   if(costTotalEl)    costTotalEl.textContent    = fmtBaht(totalCost);
   if(costPerEl)      costPerEl.textContent      = fmtBaht(pp);
@@ -2382,8 +2399,30 @@ function renderSummary(){
 }
 
 function renderDate(){
+  const iso = session?.date || todayISO();
+  // ถ้ายังมี date-big ใน header (legacy) — update ด้วย
   const el = document.getElementById('date-big');
-  if(el) el.textContent = thaiDateShort(session?.date || todayISO());
+  if(el) el.textContent = thaiDateShort(iso);
+  // Date picker input (ใน tab รายชื่อ)
+  const inp = document.getElementById('session-date-input');
+  if(inp && document.activeElement !== inp) inp.value = iso;
+  // Date display (ภาษาไทยเต็มรูปแบบ)
+  const disp = document.getElementById('session-date-display');
+  if(disp) disp.textContent = thaiDate(iso);
+}
+
+/** ✅ User เปลี่ยนวันที่จัดก๊วน (เช่น Monday night prep for Tuesday) */
+function changeSessionDate(newIso){
+  if(!newIso) return;
+  const oldIso = session.date;
+  if(newIso === oldIso) return;
+  session.date = newIso;
+  session.dateDisplay = thaiDate(newIso);
+  renderDate();
+  saveDraft();
+  // ✅ ถ้าเปลี่ยนเป็นวันอื่น และมี doc เก่าอยู่ → save ทันที (กัน user refresh แล้วหา doc ไม่เจอ)
+  flushSyncNow();
+  toast(`📅 วันที่: ${thaiDate(newIso)}`);
 }
 
 /* ================================================================
@@ -3507,14 +3546,30 @@ document.getElementById('new-member-name').addEventListener('keydown', e => {
 });
 
 // Court breakdown operations
+/** สร้าง <option> สำหรับ dropdown เลขคอร์ท (1-30) — เลือก default ที่ระบุ */
+function courtNumberOptions(selected){
+  const sel = String(selected);
+  let html = '';
+  for(let i = 1; i <= 30; i++){
+    const v = String(i);
+    html += `<option value="${v}"${v === sel ? ' selected' : ''}>${v}</option>`;
+  }
+  return html;
+}
+
 function addNewCourt(){
   const list = document.getElementById('court-list');
-  const name = String(3 + list.children.length); // 4, 5, 6, ... (เพิ่มจากคอร์ท 3 ที่เริ่มต้น)
+  // หาเลขคอร์ทถัดไปที่ยังไม่ถูกใช้ (default = ตัวแรกที่ว่าง)
+  const used = new Set(Array.from(list.querySelectorAll('.court-name')).map(s => s.value));
+  let next = '1';
+  for(let i = 1; i <= 30; i++){
+    if(!used.has(String(i))){ next = String(i); break; }
+  }
   const item = document.createElement('div');
   item.className = 'court-item';
-  item.dataset.courtId = name;
+  item.dataset.courtId = next;
   item.innerHTML = `
-    <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+    <select class="court-name" onchange="updateCourtCalculation()">${courtNumberOptions(next)}</select>
     <div class="court-hours-wrapper">
       <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
       <span class="court-hours-display">2.0</span>
@@ -3530,7 +3585,8 @@ function addNewCourt(){
 
 function removeCourt(btn){
   const item = btn.closest('.court-item');
-  if(!confirm('ลบคอร์ท ' + item.dataset.courtId + '?')) return;
+  const currentNum = item.querySelector('.court-name')?.value || item.dataset.courtId;
+  if(!confirm('ลบคอร์ทเลขที่ ' + currentNum + '?')) return;
   item.remove();
   updateCourtCalculation();
   // ✅ บันทึกทันที — ไม่รอ 800ms debounce (กัน user refresh แล้วหาย)
@@ -3574,7 +3630,11 @@ function updateCourtCalculation(){
 
   // Update formula display
   const formula = document.getElementById('court-formula');
-  if(formula) formula.textContent = `${courtHours} court-hours @ ${rate}฿`;
+  if(formula) formula.textContent = `รวมกันทั้งสิ้น ${courtHours} ชั่วโมง × ${rate} บาท`;
+
+  // ✅ Update court count label "(จองสนามจำนวน xx คอร์ท)"
+  const countNum = document.getElementById('court-count-num');
+  if(countNum) countNum.textContent = courtItems.length;
 
   const display = document.getElementById('court-cost-display');
   if(display) display.textContent = fmtBaht(courtFee);
@@ -3622,13 +3682,18 @@ function setSetupInputsFromSession(){
   const courtList = document.getElementById('court-list');
   if(courtList){
     courtList.innerHTML = '';
-    const courts = session.courts || [{name: '3', hours: 2}];
-    (Array.isArray(courts) ? courts : [{name: '3', hours: 2}]).forEach(c => {
+    // ✅ Default: 3 คอร์ทเลขที่ 3, 4, 5
+    const defaultCourts = [{name: '3', hours: 2}, {name: '4', hours: 2}, {name: '5', hours: 2}];
+    const courts = Array.isArray(session.courts) && session.courts.length > 0
+      ? session.courts
+      : defaultCourts;
+    courts.forEach(c => {
+      const courtNum = String(c.name || '1').replace(/[^\d]/g, '') || '1'; // เอาเฉพาะตัวเลข
       const item = document.createElement('div');
       item.className = 'court-item';
-      item.dataset.courtId = c.name;
+      item.dataset.courtId = courtNum;
       item.innerHTML = `
-        <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+        <select class="court-name" onchange="updateCourtCalculation()">${courtNumberOptions(courtNum)}</select>
         <div class="court-hours-wrapper">
           <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
           <span class="court-hours-display">${(c.hours || 2).toFixed(1)}</span>
@@ -3652,13 +3717,20 @@ function setSetupInputsFromSession(){
   if(!loadedFromCloud){
     // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี
     if(loadDraft()){
-      // ✅ ถ้า draft ไม่ใช่ของวันนี้ → reset (ไม่ติด doc เก่า)
-      //    ถ้าเป็นวันนี้ และมี session.id → subscribe real-time
-      if(session.date !== todayISO()){
+      // ✅ เก็บ session ถ้าวันที่เป็นวันนี้หรืออนาคต (เช่น prep คืนนี้สำหรับพรุ่งนี้)
+      //    reset เฉพาะถ้าเป็นวันในอดีต (ไม่ติด doc เก่า)
+      const today = todayISO();
+      if(session.date < today){
+        // วันที่ผ่านมาแล้ว → reset
+        console.log(`[boot] draft date (${session.date}) < today (${today}) → reset`);
         session = newSession();
         editingId = null;
-      } else if(session.id){
-        subscribeToSession(session.id);
+      } else {
+        // วันนี้หรืออนาคต → keep
+        if(session.date > today){
+          console.log(`[boot] keeping prepped session for future date: ${session.date}`);
+        }
+        if(session.id) subscribeToSession(session.id);
       }
     } else {
       session = newSession();
