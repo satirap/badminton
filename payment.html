@@ -219,6 +219,8 @@ body{min-height:100dvh}
   box-shadow:0 4px 12px rgba(164,214,94,.25);
   display:block;width:100%;text-align:center;
   margin:0 0 16px;letter-spacing:.02em;
+  /* ✅ Sticky — ลอยอยู่ด้านบนเวลา scroll ลง เพื่อเห็นยอดจ่ายตลอด */
+  position:sticky;top:8px;z-index:50;
 }
 
 .player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
@@ -544,7 +546,7 @@ body{min-height:100dvh}
   background:var(--card2);border:1.5px solid var(--border);
   border-radius:var(--rsm);padding:13px 16px;margin-bottom:10px;
 }
-.member-summary-strip .left{font-size:14px;color:#1B5E20;font-weight:600}
+.member-summary-strip .left{font-size:14px;color:var(--accent);font-weight:700}
 .member-summary-strip .left b{
   font-size:20px;color:var(--accent);font-weight:800;
   font-family:'IBM Plex Mono',monospace;margin:0 4px;
@@ -687,11 +689,22 @@ body{min-height:100dvh}
 .stp-field label{font-size:16px;font-weight:900;color:#1B5E20;letter-spacing:.02em;text-transform:uppercase}
 .stp-field-row{display:flex;align-items:center;gap:10px}
 .stp-field input{
-  flex:1;background:transparent;border:none;outline:none;
+  flex:1;background:#FFFDE7;border:1px solid #FFF59D;outline:none;
+  border-radius:8px;
   color:#1B5E20;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
-  padding:0;text-align:left;width:100%;min-width:0;
+  padding:6px 12px;text-align:left;width:100%;min-width:0;
 }
-.stp-field input::placeholder{color:#1B5E20}
+.stp-field input:focus{
+  background:#FFF9C4;border-color:#FFE082;
+}
+/* ✅ Readonly input — สีเทาอ่อน บอกว่าพิมพ์ไม่ได้ (รับค่ามาจากหน้าแรก) */
+.stp-field input[readonly]{
+  background:#ECEFF1;border-color:#CFD8DC;color:#546E7A;cursor:not-allowed;
+}
+.stp-field input[readonly]:focus{
+  background:#ECEFF1;border-color:#CFD8DC;
+}
+.stp-field input::placeholder{color:#558B2F;opacity:.5}
 .stp-field input::-webkit-outer-spin-button,
 .stp-field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stp-field .suf{font-size:16px;font-weight:900;color:#1B5E20;flex:0 0 auto}
@@ -794,12 +807,6 @@ body{min-height:100dvh}
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
 }
 .date-picker-card input[type="date"]:focus{border-color:#558B2F}
-.date-picker-display{
-  margin-top:10px;padding:10px 14px;
-  background:#fff;border-radius:8px;
-  font-size:15px;font-weight:800;color:#1B5E20;text-align:center;
-  letter-spacing:.02em;
-}
 
 /* ── Paste card (รายชื่อ tab) ── */
 .paste-card{
@@ -1256,7 +1263,6 @@ body{min-height:100dvh}
       <div class="date-picker-card">
         <label for="session-date-input" class="date-picker-label">📅 เลือกวันที่จัดก๊วน</label>
         <input type="date" id="session-date-input" onchange="changeSessionDate(this.value)"/>
-        <div class="date-picker-display" id="session-date-display">—</div>
       </div>
 
       <!-- 1. paste จาก LINE -->
@@ -1430,7 +1436,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.8.2 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.8.7 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2400,15 +2406,9 @@ function renderSummary(){
 
 function renderDate(){
   const iso = session?.date || todayISO();
-  // ถ้ายังมี date-big ใน header (legacy) — update ด้วย
-  const el = document.getElementById('date-big');
-  if(el) el.textContent = thaiDateShort(iso);
   // Date picker input (ใน tab รายชื่อ)
   const inp = document.getElementById('session-date-input');
   if(inp && document.activeElement !== inp) inp.value = iso;
-  // Date display (ภาษาไทยเต็มรูปแบบ)
-  const disp = document.getElementById('session-date-display');
-  if(disp) disp.textContent = thaiDate(iso);
 }
 
 /** ✅ User เปลี่ยนวันที่จัดก๊วน (เช่น Monday night prep for Tuesday) */
