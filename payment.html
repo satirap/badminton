@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.2.0 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.2.1 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1851,17 +1851,10 @@ function subscribeToSession(docId){
   _docUnsubscribe = db.collection('payment_sessions').doc(docId)
     .onSnapshot(snap => {
       if(!snap.exists) return;
-      // ✅ Skip ตรวจ pending writes of THIS device only (ไม่ skip update จากคนอื่น)
-      if(snap.metadata.hasPendingWrites && snap.metadata.fromCache === false) return;
       const d = snap.data();
-
-      // ✅ Real-time merge — ลบ debounce, ลบ guards ทั้งหมด
-      // Strategy: เสมอ merge remote, แต่ surgical update (ไม่ rebuild DOM)
-      if(!hasDataChanged(d, _lastMergedData)){
-        console.log('[listener] data unchanged, skip merge');
-        return;
-      }
-      console.log('[listener] realtime update from cloud');
+      // ✅ Skip echo ของตัวเอง (เราเขียน → cloud push echo กลับมา)
+      if(d.lastWriterId === _myWriterId) return;
+      console.log('[listener] update from another device');
       mergeRemoteIntoSession(d);
       _lastMergedData = JSON.parse(JSON.stringify(d));
       const lbl = document.getElementById('autosave-label');
@@ -2020,48 +2013,20 @@ function trackDeletedPlayerIds(ids){
  *  - Player ที่อยู่ใน local → ใช้เวอร์ชั่น local (รวม cash/transfer ที่เพิ่ง toggle)
  *  - Player ที่อยู่ใน remote (ไม่อยู่ใน local) AND ไม่อยู่ใน deleted list → append (คนอื่นเพิ่งเพิ่ม)
  *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
-/** Smart merge — remote-wins (unless we just toggled), local-wins for new players
- *  - Player ใน local ที่มีใน remote:
- *    - ถ้าเราเพิ่งปรับ payment state (< 10s) → ใช้ local (เราเพิ่งสั่ง toggle)
- *    - ไม่งั้น → ใช้ remote (Device 1 ล่าสุด)
- *  - Player เฉพาะ local (ไม่มีใน remote) → keep if not deleted (เราเพิ่งเพิ่ม)
- *  - Player เฉพาะ remote (ไม่มีใน local) → append (คนอื่นเพิ่งเพิ่ม)
- *  - Player ใน deleted list → skip (เราตั้งใจลบ)
- *  toggledSnapshot: optional map of recently toggled players (from transaction context) */
-function mergePlayersConservative(remote, local, toggledSnapshot){
+/** Simple merge — local wins, append remote-only players
+ *  - Player ใน local → ใช้ local (รวม cash/transfer ที่เพิ่ง toggle)
+ *  - Player เฉพาะ remote (ไม่อยู่ใน local) → append (คนอื่นเพิ่ม)
+ *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
+function mergePlayersConservative(remote, local){
   const localList = Array.isArray(local) ? local : [];
   const remoteList = Array.isArray(remote) ? remote : [];
-  const remoteMap = new Map(remoteList.map(p => [p.id, p]));
-  const result = [];
-  // ใช้ snapshot ถ้าให้ (จาก transaction) ไม่งั้นใช้ current (จาก listener)
-  const toggledMap = toggledSnapshot || _recentlyToggledPayment;
-
-  // ทุก player ใน local
-  for(const lp of localList){
-    if(remoteMap.has(lp.id)){
-      const rp = remoteMap.get(lp.id);
-      const recentToggle = toggledMap.get(lp.id);
-      // ถ้าเพิ่งปรับ payment → ใช้ local (เราเพิ่งกด toggle)
-      if(recentToggle && recentToggle.cash === lp.cash && recentToggle.transfer === lp.transfer){
-        result.push(lp);
-        console.log(`[merge] player ${lp.id}: using local payment (recent toggle)`);
-      } else {
-        // ไม่งั้น → ใช้ remote (Device 1 ล่าสุด)
-        result.push(rp);
-      }
-      remoteMap.delete(lp.id);
-    } else if(!_recentlyDeletedIds.has(lp.id)){
-      result.push(lp);
-    }
+  const localIds = new Set(localList.map(p => p.id));
+  const result = [...localList];
+  for(const rp of remoteList){
+    if(localIds.has(rp.id)) continue;
+    if(_recentlyDeletedIds.has(rp.id)) continue;
+    result.push(rp);
   }
-
-  // player ใน remote ที่ local ไม่มี → append (คนอื่นเพิ่งเพิ่ม)
-  for(const rp of remoteMap.values()){
-    if(!_recentlyDeletedIds.has(rp.id)){
-      result.push(rp);
-    }
-  }
-
   return result;
 }
 
@@ -2096,14 +2061,12 @@ function mergeRemoteIntoSession(d){
     }
   };
   if(d.courts !== undefined){
-    // ✅ Realtime: เสมอ update courts (ไม่มี guard)
-    // ถ้า user focus on court input → setIfNotFocused ป้องกัน
     const oldCourts = JSON.stringify(session.courts || []);
     const newCourts = JSON.stringify(d.courts || []);
     if(oldCourts !== newCourts){
       session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
-      // ✅ Surgical: rebuild court items แต่เก็บ focus
-      updateCourtListDOM();
+      // Rebuild court items (ใช้ฟังก์ชั่นเดิมที่ทำงานได้)
+      setSetupInputsFromSession();
     }
   }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
@@ -2236,15 +2199,12 @@ async function cloudSync(){
       // transaction อ่าน remote → merge (pure, ไม่แตะ global state) → เขียน atomic
       let finalMergedPlayers = localPlayers; // default ถ้า transaction ไม่ต้อง merge
 
-      // ✅ Snapshot recent toggles ก่อน transaction (network delay อาจเปลี่ยน state)
-      const toggledSnapshot = new Map(_recentlyToggledPayment);
-
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(docRef);
         const remote = snap.exists ? snap.data() : {};
 
-        // ✅ Players: conservative merge (union) — pass snapshot of toggles
-        const merged = mergePlayersConservative(remote.players || [], localPlayers, toggledSnapshot);
+        // ✅ Players: simple merge (union)
+        const merged = mergePlayersConservative(remote.players || [], localPlayers);
         finalMergedPlayers = merged;
         const stats = computeStats(merged);
 
@@ -3955,40 +3915,6 @@ function onCostInputChange(e){
   const el = document.getElementById(id);
   if(el) el.addEventListener('input', onCostInputChange);
 });
-
-/** ✅ Surgical update court list — rebuild items แต่เก็บ focus/values */
-function updateCourtListDOM(){
-  const list = document.getElementById('court-items');
-  if(!list) return;
-
-  const courts = session.courts || [];
-  // Update or create items
-  for(let i = 0; i < courts.length; i++){
-    let item = list.children[i];
-    if(!item){
-      // Add new item
-      item = document.createElement('div');
-      item.className = 'court-item';
-      list.appendChild(item);
-    }
-    // Update existing item
-    const c = courts[i];
-    item.innerHTML = `
-      <input type="text" class="court-name" placeholder="เลขที่" value="${c.name}">
-      <div class="court-hours-wrapper">
-        <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
-        <span class="court-hours-display">${c.hours}</span>
-        <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
-      </div>
-      <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
-    `;
-  }
-  // Remove extra items
-  while(list.children.length > courts.length){
-    list.removeChild(list.lastChild);
-  }
-  updateCourtCalculation();
-}
 
 /** Sync ค่าใน input fields จาก session.* — ใช้ตอน boot, edit, load */
 function setSetupInputsFromSession(){
