@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.3.0 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.3.1 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1852,8 +1852,13 @@ function subscribeToSession(docId){
     .onSnapshot(snap => {
       if(!snap.exists) return;
       const d = snap.data();
-      // ✅ Skip echo ของตัวเอง (เราเขียน → cloud push echo กลับมา)
+      // ✅ Skip echo ของตัวเอง
       if(d.lastWriterId === _myWriterId) return;
+      // ✅ Skip ระหว่างเรา write ค้าง (กัน listener overwrite local action)
+      if(_writeInFlight > 0){
+        console.log('[listener] our write in flight, skip merge (will sync after)');
+        return;
+      }
       console.log('[listener] update from another device');
       mergeRemoteIntoSession(d);
       _lastMergedData = JSON.parse(JSON.stringify(d));
@@ -1998,6 +2003,31 @@ function trackPaymentToggle(playerId, cash, transfer){
   setTimeout(() => _recentlyToggledPayment.delete(playerId), PAYMENT_TOGGLE_TTL);
 }
 
+// ✅ Track ว่า user กำลัง interact กับ courts หรือไม่ (กัน dropdown ปิด)
+let _pendingCourtsMerge = null; // remote courts ที่รอ apply หลัง user blur
+function isUserInteractingWithCourts(){
+  const active = document.activeElement;
+  if(!active) return false;
+  // ถ้า focus อยู่ที่ court-item area (select, input, button)
+  if(active.closest && active.closest('.court-item')) return true;
+  // ถ้า focus อยู่ที่ court-rate (กรณีใช้คีย์บอร์ดเปลี่ยนค่า)
+  if(active.id === 'court-rate') return true;
+  return false;
+}
+// ลด defer หลัง user finishes interacting
+document.addEventListener('focusout', e => {
+  if(e.target?.closest && e.target.closest('.court-item')){
+    setTimeout(() => {
+      if(!isUserInteractingWithCourts() && _pendingCourtsMerge){
+        console.log('[focusout] applying deferred courts merge');
+        session.courts = Array.isArray(_pendingCourtsMerge) ? _pendingCourtsMerge : [{name: '3', hours: 2}];
+        _pendingCourtsMerge = null;
+        setSetupInputsFromSession();
+      }
+    }, 200);
+  }
+});
+
 /** Mark player ID ว่าถูกลบ (ป้องกัน merge เอากลับมา) */
 function trackDeletedPlayerId(id){
   _recentlyDeletedIds.add(id);
@@ -2064,9 +2094,15 @@ function mergeRemoteIntoSession(d){
     const oldCourts = JSON.stringify(session.courts || []);
     const newCourts = JSON.stringify(d.courts || []);
     if(oldCourts !== newCourts){
-      session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
-      // Rebuild court items (ใช้ฟังก์ชั่นเดิมที่ทำงานได้)
-      setSetupInputsFromSession();
+      // ✅ ถ้า user กำลังเปิด dropdown / focus อยู่ที่ court inputs → SKIP rebuild
+      // (ไม่ทำลาย dropdown ที่เปิดอยู่)
+      if(isUserInteractingWithCourts()){
+        console.log('[merge] user interacting with courts, defer rebuild (will rebuild on blur)');
+        _pendingCourtsMerge = d.courts;  // เก็บไว้ rebuild ตอน blur
+      } else {
+        session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
+        setSetupInputsFromSession();
+      }
     }
   }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
@@ -2128,6 +2164,9 @@ function isSessionCustomized(){
   return false;
 }
 
+/** ✅ Track in-flight writes — กัน listener overwrite local action ที่ยังไม่ confirm */
+let _writeInFlight = 0;
+
 /** ✅ SIMPLE LAST-WRITE-WINS — ใครเขียนใหม่กว่าชนะ
  *  - ไม่ใช้ transaction (กัน race เกินไป)
  *  - เขียน payload เต็ม → cloud
@@ -2140,8 +2179,9 @@ async function cloudSync(){
     return;
   }
 
+  _writeInFlight++;
   updateAutosaveLabel('syncing');
-  console.log('[cloudSync] Starting', { editingId, playerCount: session.players.length });
+  console.log('[cloudSync] Starting', { editingId, playerCount: session.players.length, inFlight: _writeInFlight });
 
   try{
     const breakdown = getCostBreakdown();
@@ -2212,6 +2252,8 @@ async function cloudSync(){
   }catch(e){
     updateAutosaveLabel('error');
     console.error('[cloudSync] ❌ FAILED:', { name: e.name, message: e.message, code: e.code });
+  }finally{
+    _writeInFlight = Math.max(0, _writeInFlight - 1);
   }
 }
 
