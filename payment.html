@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.2 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.3 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1851,25 +1851,34 @@ function subscribeToSession(docId){
   _docUnsubscribe = db.collection('payment_sessions').doc(docId)
     .onSnapshot(snap => {
       if(!snap.exists) return;
-      // ✅ Skip own pending writes — มันจะ echo กลับมา แต่เรามี state local อยู่แล้ว
       if(snap.metadata.hasPendingWrites) return;
       const d = snap.data();
-      // ✅ Debounce + change detection — กันแสดงผล too frequently
+
+      // ✅ OWN ECHO: จัดการทันที ไม่ผ่าน debounce (กันยกเลิก update ของคนอื่น)
+      const isOwnEcho = d.lastWriterId === _myWriterId && d.lastWriteId === _myLastWriteId;
+      if(isOwnEcho){
+        // อัปเดต _lastMergedData เสมอ — กัน hasDataChanged หลอกว่า "changed" ทุกรอบ
+        _lastMergedData = JSON.parse(JSON.stringify(d));
+        console.log('[listener] own echo — updated _lastMergedData, skip merge');
+        return;
+      }
+
+      // ✅ OTHERS' WRITE: debounce เพื่อ batch หลาย snapshot
       if(_mergeDebounceTimer) clearTimeout(_mergeDebounceTimer);
       _mergeDebounceTimer = setTimeout(() => {
         if(!hasDataChanged(d, _lastMergedData)){
           console.log('[listener] data unchanged, skip merge');
           return;
         }
-        console.log('[listener] data changed, merging...', d);
+        console.log('[listener] merging update from another user');
         mergeRemoteIntoSession(d);
-        _lastMergedData = JSON.parse(JSON.stringify(d)); // deep copy
+        _lastMergedData = JSON.parse(JSON.stringify(d));
         const lbl = document.getElementById('autosave-label');
         if(lbl){
           const t = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
           lbl.textContent = `🔄 sync จาก cloud · ${t}`;
         }
-      }, 100); // 100ms debounce — รวมหลาย listener fires
+      }, 100);
     }, err => { console.error('[snapshot error]', err); });
 }
 
