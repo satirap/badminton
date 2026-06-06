@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.1.2 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.2.0 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1904,7 +1904,7 @@ let _queryUnsubscribe = null;
 
 function subscribeToTodayOpenQuery(){
   if(_queryUnsubscribe) return;
-  // ✅ ฟัง status='open' realtime — ตรวจจับ doc ใหม่ทันที
+  // ✅ ฟัง status='open' realtime — ตรวจจับ doc ใหม่ทันที (แม้เรามี session.id อยู่)
   _queryUnsubscribe = db.collection('payment_sessions')
     .where('status','==','open')
     .onSnapshot(snap => {
@@ -1912,12 +1912,11 @@ function subscribeToTodayOpenQuery(){
         console.log('[subscribeToTodayOpenQuery] ไม่เจอ open session');
         return;
       }
-      if(session?.id) return; // มี session แล้ว → doc listener จัดการต่อ
 
       const now = Date.now();
       const cutoff = 48 * 60 * 60 * 1000;
 
-      // หา doc ที่ fresh (< 48 ชม.) และ confirmed
+      // หา fresh open sessions (< 48 ชม.) sorted by updatedAt desc
       const candidates = snap.docs
         .filter(doc => !doc.metadata.hasPendingWrites)
         .map(doc => {
@@ -1930,14 +1929,37 @@ function subscribeToTodayOpenQuery(){
         .sort((a, b) => b.ts - a.ts);
 
       if(!candidates.length){
-        console.log('[subscribeToTodayOpenQuery] ไม่เจอ fresh session (ทั้งหมดมี pending writes)');
+        console.log('[subscribeToTodayOpenQuery] ไม่เจอ fresh session');
         return;
       }
 
-      const {doc, data} = candidates[0];
-      console.log('[subscribeToTodayOpenQuery] ✅ Adopting session:', doc.id,
-                  'players:', data.players?.length || 0);
-      adoptSession(doc.id, data);
+      const best = candidates[0];
+
+      // ✅ Case 1: ยังไม่มี session → adopt ตัวที่ดีสุด
+      if(!session?.id){
+        console.log('[subscribeToTodayOpenQuery] ✅ Adopt (no current session):', best.doc.id);
+        adoptSession(best.doc.id, best.data);
+        return;
+      }
+
+      // ✅ Case 2: session ของเราตรงกับตัวที่ดีสุดอยู่แล้ว → ปล่อย
+      if(session.id === best.doc.id){
+        return;
+      }
+
+      // ✅ Case 3: session ของเราไม่ตรง → check ว่ายังอยู่ใน open list ไหม
+      const ourSession = candidates.find(c => c.doc.id === session.id);
+      if(!ourSession){
+        // session ของเราไม่ใช่ open แล้ว (อาจถูก complete) → switch ไป best
+        console.log('[subscribeToTodayOpenQuery] ⚠️ Our session not open anymore, switching:', session.id, '→', best.doc.id);
+        unsubscribeFromSession();
+        editingId = null;
+        session.id = null;
+        adoptSession(best.doc.id, best.data);
+      } else {
+        // session เรายัง open อยู่ และมี doc อื่นอยู่ด้วย → log แค่
+        console.log('[subscribeToTodayOpenQuery] Multiple open sessions exist, keeping current:', session.id);
+      }
     }, err => {
       console.error('[subscribeToTodayOpenQuery] listener error:', err);
     });
@@ -4012,6 +4034,26 @@ function setSetupInputsFromSession(){
 /* ================================================================
    BOOT
    ================================================================ */
+/** ✅ Verify ว่า session.id ยังอยู่ใน cloud และ status='open' (กัน subscribe doc เก่าที่ completed แล้ว) */
+async function verifyOpenSession(docId){
+  try{
+    const doc = await db.collection('payment_sessions').doc(docId).get();
+    if(!doc.exists) {
+      console.log('[verifyOpenSession] doc ไม่มี:', docId);
+      return false;
+    }
+    const status = doc.data().status;
+    if(status !== 'open'){
+      console.log('[verifyOpenSession] doc ไม่ open:', docId, 'status:', status);
+      return false;
+    }
+    return true;
+  }catch(e){
+    console.error('[verifyOpenSession] error:', e);
+    return false;
+  }
+}
+
 (async function boot(){
   // 1) พยายามโหลด open session ของวันนี้จาก cloud ก่อน (คนเตรียมอาจเป็นคนละคน)
   const loadedFromCloud = await loadTodayOpenSession();
@@ -4019,8 +4061,6 @@ function setSetupInputsFromSession(){
   if(!loadedFromCloud){
     // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี
     if(loadDraft()){
-      // ✅ เก็บ session ถ้าวันที่เป็นวันนี้หรืออนาคต (เช่น prep คืนนี้สำหรับพรุ่งนี้)
-      //    reset เฉพาะถ้าเป็นวันในอดีต (ไม่ติด doc เก่า)
       const today = todayISO();
       if(session.date < today){
         // วันที่ผ่านมาแล้ว → reset
@@ -4028,11 +4068,21 @@ function setSetupInputsFromSession(){
         session = newSession();
         editingId = null;
       } else {
-        // วันนี้หรืออนาคต → keep
         if(session.date > today){
           console.log(`[boot] keeping prepped session for future date: ${session.date}`);
         }
-        if(session.id) subscribeToSession(session.id);
+        // ✅ Verify session.id จาก draft ยังถูกต้องไหม (อาจ stale)
+        if(session.id){
+          const valid = await verifyOpenSession(session.id);
+          if(!valid){
+            console.log('[boot] ⚠️ draft session.id stale → drop เพื่อรอ adopt ใหม่');
+            session.id = null;
+            editingId = null;
+          } else {
+            console.log('[boot] ✅ draft session.id verified, subscribing:', session.id);
+            subscribeToSession(session.id);
+          }
+        }
       }
     } else {
       session = newSession();
