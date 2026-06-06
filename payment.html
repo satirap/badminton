@@ -21,16 +21,16 @@
   --card:    #ffffff;        /* Pure white cards */
   --card2:   #fbfbfd;        /* Pearl button bg */
   --input:   #f5f5f7;        /* Subtle input fill */
-  --border:  #d2d2d7;        /* Hairline border */
-  --border-soft: #e8e8ed;    /* Divider soft */
+  --border:  #a8a8b0;        /* Visible border (darker for clarity) */
+  --border-soft: #c8c8cc;    /* Soft visible divider */
   --ink:     #1d1d1f;        /* Primary ink */
   --soft:    #424245;        /* Secondary */
   --mute:    #86868b;        /* Tertiary muted */
-  --accent:  #30a14e;        /* iOS-style green (refined, less neon) */
-  --accent-dark: #1e7a3a;
-  --accent-light:#e8f5ec;
-  --green:   #30a14e;
-  --gbg:     #1e7a3a;
+  --accent:  #0066cc;        /* Apple action blue (unified theme) */
+  --accent-dark: #004a99;
+  --accent-light:#e8f1fc;    /* light blue tint for paid state */
+  --green:   #0066cc;        /* legacy alias → blue */
+  --gbg:     #004a99;
   --gtxt:    #ffffff;
   --blue:    #0066cc;        /* Apple action blue */
   --bbg:     #0071e3;
@@ -40,14 +40,27 @@
   --yellow-bd:#fde68a;
   --radius:  14px;
   --rsm:     10px;
-  --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-  --shadow-lift: 0 4px 12px rgba(0,0,0,0.06);
+  /* ── Elegant layered shadows ── */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.08);
+  --shadow-lift: 0 2px 6px rgba(0,0,0,0.08), 0 12px 32px rgba(0,0,0,0.10);
+  --shadow-soft: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-tint-blue: 0 1px 3px rgba(0, 102, 204, 0.08), 0 6px 20px rgba(88, 86, 214, 0.10);
+  /* ── Beautiful Gradients (iOS-style blue → indigo) ── */
+  --grad-primary:        linear-gradient(135deg, #0066cc 0%, #5856d6 100%);
+  --grad-primary-hover:  linear-gradient(135deg, #0071e3 0%, #6f6dde 100%);
+  --grad-primary-active: linear-gradient(135deg, #004a99 0%, #3d3bb8 100%);
+  --grad-bg:             linear-gradient(180deg, #f5f5f7 0%, #eef0fc 100%);
+  --grad-card-total:     linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
+  --grad-paid:           linear-gradient(135deg, #e8f1fc 0%, #ede7fc 100%);
+  --grad-paid-border:    linear-gradient(135deg, #0066cc, #5856d6);
+  --grad-line:           linear-gradient(135deg, #06c755 0%, #00a85a 100%);
+  --shadow-blue:         0 6px 16px rgba(0, 102, 204, 0.25), 0 2px 4px rgba(88, 86, 214, 0.15);
 }
 html,body{
   min-height:100vh;
 }
 *,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+html,body{margin:0;padding:0;background:var(--grad-bg);background-attachment:fixed;color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','DM Sans',system-ui,sans-serif;
   font-size:17px;line-height:1.47;letter-spacing:-0.003em;
   -webkit-font-smoothing:antialiased}
@@ -82,21 +95,23 @@ body{min-height:100dvh}
 }
 .history-icon-btn{
   flex-shrink:0;outline:none;
-  background:var(--blue);border:none;color:#fff;
-  font-family:inherit;font-size:13px;font-weight:500;
+  background:var(--grad-primary);border:none;color:#fff;
+  font-family:inherit;font-size:13px;font-weight:600;
   padding:10px 16px;border-radius:980px;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  transition:background .2s;-webkit-tap-highlight-color:transparent;
+  transition:background .2s, box-shadow .2s, transform .15s;
+  -webkit-tap-highlight-color:transparent;
   touch-action:manipulation;-webkit-user-select:none;user-select:none;
   -webkit-appearance:none;-moz-appearance:none;appearance:none;
   white-space:nowrap;letter-spacing:-0.01em;
+  box-shadow:var(--shadow-blue);
 }
 @media (min-width:520px){
   .history-icon-btn{font-size:14px;padding:11px 18px}
   .header-card .brand-logo{width:46px!important;height:46px!important}
 }
-.history-icon-btn:hover{background:var(--bbg)}
-.history-icon-btn:active{background:#005bb5}
+.history-icon-btn:hover{background:var(--grad-primary-hover)}
+.history-icon-btn:active{background:var(--grad-primary-active);transform:scale(0.98)}
 .back-btn{
   width:auto;padding:8px 14px 8px 10px;margin-bottom:12px;outline:none;
   background:transparent;border:none;border-radius:0;
@@ -197,13 +212,19 @@ body{min-height:100dvh}
 .summary-bar .s-item.total{grid-column:1 / -1;grid-row:1}
 .summary-bar .s-item.cash{grid-column:1;grid-row:2}
 .summary-bar .s-item.transfer{grid-column:2;grid-row:2}
-.summary-bar .s-num{font-family:inherit;font-size:clamp(22px,5.5vw,32px);font-weight:600;line-height:1.1;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:4px;letter-spacing:-0.02em}
-.summary-bar .s-num .baht{font-size:clamp(13px,3vw,16px);font-weight:500;color:var(--mute);margin-left:4px}
-.summary-bar .s-lbl{font-size:13px;color:var(--mute);margin-top:6px;font-weight:500;text-transform:none;letter-spacing:0}
+.summary-bar .s-num{font-family:inherit;font-size:clamp(18px,4.5vw,26px);font-weight:600;line-height:1.1;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:4px;letter-spacing:-0.02em}
+.summary-bar .s-num .baht{font-size:clamp(11px,2.5vw,14px);font-weight:500;color:var(--mute);margin-left:4px}
+.summary-bar .s-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:500;text-transform:none;letter-spacing:0}
 .summary-bar .s-item.total{
-  background:var(--card);border-color:var(--border);
+  background:var(--grad-card-total);
+  border-color:rgba(0,102,204,0.15);
+  box-shadow:0 4px 16px rgba(0, 102, 204, 0.08), 0 1px 3px rgba(88, 86, 214, 0.06);
 }
-.summary-bar .s-item.total .s-num{color:var(--accent)}
+.summary-bar .s-item.total .s-num{
+  background:var(--grad-primary);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
 
 /* ── Player table ── */
 /* ── Section title for member list ── */
@@ -217,10 +238,10 @@ body{min-height:100dvh}
   font-size:26px;font-weight:900;color:var(--ink);letter-spacing:.02em;
 }
 .section-head-count{
-  font-family:inherit;font-size:clamp(13px,3.2vw,15px);font-weight:500;
-  color:var(--ink);background:rgba(255,255,255,0.85);
-  border:1px solid var(--border-soft);padding:10px 14px;border-radius:12px;
-  box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04);
+  font-family:inherit;font-size:clamp(13px,3.2vw,15px);font-weight:600;
+  color:var(--ink);background:var(--grad-card-total);
+  border:1px solid rgba(0,102,204,0.15);padding:10px 14px;border-radius:12px;
+  box-shadow:0 4px 16px rgba(0, 102, 204, 0.1), 0 1px 3px rgba(88, 86, 214, 0.06);
   display:block;width:100%;text-align:center;
   margin:0 0 16px;letter-spacing:-0.01em;
   -webkit-backdrop-filter:saturate(180%) blur(20px);
@@ -241,35 +262,35 @@ body{min-height:100dvh}
   backdrop-filter:blur(8px);
   min-height:70px;
 }
-.player-row.paid-both{border-color:var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.1), rgba(164,214,94,.05));box-shadow:0 4px 12px rgba(164,214,94,.12)}
-.player-row.paid-cash{border-color:var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.1), rgba(164,214,94,.05));box-shadow:0 4px 12px rgba(164,214,94,.12)}
-.player-row.paid-transfer{border-color:var(--accent);background:linear-gradient(135deg, rgba(164,214,94,.1), rgba(164,214,94,.05));box-shadow:0 4px 12px rgba(164,214,94,.12)}
+.player-row.paid-both,
+.player-row.paid-cash,
+.player-row.paid-transfer{border-color:var(--blue);background:var(--accent-light);box-shadow:none}
 
 .player-row .num{
-  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
-  color:#1B5E20;text-align:center;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg, rgba(164,214,94,.2), rgba(164,214,94,.1));border-radius:12px;
+  font-family:inherit;font-size:22px;font-weight:600;
+  color:var(--blue);text-align:center;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+  background:var(--accent-light);border-radius:12px;letter-spacing:-0.02em;
 }
 .player-row .name{
-  font-size:22px;font-weight:900;color:var(--ink);line-height:1.3;
+  font-size:22px;font-weight:500;color:var(--ink);line-height:1.3;letter-spacing:-0.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
 /* Toggle buttons */
 .pay-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:4px;
-  padding:14px 18px;border-radius:10px;
-  font-family:'DM Sans',sans-serif;font-size:18px;font-weight:900;
-  border:2px solid transparent;outline:none;background:linear-gradient(135deg, rgba(200,200,200,.15), rgba(200,200,200,.08));
-  color:#333;cursor:pointer;transition:opacity .2s;white-space:nowrap;min-width:80px;
+  padding:11px 16px;border-radius:10px;
+  font-family:inherit;font-size:15px;font-weight:500;letter-spacing:-0.01em;
+  border:1px solid var(--border);outline:none;background:var(--card2);
+  color:var(--soft);cursor:pointer;transition:background .15s, color .15s;white-space:nowrap;min-width:80px;
   -webkit-tap-highlight-color:transparent;user-select:none;
   touch-action:manipulation;-webkit-user-select:none;
   -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.pay-btn:active{opacity:.85}
+.pay-btn:active{background:var(--input)}
 .pay-btn:focus{outline:none}
-.pay-btn.on.cash{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
-.pay-btn.on.transfer{background:linear-gradient(135deg, #A4D65E, #9CCC65);border-color:#558B2F;color:#111}
+.pay-btn.on.cash,
+.pay-btn.on.transfer{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
 
 .del-btn{
   width:36px;height:36px;border-radius:10px;border:none;
@@ -296,12 +317,13 @@ body{min-height:100dvh}
 }
 .add-form .add-btn{
   padding:12px 18px;border-radius:10px;
-  border:none;background:var(--blue);color:#fff;
-  font-family:inherit;font-size:15px;font-weight:500;letter-spacing:-0.01em;
-  cursor:pointer;flex-shrink:0;transition:background .15s;
+  border:none;background:var(--grad-primary);color:#fff;
+  font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-0.01em;
+  cursor:pointer;flex-shrink:0;transition:background .15s, transform .15s;
+  box-shadow:0 4px 10px rgba(0, 102, 204, 0.2);
 }
-.add-form .add-btn:hover{background:var(--bbg)}
-.add-form .add-btn:active{background:#005bb5}
+.add-form .add-btn:hover{background:var(--grad-primary-hover)}
+.add-form .add-btn:active{background:var(--grad-primary-active);transform:scale(0.96)}
 
 /* ── Share-to-LINE card (Apple style) ── */
 .share-card{
@@ -316,30 +338,32 @@ body{min-height:100dvh}
 }
 .btn-share-line{
   width:100%;padding:16px;border:none;border-radius:12px;
-  background:#06c755;color:#fff;
-  font-family:inherit;font-size:17px;font-weight:500;letter-spacing:-0.01em;
+  background:var(--grad-line);color:#fff;
+  font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.01em;
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
-  -webkit-tap-highlight-color:transparent;transition:background .15s;margin-bottom:10px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s, transform .15s;margin-bottom:10px;
   flex-wrap:wrap;
+  box-shadow:0 6px 16px rgba(6,199,85,0.25);
 }
 .btn-share-line:last-child{margin-bottom:0}
-.btn-share-line:hover{background:#05a74e}
-.btn-share-line:active{background:#048a3f}
-.btn-share-line.status{background:var(--accent)}
-.btn-share-line.status:hover{background:var(--accent-dark)}
-.btn-share-line small{font-size:12px;font-weight:400;opacity:.85}
+.btn-share-line:hover{background:linear-gradient(135deg, #05a74e, #008f4d)}
+.btn-share-line:active{background:linear-gradient(135deg, #048a3f, #007340);transform:scale(0.98)}
+.btn-share-line.status{background:var(--grad-primary);box-shadow:var(--shadow-blue)}
+.btn-share-line.status:hover{background:var(--grad-primary-hover)}
+.btn-share-line small{font-size:12px;font-weight:400;opacity:.9}
 
 /* ── Action buttons (Apple-style large CTAs) ── */
 .action-row{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .btn-complete{
   width:100%;padding:16px;border-radius:12px;border:none;
-  background:var(--accent);color:#fff;
-  font-family:inherit;font-size:17px;font-weight:500;letter-spacing:-0.01em;
-  cursor:pointer;transition:background .15s;
+  background:var(--grad-primary);color:#fff;
+  font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s, transform .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:var(--shadow-blue);
 }
-.btn-complete:hover{background:var(--accent-dark)}
-.btn-complete:active{background:#155b2c}
+.btn-complete:hover{background:var(--grad-primary-hover)}
+.btn-complete:active{background:var(--grad-primary-active);transform:scale(0.98)}
 .btn-complete:disabled{opacity:.4;cursor:not-allowed}
 .btn-save{
   width:100%;padding:15px;border-radius:12px;
@@ -533,18 +557,18 @@ body{min-height:100dvh}
 #section-members .sub-tab.active,
 #section-price .sub-tab.active,
 #section-payment .sub-tab.active{
-  color:var(--ink);
-  background:var(--card2);
-  box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  color:#fff;
+  background:var(--grad-primary);
+  box-shadow:var(--shadow-blue);
   font-weight:600;
 }
 
 .sub-tab .badge{
   font-family:inherit;font-size:12px;font-weight:600;
-  background:var(--accent);color:#fff;padding:2px 8px;border-radius:980px;
+  background:var(--mute);color:#fff;padding:2px 8px;border-radius:980px;
   min-width:22px;text-align:center;
 }
-.sub-tab:not(.active) .badge{background:var(--mute);color:#fff}
+.sub-tab.active .badge{background:rgba(255,255,255,.25);color:#fff}
 
 /* Selected count strip (Apple-style) */
 .member-summary-strip{
@@ -574,8 +598,8 @@ body{min-height:100dvh}
   color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
   outline:none;transition:border-color .15s;
 }
-.member-toolbar input::placeholder{color:#558B2F}
-.member-toolbar input:focus{border-color:var(--accent)}
+.member-toolbar input::placeholder{color:var(--mute)}
+.member-toolbar input:focus{border-color:var(--blue)}
 
 /* Member grid (selectable chips) */
 .member-grid{
@@ -634,12 +658,12 @@ body{min-height:100dvh}
    v2 redesign: setup card / big pay buttons / hour stepper / chip delete
    ────────────────────────────────────────────── */
 
-/* ── Setup card (Apple-style: white, hairline) ── */
+/* ── Setup card (Apple-style: white, elegant shadow) ── */
 .setup-card{
   background:var(--card);
   border:1px solid var(--border-soft);
   border-radius:18px;padding:16px 14px;margin:0 auto 12px;max-width:100%;
-  box-shadow:var(--shadow-card);
+  box-shadow:var(--shadow-lift);
 }
 @media (min-width:480px){
   .setup-card{padding:20px 16px;margin:0 auto 14px}
@@ -714,9 +738,9 @@ body{min-height:100dvh}
 .stp-field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .stp-field .suf{font-size:14px;font-weight:500;color:var(--mute);flex:0 0 auto}
 .stp-field:focus-within{
-  border-color:var(--accent);
+  border-color:var(--blue);
   background:var(--card);
-  box-shadow:0 0 0 3px rgba(48, 161, 78, 0.12);
+  box-shadow:0 0 0 3px rgba(0, 102, 204, 0.12);
 }
 .stp-field.need-fill{
   border-color:#fde68a;background:var(--yellow-bg);
@@ -733,10 +757,10 @@ body{min-height:100dvh}
 }
 .stp-row small{color:var(--mute);font-size:12px;font-weight:400;margin-left:6px;font-family:inherit}
 .stp-row b{font-family:inherit;font-size:16px;font-weight:500;color:var(--ink);letter-spacing:-0.01em}
-.stp-row.big{font-size:15px;color:var(--ink);font-weight:500;padding-top:10px;margin-top:6px;border-top:1px solid var(--border-soft)}
-.stp-row.big b{font-size:22px;font-weight:600;letter-spacing:-0.02em}
+.stp-row.big{font-size:14px;color:var(--ink);font-weight:500;padding-top:10px;margin-top:6px;border-top:1px solid var(--border-soft)}
+.stp-row.big b{font-size:18px;font-weight:600;letter-spacing:-0.02em}
 .stp-row.big.accent{color:var(--ink)}
-.stp-row.big.accent b{font-size:28px;color:var(--ink);font-weight:600;letter-spacing:-0.02em}
+.stp-row.big.accent b{font-size:22px;color:var(--ink);font-weight:600;letter-spacing:-0.02em}
 
 /* ราคาที่จะแจ้ง (override) */
 .stp-override{
@@ -750,14 +774,17 @@ body{min-height:100dvh}
 .ov-row input{
   flex:1;background:var(--card);
   border:1px solid var(--border);border-radius:10px;
-  padding:12px 16px;color:var(--ink);
-  font-family:inherit;font-size:24px;font-weight:600;letter-spacing:-0.02em;
+  padding:10px 14px;color:var(--ink);
+  font-family:inherit;font-size:20px;font-weight:600;letter-spacing:-0.02em;
   text-align:right;outline:none;
   transition:border-color .2s, box-shadow .2s;
   min-width:0;overflow:hidden;text-overflow:ellipsis;
 }
+/* ✅ Placeholder เล็กกว่า text เพื่อไม่ให้ล้นใน mobile */
+.ov-row input::placeholder{font-size:13px;font-weight:400;color:var(--mute)}
 @media (max-width:480px){
-  .ov-row input{font-size:20px;padding:10px 12px;}
+  .ov-row input{font-size:18px;padding:9px 12px;}
+  .ov-row input::placeholder{font-size:12px;}
 }
 .ov-row input:focus{
   border-color:var(--blue);
@@ -791,7 +818,7 @@ body{min-height:100dvh}
   background:var(--card);
   border:1px solid var(--border-soft);
   border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
-  box-shadow:var(--shadow-card);
+  box-shadow:var(--shadow-tint-blue);
 }
 .date-picker-label{
   display:block;font-size:13px;font-weight:500;color:var(--mute);margin-bottom:10px;
@@ -816,6 +843,7 @@ body{min-height:100dvh}
   border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;
   box-shadow:var(--shadow-card);
 }
+.history-card{box-shadow:var(--shadow-card)!important}
 .paste-label{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:-0.01em}
 .paste-card textarea{
   width:100%;background:var(--card2);border:1px solid var(--border-soft);border-radius:10px;
@@ -831,12 +859,13 @@ body{min-height:100dvh}
 .paste-card textarea::placeholder{color:var(--mute);font-weight:400}
 .paste-btn{
   width:100%;margin-top:12px;padding:14px;border:none;border-radius:12px;
-  background:var(--blue);color:#fff;
-  font-family:inherit;font-size:16px;font-weight:500;cursor:pointer;letter-spacing:-0.01em;
-  transition:background .15s;-webkit-tap-highlight-color:transparent;
+  background:var(--grad-primary);color:#fff;
+  font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;letter-spacing:-0.01em;
+  transition:background .15s, transform .15s;-webkit-tap-highlight-color:transparent;
+  box-shadow:var(--shadow-blue);
 }
-.paste-btn:hover{background:var(--bbg)}
-.paste-btn:active{background:#005bb5}
+.paste-btn:hover{background:var(--grad-primary-hover)}
+.paste-btn:active{background:var(--grad-primary-active);transform:scale(0.98)}
 .paste-hint{font-size:12px;color:var(--mute);margin-top:10px;text-align:center;font-style:normal}
 
 /* ── Player list mini (รายชื่อ tab) ── */
@@ -886,13 +915,14 @@ body{min-height:100dvh}
 
 .big-share-btn{
   width:100%;margin-top:16px;padding:16px;border:none;border-radius:12px;
-  background:#06c755;color:#fff;
-  font-family:inherit;font-size:16px;font-weight:500;letter-spacing:-0.01em;
+  background:var(--grad-line);color:#fff;
+  font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-0.01em;
   cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  transition:background .15s;-webkit-tap-highlight-color:transparent;line-height:1.3;
+  transition:background .15s, transform .15s;-webkit-tap-highlight-color:transparent;line-height:1.3;
+  box-shadow:0 6px 16px rgba(6,199,85,0.25);
 }
-.big-share-btn:hover{background:#05a74e}
-.big-share-btn:active{background:#048a3f}
+.big-share-btn:hover{background:linear-gradient(135deg, #05a74e, #008f4d)}
+.big-share-btn:active{background:linear-gradient(135deg, #048a3f, #007340);transform:scale(0.98)}
 .big-share-btn small{font-size:12px;font-weight:400;opacity:.9}
 
 .big-copy-btn{
@@ -930,9 +960,12 @@ body{min-height:100dvh}
   box-shadow:var(--shadow-card);
   transition:border-color .2s;
 }
-.player-card.paid-cash{border-color:var(--accent);background:var(--accent-light)}
-.player-card.paid-transfer{border-color:var(--accent);background:var(--accent-light)}
-.player-card.paid-both{border-color:var(--accent);background:var(--accent-light)}
+.player-card.paid-cash,
+.player-card.paid-transfer,
+.player-card.paid-both{
+  border-color:transparent;background:var(--grad-paid);
+  box-shadow:0 4px 12px rgba(0, 102, 204, 0.12), 0 1px 3px rgba(88, 86, 214, 0.08);
+}
 
 .pc-head{
   display:flex;align-items:center;gap:10px;
@@ -974,7 +1007,8 @@ body{min-height:100dvh}
 .pay-btn-big:active{background:var(--input);opacity:.85}
 .pay-btn-big.cash.on,
 .pay-btn-big.transfer.on{
-  background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;
+  background:var(--grad-primary);border-color:transparent;color:#fff;font-weight:600;
+  box-shadow:0 4px 12px rgba(0, 102, 204, 0.25);
 }
 .pay-btn-big .ic{font-size:16px;line-height:1}
 
@@ -1064,24 +1098,21 @@ body{min-height:100dvh}
 }
 .court-item .court-hours-input{
   flex:1;min-width:0;
-  padding:11px 12px;border:2px solid #C8E6A0;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
+  padding:9px 10px;border:1px solid var(--border);
+  background:var(--card);
   border-radius:10px;
-  color:#1B5E20;font-size:16px;font-weight:800;
-  font-family:'IBM Plex Mono',monospace;outline:none;
+  color:var(--ink);font-size:15px;font-weight:500;letter-spacing:-0.01em;
+  font-family:inherit;outline:none;
   text-align:center;
-  transition:border-color .2s ease, background .2s ease, box-shadow .2s ease;
-  box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
+  transition:border-color .15s, box-shadow .15s;
   touch-action:manipulation;
 }
 @media (max-width:480px){
-  .court-item .court-hours-input{padding:10px 8px;font-size:15px;}
+  .court-item .court-hours-input{padding:8px;font-size:14px;}
 }
 .court-item .court-hours-input:focus{
-  border-color:#A4D65E;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
-  outline:2px solid #A4D65E;outline-offset:2px;
-  box-shadow:0 4px 12px rgba(164, 214, 94, 0.2);
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 102, 204, 0.12);
 }
 .court-item .court-hours-input::-webkit-outer-spin-button,
 .court-item .court-hours-input::-webkit-inner-spin-button{
@@ -1202,9 +1233,10 @@ body{min-height:100dvh}
 }
 #section-payment .pay-btn-big.cash.on,
 #section-payment .pay-btn-big.transfer.on {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--grad-primary);
+  border-color: transparent;
   color: #fff;
+  box-shadow:0 4px 12px rgba(0, 102, 204, 0.25);
 }
 #section-payment .pay-btn-big:active {
   opacity:.85;
@@ -1293,13 +1325,13 @@ body{min-height:100dvh}
     <!-- ════════════════ Section: คำนวณราคา ════════════════ -->
     <div id="section-price" style="display:none">
       <div class="setup-card" id="setup-card">
-        <div class="setup-head" style="cursor:default;background:linear-gradient(135deg, rgba(164,214,94,.08), rgba(164,214,94,.04));padding:16px;border-radius:12px;margin-bottom:16px">
+        <div class="setup-head" style="cursor:default;background:var(--accent-light);padding:14px 16px;border-radius:12px;margin-bottom:16px">
           <div class="setup-title">💰 ตั้งค่ารอบ</div>
         </div>
         <div class="setup-body">
           <!-- Court Breakdown Section (ใหม่) -->
           <div class="court-breakdown-section">
-            <div class="breakdown-label">🏸 คอร์ท <span id="court-count-label" style="font-weight:700;color:#558B2F;font-size:13px;letter-spacing:0">(จองสนามจำนวน <b id="court-count-num">0</b> คอร์ท)</span></div>
+            <div class="breakdown-label">🏸 คอร์ท <span id="court-count-label" style="font-weight:400;color:var(--mute);font-size:13px;letter-spacing:0">(จองสนามจำนวน <b id="court-count-num" style="color:var(--blue);font-weight:600">0</b> คอร์ท)</span></div>
             <div class="court-items-wrapper">
               <div class="breakdown-header">
                 <span>คอร์ทเลขที่</span>
@@ -1435,7 +1467,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.9.0 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.9.6 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2588,9 +2620,9 @@ async function loadHistory(){
           ${badge}
         </div>
         ${isComplete ? `
-        <div style="background:#A4D65E18;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-          <span style="font-size:13px;color:var(--soft);font-weight:600">💰 ยอดเก็บได้รอบนี้</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollected)} ฿</span>
+        <div style="background:var(--accent-light);border:1px solid rgba(0,102,204,.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-size:13px;color:var(--mute);font-weight:500">💰 ยอดเก็บได้รอบนี้</span>
+          <span style="font-family:inherit;font-size:22px;font-weight:600;color:var(--blue);letter-spacing:-0.02em">${fmtBaht(totalCollected)} ฿</span>
         </div>` : ''}
         <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
           <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
@@ -2685,9 +2717,9 @@ function renderViewModal(d){
     <div class="vm-block">
       <div class="vm-block-head">📊 สรุปการจ่าย</div>
       ${isCompleteView ? `
-      <div style="background:#A4D65E20;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
-        <span style="font-size:14px;font-weight:700;color:var(--accent)">💰 ยอดเก็บได้รอบนี้</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollectedView)} ฿</span>
+      <div style="background:var(--accent-light);border:1px solid rgba(0,102,204,.2);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:14px;font-weight:500;color:var(--mute)">💰 ยอดเก็บได้รอบนี้</span>
+        <span style="font-family:inherit;font-size:26px;font-weight:600;color:var(--blue);letter-spacing:-0.02em">${fmtBaht(totalCollectedView)} ฿</span>
       </div>` : ''}
       <div class="vm-sum-row">
         <div class="vm-sum-item cash">
@@ -3135,7 +3167,7 @@ function refreshAutoOverride(){
     const wrapper = memberEstInp.closest('.stp-field');
     if(wrapper) wrapper.classList.toggle('need-fill', needHeadcount);
   }
-  inp.placeholder = needHeadcount ? '⚠️ ใส่ "คนที่จะมา" ก่อน' : '0';
+  inp.placeholder = needHeadcount ? '⚠️ ใส่จำนวนคนก่อน' : '0';
 
   if(autoRounded > 0){
     inp.value = String(autoRounded);
@@ -3545,12 +3577,16 @@ document.getElementById('new-member-name').addEventListener('keydown', e => {
 });
 
 // Court breakdown operations
-/** สร้าง <option> สำหรับ dropdown เลขคอร์ท (1-30) — เลือก default ที่ระบุ */
-function courtNumberOptions(selected){
+/** สร้าง <option> สำหรับ dropdown เลขคอร์ท (1-30) — เลือก default ที่ระบุ
+ *  excludedSet: เลขคอร์ทที่ใช้แล้ว (จะถูกตัดออก ยกเว้นถ้าตรงกับ selected เอง) */
+function courtNumberOptions(selected, excludedSet){
   const sel = String(selected);
+  const ex = excludedSet || new Set();
   let html = '';
   for(let i = 1; i <= 30; i++){
     const v = String(i);
+    // ✅ ตัดเลขที่ถูกใช้แล้วออก — ยกเว้นเลขของตัวเอง (selected)
+    if(ex.has(v) && v !== sel) continue;
     html += `<option value="${v}"${v === sel ? ' selected' : ''}>${v}</option>`;
   }
   return html;
@@ -3568,7 +3604,7 @@ function addNewCourt(){
   item.className = 'court-item';
   item.dataset.courtId = next;
   item.innerHTML = `
-    <select class="court-name" onchange="updateCourtCalculation()">${courtNumberOptions(next)}</select>
+    <select class="court-name" onchange="updateCourtCalculation()">${courtNumberOptions(next, used)}</select>
     <div class="court-hours-wrapper">
       <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
       <span class="court-hours-display">2.0</span>
@@ -3612,6 +3648,20 @@ function adjustCourtHours(btn, delta){
   flushSyncNow();
 }
 
+/** ✅ Refresh dropdowns ทุก row — ตัดเลขที่ row อื่นเลือกอยู่ออก (กันซ้ำ) */
+function refreshAllCourtDropdowns(){
+  const selects = document.querySelectorAll('.court-item .court-name');
+  const allValues = Array.from(selects).map(s => s.value);
+  selects.forEach((select, idx) => {
+    const currentValue = select.value;
+    // excluded = ค่าของ select อื่น ๆ (ไม่รวมตัวเอง)
+    const excluded = new Set(allValues.filter((_, i) => i !== idx));
+    // rebuild options แล้ว preserve selection ของตัวเอง
+    select.innerHTML = courtNumberOptions(currentValue, excluded);
+    select.value = currentValue;
+  });
+}
+
 function updateCourtCalculation(){
   // ✅ Mark that courts were modified locally — prevent listener bounce-back
   _lastLocalCourtChange = Date.now();
@@ -3626,6 +3676,9 @@ function updateCourtCalculation(){
     name: item.querySelector('.court-name')?.value || '?',
     hours: parseFloat(item.querySelector('.court-hours-display')?.textContent) || 0
   }));
+
+  // ✅ Refresh dropdowns ทุก row — ตัดเลขซ้ำออก
+  refreshAllCourtDropdowns();
 
   // Update formula display
   const formula = document.getElementById('court-formula');
