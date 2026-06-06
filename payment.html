@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.1.1 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.1.2 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2286,40 +2286,41 @@ async function cloudSync(){
 async function loadTodayOpenSession(){
   try{
     const iso = todayISO();
-    // 1) ลอง query หลัก: open session ของวันนี้
-    let snap = await db.collection('payment_sessions')
-      .where('date','==',iso)
+    // ✅ ลบ date filter เลย! (timezone/device ต่างกัน → ไม่ match)
+    // ใช้ status='open' ตามลำพังพอ + filter date ด้วย JS
+    // ทำให้ device ต่างกันเห็น session เดียวกัน
+    console.log('[loadTodayOpenSession] querying open sessions (no date filter)');
+    const snap = await db.collection('payment_sessions')
       .where('status','==','open')
-      .limit(1).get();
+      .limit(20).get();
 
-    // 2) ถ้าไม่เจอ → ลอง fallback: open session ล่าสุด (createdAt < 48 hr) ที่ใช่อะไรก็ตาม
-    //    กันกรณี prep บน device อื่นแล้ว date mismatch
-    if(snap.empty){
-      console.log('[loadTodayOpenSession] ไม่เจอ session ของวันนี้ — ลอง fallback');
-      // ✅ Fallback: query แค่ status='open' (ไม่ใช้ orderBy — กัน composite index missing)
-      // แล้ว filter ด้วย JS เอา doc ที่ active ภายใน 48 ชม.
-      const recent = await db.collection('payment_sessions')
-        .where('status','==','open')
-        .limit(20).get();
-      if(recent.empty) return false;
-      const now = Date.now();
-      const cutoff = 48 * 60 * 60 * 1000; // 48 ชม.
-      // sort by updatedAt desc ใน JS
-      const sorted = recent.docs
-        .map(doc => ({
-          doc,
-          ts: doc.data().updatedAt?.toDate?.()?.getTime?.() ||
-              doc.data().createdAt?.toDate?.()?.getTime?.() || 0
-        }))
-        .filter(({ts}) => (now - ts) < cutoff)
-        .sort((a, b) => b.ts - a.ts);
-      if(!sorted.length) return false;
-      const fresh = sorted[0].doc;
-      console.log('[loadTodayOpenSession] ✅ Fallback เจอ session (date:', fresh.data().date, ')');
-      snap = { empty: false, docs: [fresh] };
+    if(snap.empty) {
+      console.log('[loadTodayOpenSession] ไม่เจอ open session ใดๆ');
+      return false;
     }
 
-    const doc = snap.docs[0];
+    const now = Date.now();
+    const cutoff = 48 * 60 * 60 * 1000; // 48 ชม.
+
+    // หา doc ที่ fresh (<48h) จาก open sessions
+    const sorted = snap.docs
+      .map(doc => ({
+        doc,
+        ts: doc.data().updatedAt?.toDate?.()?.getTime?.() ||
+            doc.data().createdAt?.toDate?.()?.getTime?.() || 0
+      }))
+      .filter(({ts}) => (now - ts) < cutoff)
+      .sort((a, b) => b.ts - a.ts);
+
+    if(!sorted.length) {
+      console.log('[loadTodayOpenSession] ไม่เจอ fresh open session (<48h)');
+      return false;
+    }
+
+    const fresh = sorted[0].doc;
+    console.log('[loadTodayOpenSession] ✅ พบ session:', fresh.id, 'date:', fresh.data().date);
+
+    const doc = fresh;
     const d = doc.data();
     editingId = doc.id;
     session = {
