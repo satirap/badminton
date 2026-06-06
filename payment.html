@@ -1452,11 +1452,8 @@ body{min-height:100dvh}
         </button>
       </div>
 
-      <!-- Actions -->
+      <!-- Actions (ไม่มีปุ่ม "บันทึก" — auto-save ทุกครั้งที่กด) -->
       <div class="action-row">
-        <button class="btn-save" id="btn-save" onclick="saveSessionNow()">
-          💾 บันทึกรายการ
-        </button>
         <button class="btn-complete" id="btn-complete" onclick="completeSession()" style="display:none">
           🎉 จบรอบ (จ่ายครบแล้ว)
         </button>
@@ -1467,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v3.9.6 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.0 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1942,17 +1939,64 @@ function adoptSession(docId, d){
 }
 
 let _lastLocalCourtChange = 0; // ✅ Track when courts were modified locally
-let _lastLocalWrite = 0; // ✅ Track when WE last wrote — skip listener echo
+let _lastLocalWrite = 0; // legacy timestamp (เก็บไว้ compat)
+// ✅ Unique writer ID — กัน echo ของตัวเอง แต่ยังเห็น write ของคนอื่นได้
+const _myWriterId = 'w_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+let _myLastWriteId = 0; // increment ทุกครั้งที่เขียน
+
+/* ═══════════════════════════════════════════════════════════════
+   PRODUCTION-GRADE MULTI-USER SAFETY
+   - Conservative merge: union remote + local (กัน concurrent adds หาย)
+   - Deleted ID tracking: รู้ว่า player ถูกลบ → ไม่ดึงกลับมาตอน merge
+   - Transactional cloudSync: read-modify-write atomic
+   ═══════════════════════════════════════════════════════════════ */
+const _recentlyDeletedIds = new Set();
+const DELETED_ID_TTL = 30000; // 30 วินาที — กัน race รอบใหญ่
+
+/** Mark player ID ว่าถูกลบ (ป้องกัน merge เอากลับมา) */
+function trackDeletedPlayerId(id){
+  _recentlyDeletedIds.add(id);
+  setTimeout(() => _recentlyDeletedIds.delete(id), DELETED_ID_TTL);
+}
+
+/** Mark หลาย ID พร้อมกัน (ใช้กับ paste / clear) */
+function trackDeletedPlayerIds(ids){
+  ids.forEach(trackDeletedPlayerId);
+}
+
+/** Conservative merge — union remote + local
+ *  - Player ที่อยู่ใน local → ใช้เวอร์ชั่น local (รวม cash/transfer ที่เพิ่ง toggle)
+ *  - Player ที่อยู่ใน remote (ไม่อยู่ใน local) AND ไม่อยู่ใน deleted list → append (คนอื่นเพิ่งเพิ่ม)
+ *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
+function mergePlayersConservative(remote, local){
+  const localList = Array.isArray(local) ? local : [];
+  const remoteList = Array.isArray(remote) ? remote : [];
+  const localIds = new Set(localList.map(p => p.id));
+  const result = [...localList];
+  for(const rp of remoteList){
+    if(localIds.has(rp.id)) continue; // ใช้ของ local
+    if(_recentlyDeletedIds.has(rp.id)) continue; // เราลบไปแล้ว
+    result.push(rp); // คนอื่นเพิ่งเพิ่ม → keep
+  }
+  return result;
+}
 
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
-  // ✅ Skip listener echo — ถ้าเพิ่งเขียนเอง <2s ที่แล้ว ไม่ต้อง merge (เป็น echo ของ write เรา)
-  const sinceWrite = Date.now() - _lastLocalWrite;
-  if(sinceWrite < 2000){
-    console.log(`[merge] skip listener echo (wrote ${sinceWrite}ms ago)`);
+  // ✅ Skip echo ของตัวเองเท่านั้น (เช็คจาก writerId) — ของคนอื่นจะถูก merge
+  if(d.lastWriterId === _myWriterId && d.lastWriteId === _myLastWriteId){
+    console.log('[merge] skip own echo (writerId match)');
     return;
   }
+  // ถ้าเป็นการเขียนจากคนอื่น → log + merge ต่อ
+  if(d.lastWriterId && d.lastWriterId !== _myWriterId){
+    console.log(`[merge] received update from another user (${d.lastWriterId.slice(0,10)})`);
+  }
+  // ✅ Snapshot players ก่อน merge → ใช้เปรียบเทียบใน smartRerenderPlayers
+  const prevPlayers = (session.players || []).map(p => ({
+    id: p.id, cash: !!p.cash, transfer: !!p.transfer
+  }));
   // player list — main reason สำหรับ multi-user
   if(Array.isArray(d.players)){
     session.players = d.players.map(p => ({
@@ -1998,16 +2042,50 @@ function mergeRemoteIntoSession(d){
   }
   // persist local
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-  // re-render
-  renderTable();
+  // ✅ Surgical re-render — เปรียบเทียบ old vs new เพื่อกัน bounce
+  smartRerenderPlayers(prevPlayers);
   renderSummary();
   renderPlayerListMini();
 }
 
+/** ✅ Smart re-render: ถ้าจำนวน/ลำดับเปลี่ยน → full rebuild; ถ้าแค่ state เปลี่ยน → surgical update */
+function smartRerenderPlayers(prevPlayers){
+  const cur = session.players || [];
+  const prev = prevPlayers || [];
+  // ถ้าจำนวนหรือลำดับต่าง → full rebuild
+  if(cur.length !== prev.length){ renderTable(); return; }
+  for(let i = 0; i < cur.length; i++){
+    if(cur[i].id !== prev[i].id){ renderTable(); return; }
+  }
+  // เลข + ลำดับเหมือนเดิม → update เฉพาะ state ที่เปลี่ยน
+  for(let i = 0; i < cur.length; i++){
+    const p = cur[i], q = prev[i];
+    if(p.cash !== q.cash || p.transfer !== q.transfer){
+      updatePlayerCardUI(p.id); // surgical: แค่ toggle class ของ card นี้
+    }
+  }
+}
+
+/** ✅ Detect ถ้า session มีการปรับแต่งจาก default → ควร sync แม้ไม่มี players (กัน prep ใน device อื่นแล้วไม่เจอ) */
+function isSessionCustomized(){
+  if(!session) return false;
+  // มี players → customized
+  if(session.players?.length > 0) return true;
+  // courts ไม่เป็น default (3,4,5 @ 2 ชม.)
+  const defaultCourts = JSON.stringify([{name:'3',hours:2},{name:'4',hours:2},{name:'5',hours:2}]);
+  if(JSON.stringify(session.courts || []) !== defaultCourts) return true;
+  // rate / shuttle / etc ไม่เป็น default
+  if((session.courtRate || 220) !== 220) return true;
+  if((session.shuttlePrice || 75) !== 75) return true;
+  if((session.shuttleCount || 0) > 0) return true;
+  if((session.priceOverride || 0) > 0) return true;
+  return false;
+}
+
 async function cloudSync(){
   if(!session || !session.players) return;
-  // ไม่ sync session เปล่า (ยังไม่มีคน)
-  if(session.players.length === 0 && !editingId) {
+  // ✅ Sync ถ้า: มี players หรือ มี editingId หรือ มีการปรับแต่ง (prep flow)
+  if(session.players.length === 0 && !editingId && !isSessionCustomized()) {
     updateAutosaveLabel('skip');
     return;
   }
@@ -2064,12 +2142,44 @@ async function cloudSync(){
       totalAmount:    totalAmt,
       createdAt:      session.createdAt ? new Date(session.createdAt) : new Date(),
       updatedAt:      new Date(),
+      // ✅ Multi-user echo detection
+      lastWriterId:   _myWriterId,
+      lastWriteId:    ++_myLastWriteId,
     };
     if(editingId){
-      // doc เดิม — merge:true ไม่แตะ status field (คงค่าเดิม)
-      console.log('[cloudSync] Updating existing doc:', editingId);
-      await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
-      console.log('[cloudSync] ✅ Update successful');
+      // ✅ Production-grade: ใช้ transaction (read → conservative merge → write atomic)
+      // กัน concurrent edits จากหลายคนเสียข้อมูล
+      console.log('[cloudSync] Transactional update on existing doc:', editingId);
+      const docRef = db.collection('payment_sessions').doc(editingId);
+      await db.runTransaction(async (tx) => {
+        const snap = await tx.get(docRef);
+        const remote = snap.exists ? snap.data() : {};
+        // ✅ Conservative merge: union players (กัน concurrent adds หาย)
+        const mergedPlayers = mergePlayersConservative(remote.players || [], session.players);
+        // ✅ Sync local state ให้ตรงกับ merged → derived stats จะคำนวณถูก
+        session.players = mergedPlayers;
+        // ✅ Recompute derived stats จาก mergedPlayers
+        const m_cashN  = mergedPlayers.filter(p => p.cash).length;
+        const m_transN = mergedPlayers.filter(p => p.transfer).length;
+        let m_totalAmt = 0, m_cashAmt = 0, m_transAmt = 0;
+        mergedPlayers.forEach(p => {
+          const s = getPlayerShare(p);
+          m_totalAmt += s;
+          if(p.cash)     m_cashAmt  += s;
+          if(p.transfer) m_transAmt += s;
+        });
+        // อัปเดต payload ด้วยค่า merged
+        payload.players        = mergedPlayers;
+        payload.cashCount      = m_cashN;
+        payload.transferCount  = m_transN;
+        payload.totalCount     = mergedPlayers.length;
+        payload.paidCount      = m_cashN + m_transN;
+        payload.cashAmount     = m_cashAmt;
+        payload.transferAmount = m_transAmt;
+        payload.totalAmount    = m_totalAmt;
+        tx.set(docRef, payload, {merge:true});
+      });
+      console.log('[cloudSync] ✅ Transactional update successful');
     } else {
       // doc ใหม่ — initialize status เป็น 'open'
       console.log('[cloudSync] Creating new doc');
@@ -2107,15 +2217,39 @@ async function cloudSync(){
   }
 }
 
-/** ค้นหา open session ของวันนี้ — ให้อีกคนที่เตรียมไว้ ใช้ต่อได้ */
+/** ค้นหา open session ของวันนี้ — ให้อีกคนที่เตรียมไว้ ใช้ต่อได้
+ *  Fallback: ถ้าไม่เจอด้วย date == today ลองหา open session ล่าสุด (กัน timezone/date picker mismatch) */
 async function loadTodayOpenSession(){
   try{
     const iso = todayISO();
-    const snap = await db.collection('payment_sessions')
+    // 1) ลอง query หลัก: open session ของวันนี้
+    let snap = await db.collection('payment_sessions')
       .where('date','==',iso)
       .where('status','==','open')
       .limit(1).get();
-    if(snap.empty) return false;
+
+    // 2) ถ้าไม่เจอ → ลอง fallback: open session ล่าสุด (createdAt < 48 hr) ที่ใช่อะไรก็ตาม
+    //    กันกรณี prep บน device อื่นแล้ว date mismatch
+    if(snap.empty){
+      console.log('[loadTodayOpenSession] ไม่เจอ session ของวันนี้ — ลอง fallback หา open session ล่าสุด');
+      const recent = await db.collection('payment_sessions')
+        .where('status','==','open')
+        .orderBy('createdAt','desc')
+        .limit(5).get();
+      if(recent.empty) return false;
+      // หา doc ที่ updatedAt อยู่ภายใน 48 ชั่วโมง
+      const now = Date.now();
+      const cutoff = 48 * 60 * 60 * 1000; // 48 ชม.
+      const fresh = recent.docs.find(doc => {
+        const data = doc.data();
+        const updatedAt = data.updatedAt?.toDate?.()?.getTime?.() || data.createdAt?.toDate?.()?.getTime?.() || 0;
+        return (now - updatedAt) < cutoff;
+      });
+      if(!fresh) return false;
+      console.log('[loadTodayOpenSession] ✅ Fallback เจอ session ที่ prep ไว้ (date:', fresh.data().date, ')');
+      snap = { empty: false, docs: [fresh] };
+    }
+
     const doc = snap.docs[0];
     const d = doc.data();
     editingId = doc.id;
@@ -2183,6 +2317,8 @@ function addPlayer(name){
 }
 
 function deletePlayer(id){
+  // ✅ Track deleted ID — กัน conservative merge เอา player กลับมา (multi-user safe)
+  trackDeletedPlayerId(id);
   session.players = session.players.filter(p => p.id !== id);
   syncHeadcountInput();
   saveDraft();
@@ -2572,6 +2708,8 @@ function exitEditMode(){
 function clearSession(){
   if(!session.players.length) return;
   if(!confirm('ล้างรายชื่อทั้งหมด?')) return;
+  // ✅ Track all IDs as deleted (กัน merge เอา player กลับมาในระยะ TTL)
+  trackDeletedPlayerIds(session.players.map(p => p.id));
   unsubscribeFromSession();
   editingId = null;
   session = newSession();
@@ -3468,6 +3606,8 @@ function addPlayersFromPaste(){
     toast('ไม่พบรายชื่อในข้อความ · ลองตรวจฟอร์แมต');
     return;
   }
+  // ✅ Track old IDs as deleted — paste = intentional replace ไม่ให้ merge เอาคืนมา
+  trackDeletedPlayerIds(session.players.map(p => p.id));
   // Replace player list ทั้งหมด (ไม่ append)
   session.players = names.map((name, i) => ({
     id: 'p' + Date.now() + '_' + i,
@@ -3548,12 +3688,15 @@ function addNewMember(){
 function clearMemberSelection(){
   if(!session?.players?.length) return;
   if(!confirm('เคลียร์รายชื่อผู้เล่นทั้งหมด?')) return;
+  // ✅ Track all IDs as deleted — กัน conservative merge เอากลับมา
+  trackDeletedPlayerIds(session.players.map(p => p.id));
   session.players = [];
   syncHeadcountInput();
   saveDraft();
   renderPlayerListMini();
   renderTable();
   renderSummary();
+  flushSyncNow(); // บันทึกทันที (เป็น destructive action)
 }
 
 /* ================================================================
