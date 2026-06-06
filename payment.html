@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.3.1 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.0.1 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2118,6 +2118,13 @@ function mergeRemoteIntoSession(d){
   if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
   if(d.priceOverride !== undefined){ session.priceOverride = d.priceOverride || 0; setIfNotFocused('price-override', session.priceOverride); }
   if(d.courtFee !== undefined) session.courtFee = d.courtFee || 0;
+  // ✅ Sync date (จาก device อื่นเปลี่ยนวันที่จัดก๊วน)
+  if(d.date && d.date !== session.date){
+    session.date = d.date;
+    session.dateDisplay = d.dateDisplay || thaiDate(d.date);
+    renderDate(); // update input field (renderDate มี guard ถ้า user กำลัง focus)
+    console.log('[merge] date synced from remote:', d.date);
+  }
   if(d.status) session.status = d.status;
   if(d.completedAt && d.completedAt.toDate){
     session.completedAt = d.completedAt.toDate().toISOString();
