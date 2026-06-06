@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.6 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.7 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1975,7 +1975,7 @@ const DELETED_ID_TTL = 30000; // 30 วินาที — กัน race รอ
 
 // ✅ Track ที่เพิ่งเปลี่ยน payment state (cash/transfer) → กัน merge overwrite
 const _recentlyToggledPayment = new Map(); // playerId → {cash, transfer, timestamp}
-const PAYMENT_TOGGLE_TTL = 5000; // 5 วินาที
+const PAYMENT_TOGGLE_TTL = 10000; // 10 วินาที (network delay on mobile)
 function trackPaymentToggle(playerId, cash, transfer){
   _recentlyToggledPayment.set(playerId, {cash, transfer, ts: Date.now()});
   setTimeout(() => _recentlyToggledPayment.delete(playerId), PAYMENT_TOGGLE_TTL);
@@ -1998,22 +1998,25 @@ function trackDeletedPlayerIds(ids){
  *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
 /** Smart merge — remote-wins (unless we just toggled), local-wins for new players
  *  - Player ใน local ที่มีใน remote:
- *    - ถ้าเราเพิ่งปรับ payment state (< 5s) → ใช้ local (เราเพิ่งสั่ง toggle)
+ *    - ถ้าเราเพิ่งปรับ payment state (< 10s) → ใช้ local (เราเพิ่งสั่ง toggle)
  *    - ไม่งั้น → ใช้ remote (Device 1 ล่าสุด)
  *  - Player เฉพาะ local (ไม่มีใน remote) → keep if not deleted (เราเพิ่งเพิ่ม)
  *  - Player เฉพาะ remote (ไม่มีใน local) → append (คนอื่นเพิ่งเพิ่ม)
- *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
-function mergePlayersConservative(remote, local){
+ *  - Player ใน deleted list → skip (เราตั้งใจลบ)
+ *  toggledSnapshot: optional map of recently toggled players (from transaction context) */
+function mergePlayersConservative(remote, local, toggledSnapshot){
   const localList = Array.isArray(local) ? local : [];
   const remoteList = Array.isArray(remote) ? remote : [];
   const remoteMap = new Map(remoteList.map(p => [p.id, p]));
   const result = [];
+  // ใช้ snapshot ถ้าให้ (จาก transaction) ไม่งั้นใช้ current (จาก listener)
+  const toggledMap = toggledSnapshot || _recentlyToggledPayment;
 
   // ทุก player ใน local
   for(const lp of localList){
     if(remoteMap.has(lp.id)){
       const rp = remoteMap.get(lp.id);
-      const recentToggle = _recentlyToggledPayment.get(lp.id);
+      const recentToggle = toggledMap.get(lp.id);
       // ถ้าเพิ่งปรับ payment → ใช้ local (เราเพิ่งกด toggle)
       if(recentToggle && recentToggle.cash === lp.cash && recentToggle.transfer === lp.transfer){
         result.push(lp);
@@ -2210,12 +2213,15 @@ async function cloudSync(){
       // transaction อ่าน remote → merge (pure, ไม่แตะ global state) → เขียน atomic
       let finalMergedPlayers = localPlayers; // default ถ้า transaction ไม่ต้อง merge
 
+      // ✅ Snapshot recent toggles ก่อน transaction (network delay อาจเปลี่ยน state)
+      const toggledSnapshot = new Map(_recentlyToggledPayment);
+
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(docRef);
         const remote = snap.exists ? snap.data() : {};
 
-        // ✅ Players: conservative merge (union)
-        const merged = mergePlayersConservative(remote.players || [], localPlayers);
+        // ✅ Players: conservative merge (union) — pass snapshot of toggles
+        const merged = mergePlayersConservative(remote.players || [], localPlayers, toggledSnapshot);
         finalMergedPlayers = merged;
         const stats = computeStats(merged);
 
