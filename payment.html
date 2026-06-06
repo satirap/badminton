@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.3 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.4 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1854,12 +1854,13 @@ function subscribeToSession(docId){
       if(snap.metadata.hasPendingWrites) return;
       const d = snap.data();
 
-      // ✅ OWN ECHO: จัดการทันที ไม่ผ่าน debounce (กันยกเลิก update ของคนอื่น)
-      const isOwnEcho = d.lastWriterId === _myWriterId && d.lastWriteId === _myLastWriteId;
+      // ✅ OWN ECHO: ถ้า write มาจาก device เรา → skip merge (เรามี state ถูกต้องแล้ว)
+      // ใช้แค่ writerId (ไม่ใช่ writeId) เพราะ writeId เปลี่ยนทุก sync → echo เก่าอาจผ่านไปได้
+      const isOwnEcho = d.lastWriterId === _myWriterId;
       if(isOwnEcho){
-        // อัปเดต _lastMergedData เสมอ — กัน hasDataChanged หลอกว่า "changed" ทุกรอบ
+        // อัปเดต _lastMergedData เสมอ — กัน hasDataChanged ว่า "changed" ซ้ำๆ
         _lastMergedData = JSON.parse(JSON.stringify(d));
-        console.log('[listener] own echo — updated _lastMergedData, skip merge');
+        console.log('[listener] own echo — skip merge');
         return;
       }
 
@@ -2175,11 +2176,21 @@ async function cloudSync(){
       await db.runTransaction(async (tx) => {
         const snap = await tx.get(docRef);
         const remote = snap.exists ? snap.data() : {};
-        // ✅ Pure function — ไม่แตะ global session
+
+        // ✅ Players: conservative merge (union)
         const merged = mergePlayersConservative(remote.players || [], localPlayers);
         finalMergedPlayers = merged;
         const stats = computeStats(merged);
+
+        // ✅ Courts: ใช้ local courts ถ้าเพิ่งเปลี่ยน (<5s) ไม่งั้นใช้ remote courts
+        // กัน Device 2 เขียนทับ courts ของ Device 1 ตอน sync payment toggle
+        const now = Date.now();
+        const courtsFresh = _lastLocalCourtChange > 0 && (now - _lastLocalCourtChange) < 5000;
+        const courtsToWrite = courtsFresh ? localCourts : (remote.courts || localCourts);
+        console.log(`[cloudSync] courts: ${courtsFresh ? 'using local (recently changed)' : 'using remote (preserved)'}`);
+
         const payload = Object.assign({}, basePayload, {
+          courts:        courtsToWrite,  // ✅ smart courts
           players:       merged,
           cashCount:     stats.cashN,
           transferCount: stats.transN,
