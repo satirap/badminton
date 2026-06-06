@@ -1464,7 +1464,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.4 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v4.0.5 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1988,16 +1988,39 @@ function trackDeletedPlayerIds(ids){
  *  - Player ที่อยู่ใน local → ใช้เวอร์ชั่น local (รวม cash/transfer ที่เพิ่ง toggle)
  *  - Player ที่อยู่ใน remote (ไม่อยู่ใน local) AND ไม่อยู่ใน deleted list → append (คนอื่นเพิ่งเพิ่ม)
  *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
+/** Smart merge — remote-wins for payment state, local-wins for new players
+ *  FIX: Device 2 มี state เก่า → local ชนะ → เขียนทับ payment ของ Device 1
+ *  Solution: Use remote's cash/transfer (latest from other user), keep local new players
+ *
+ *  - Player ใน local ที่มีใน remote → ใช้ remote version (Device 1 อาจ toggle payment ล่าสุด)
+ *  - Player เฉพาะ local (ไม่มีใน remote) → keep if not deleted (เราเพิ่งเพิ่ม)
+ *  - Player เฉพาะ remote (ไม่มีใน local) → append (คนอื่นเพิ่งเพิ่ม)
+ *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
 function mergePlayersConservative(remote, local){
   const localList = Array.isArray(local) ? local : [];
   const remoteList = Array.isArray(remote) ? remote : [];
-  const localIds = new Set(localList.map(p => p.id));
-  const result = [...localList];
-  for(const rp of remoteList){
-    if(localIds.has(rp.id)) continue; // ใช้ของ local
-    if(_recentlyDeletedIds.has(rp.id)) continue; // เราลบไปแล้ว
-    result.push(rp); // คนอื่นเพิ่งเพิ่ม → keep
+  const remoteMap = new Map(remoteList.map(p => [p.id, p]));
+  const result = [];
+
+  // ทุก player ใน local
+  for(const lp of localList){
+    if(remoteMap.has(lp.id)){
+      // มีใน remote → ใช้ remote version (payment state จากคนอื่นชนะ)
+      result.push(remoteMap.get(lp.id));
+      remoteMap.delete(lp.id); // mark as processed
+    } else if(!_recentlyDeletedIds.has(lp.id)){
+      // ไม่มีใน remote และไม่ถูกลบ → keep (เราเพิ่งเพิ่ม)
+      result.push(lp);
+    }
   }
+
+  // player ใน remote ที่ local ไม่มี → append (คนอื่นเพิ่งเพิ่ม)
+  for(const rp of remoteMap.values()){
+    if(!_recentlyDeletedIds.has(rp.id)){
+      result.push(rp);
+    }
+  }
+
   return result;
 }
 
