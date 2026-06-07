@@ -963,8 +963,8 @@ body{min-height:100dvh}
 .player-card.paid-cash,
 .player-card.paid-transfer,
 .player-card.paid-both{
-  border-color:transparent;background:var(--grad-paid);
-  box-shadow:0 4px 12px rgba(0, 102, 204, 0.12), 0 1px 3px rgba(88, 86, 214, 0.08);
+  border:2px solid #0066cc;background:var(--grad-paid);
+  box-shadow:0 4px 14px rgba(0, 102, 204, 0.25), 0 1px 3px rgba(88, 86, 214, 0.15);
 }
 
 .pc-head{
@@ -1457,14 +1457,13 @@ body{min-height:100dvh}
         <button class="btn-complete" id="btn-complete" onclick="completeSession()" style="display:none">
           🎉 จบรอบ (จ่ายครบแล้ว)
         </button>
-        <button class="btn-clear" onclick="clearSession()">🗑 ล้างรายชื่อทั้งหมด</button>
       </div>
 
       <div class="autosave" id="autosave-label"></div>
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.0.1 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.0.3 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
