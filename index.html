@@ -920,6 +920,11 @@ section.view.active{display:block}
     <!-- ---- VIEW: MONTHLY ---- -->
     <section class="view" id="view-monthly">
       <h2 class="section-title" id="monthly-title">คะแนนเดือน<em> เมษายน 69</em></h2>
+      <div class="month-selector" style="display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:12px;background:var(--bg-card2);border-radius:var(--radius-sm)">
+        <button class="month-nav-btn" id="prev-month-btn" onclick="changeMonth(-1)" style="background:none;border:1px solid var(--line);color:var(--ink);width:32px;height:32px;border-radius:6px;cursor:pointer;font-weight:700">←</button>
+        <select id="month-select" onchange="selectMonth(this.value)" style="flex:1;padding:8px 12px;background:var(--bg-input);color:var(--ink);border:1px solid var(--line);border-radius:6px;font-size:14px;cursor:pointer"></select>
+        <button class="month-nav-btn" id="next-month-btn" onclick="changeMonth(1)" style="background:none;border:1px solid var(--line);color:var(--ink);width:32px;height:32px;border-radius:6px;cursor:pointer;font-weight:700">→</button>
+      </div>
       <p class="text-mute text-sm" id="monthly-label" style="margin:-8px 0 16px;display:none"></p>
       <div class="monthly-raffle-info">
         <span class="icon">🎫</span> ทุก <b>10 คะแนน = 1 สิทธิ์</b> ลุ้นรางวัลปลายเดือน · ดูสิทธิ์ปัจจุบันที่ป้ายข้างชื่อ
@@ -1134,7 +1139,9 @@ let adminInviteKey     = '';
 let allRankings        = [];
 let allDailyRankings   = [];
 let allMonthlyRankings = [];
+let allMonthlyStats    = {};  // month (0-11) → array of rankings
 let allMonthlyWinners  = [];
+let selectedMonthIndex = null; // null = current month
 let _resultHandled     = false;
 
 // =================================================================
@@ -1350,40 +1357,47 @@ async function dbGetAllData(){
     .sort(rankCmp);
 
   // ── Monthly rankings + yearly winners (single pass over year scores) ──
-  const monthAgg  = {};
+  const monthlyByMonth = {}; // month(0-11) → { playerId → stats }
   const yearlyAgg = {}; // month(0-11) → { playerId: totalPoints }
+
+  for(let i = 0; i < 12; i++) monthlyByMonth[i] = {};
 
   yearSnap.docs.forEach(d => {
     const s  = d.data();
     const mo = tsToDate(s.createdAt).getMonth(); // 0-11
 
-    // Current month aggregate
-    if(mo === curMonth){
-      if(!monthAgg[s.playerId]) monthAgg[s.playerId] = { points:0, wins:0, losses:0, played:0 };
-      monthAgg[s.playerId].points += s.points;
-      if(s.result === 'win')            { monthAgg[s.playerId].wins++;   monthAgg[s.playerId].played++; }
-      else if(s.result === 'lose')      { monthAgg[s.playerId].losses++; monthAgg[s.playerId].played++; }
-      else if(s.result === 'undo-win')  { monthAgg[s.playerId].wins--;   monthAgg[s.playerId].played--; }
-      else if(s.result === 'undo-lose') { monthAgg[s.playerId].losses--; monthAgg[s.playerId].played--; }
-    }
+    // All months aggregate
+    if(!monthlyByMonth[mo][s.playerId]) monthlyByMonth[mo][s.playerId] = { points:0, wins:0, losses:0, played:0 };
+    monthlyByMonth[mo][s.playerId].points += s.points;
+    if(s.result === 'win')            { monthlyByMonth[mo][s.playerId].wins++;   monthlyByMonth[mo][s.playerId].played++; }
+    else if(s.result === 'lose')      { monthlyByMonth[mo][s.playerId].losses++; monthlyByMonth[mo][s.playerId].played++; }
+    else if(s.result === 'undo-win')  { monthlyByMonth[mo][s.playerId].wins--;   monthlyByMonth[mo][s.playerId].played--; }
+    else if(s.result === 'undo-lose') { monthlyByMonth[mo][s.playerId].losses--; monthlyByMonth[mo][s.playerId].played--; }
 
     // Yearly winners aggregate
     if(!yearlyAgg[mo]) yearlyAgg[mo] = {};
     yearlyAgg[mo][s.playerId] = (yearlyAgg[mo][s.playerId] || 0) + s.points;
   });
 
-  const monthly = Object.entries(monthAgg)
-    .map(([id, stats]) => {
-      const clamped = {
-        points: Math.max(0, stats.points),
-        wins:   Math.max(0, stats.wins),
-        losses: Math.max(0, stats.losses),
-        played: Math.max(0, stats.played),
-      };
-      return { ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...clamped };
-    })
-    .filter(p => p.played > 0 || p.points > 0)
-    .sort(rankCmp);
+  // Build monthly stats for all months
+  const monthlyStats = {};
+  for(let mo = 0; mo < 12; mo++){
+    const monthAgg = monthlyByMonth[mo];
+    monthlyStats[mo] = Object.entries(monthAgg)
+      .map(([id, stats]) => {
+        const clamped = {
+          points: Math.max(0, stats.points),
+          wins:   Math.max(0, stats.wins),
+          losses: Math.max(0, stats.losses),
+          played: Math.max(0, stats.played),
+        };
+        return { ...(playerMap[id] || { id, name: id, pictureUrl:'' }), ...clamped };
+      })
+      .filter(p => p.played > 0 || p.points > 0)
+      .sort(rankCmp);
+  }
+
+  const monthly = monthlyStats[curMonth] || [];
 
   const winners = Array.from({ length:12 }, (_, i) => {
     const map = yearlyAgg[i];
@@ -1393,7 +1407,7 @@ async function dbGetAllData(){
     return { month: i, winner: player ? { ...player, points: pts } : null };
   });
 
-  return { players, rankings, daily, monthly, winners };
+  return { players, rankings, daily, monthly, monthlyStats, winners };
 }
 
 // =================================================================
@@ -1526,7 +1540,7 @@ function hideSplash(){
 // DATA LOADING
 // =================================================================
 
-function renderAll(){ renderDaily(); renderMonthly(); renderRanks(); updateAdminUI(); }
+function renderAll(){ initMonthSelector(); renderDaily(); renderMonthly(); renderRanks(); updateAdminUI(); }
 
 function loadCachedData(){
   try{
@@ -1536,6 +1550,7 @@ function loadCachedData(){
     allRankings        = d.rankings || [];
     allDailyRankings   = d.daily    || [];
     allMonthlyRankings = d.monthly  || [];
+    allMonthlyStats    = d.monthlyStats || {};
     allMonthlyWinners  = d.winners  || [];
     renderAll(); return true;
   }catch(e){ return false; }
@@ -1547,10 +1562,11 @@ async function loadAllData(){
     allRankings        = res.rankings || [];
     allDailyRankings   = res.daily    || [];
     allMonthlyRankings = res.monthly  || [];
+    allMonthlyStats    = res.monthlyStats || {};
     allMonthlyWinners  = res.winners  || [];
     localStorage.setItem('shuttle_data', JSON.stringify({
       rankings: allRankings, daily: allDailyRankings,
-      monthly: allMonthlyRankings, winners: allMonthlyWinners,
+      monthly: allMonthlyRankings, monthlyStats: allMonthlyStats, winners: allMonthlyWinners,
     }));
     renderAll();
   }catch(err){
@@ -1667,22 +1683,63 @@ function renderDaily(){
   if(shareBtn) shareBtn.style.display = (isAdmin && allDailyRankings.length > 0) ? 'block' : 'none';
 }
 
-function renderMonthly(){
+function getDisplayMonthIndex(){
+  if(selectedMonthIndex !== null) return selectedMonthIndex;
+  return new Date().getMonth();
+}
+
+function initMonthSelector(){
+  const select = $('#month-select');
+  if(!select) return;
   const now = new Date();
-  // Title แบบเดียวกันทุกเดือน: "คะแนนเดือน เมษายน 69"
-  const monName = THAI_MONTHS_FULL[now.getMonth()];
-  const yr2     = (now.getFullYear() + 543) % 100; // ปีพ.ศ. 2 หลักสุดท้าย
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const options = [];
+  for(let i = 0; i < 12; i++){
+    const monthName = THAI_MONTHS_FULL[i];
+    const year = i <= currentMonth ? currentYear : currentYear - 1;
+    const yearBE = year + 543;
+    const yearBEShort = String(yearBE % 100).padStart(2, '0');
+    const isCurrentMonth = i === currentMonth;
+    options.push(`<option value="${i}">${monthName} ${yearBEShort}${isCurrentMonth ? ' (เดือนนี้)' : ''}</option>`);
+  }
+  select.innerHTML = options.join('');
+  select.value = currentMonth;
+}
+
+function selectMonth(monthIndex){
+  selectedMonthIndex = parseInt(monthIndex);
+  renderMonthly();
+}
+
+function changeMonth(delta){
+  let newMonth = getDisplayMonthIndex() + delta;
+  if(newMonth < 0) newMonth = 11;
+  if(newMonth > 11) newMonth = 0;
+  selectedMonthIndex = newMonth;
+  const select = $('#month-select');
+  if(select) select.value = newMonth;
+  renderMonthly();
+}
+
+function renderMonthly(){
+  const monthIndex = getDisplayMonthIndex();
+  const now = new Date();
+  const monName = THAI_MONTHS_FULL[monthIndex];
+  const yr2 = (now.getFullYear() + 543) % 100;
   const titleEl = $('#monthly-title');
   if(titleEl) titleEl.innerHTML = `คะแนนเดือน<em> ${monName} ${String(yr2).padStart(2,'0')}</em>`;
+  
+  const rankings = allMonthlyStats[monthIndex] || [];
   const tbody = $('#monthly-tbody');
   if(tbody){
-    tbody.innerHTML = allMonthlyRankings.length === 0
+    tbody.innerHTML = rankings.length === 0
       ? '<tr><td colspan="7" style="text-align:center;padding:36px;color:var(--ink-mute);font-style:italic">ยังไม่มีเกมเดือนนี้</td></tr>'
-      : withRanks(allMonthlyRankings).map(r => rkTblRowHtml(r, 'monthly')).join('');
+      : withRanks(rankings).map(r => rkTblRowHtml(r, 'monthly')).join('');
   }
   renderMonthlyWinners();
   const shareMonBtn = document.getElementById('share-monthly-btn');
-  if(shareMonBtn) shareMonBtn.style.display = (isAdmin && allMonthlyRankings.some(r=>(r.points||0)>0)) ? 'block' : 'none';
+  if(shareMonBtn) shareMonBtn.style.display = (isAdmin && rankings.some(r=>(r.points||0)>0)) ? 'block' : 'none';
 }
 
 function renderMonthlyWinners(){
