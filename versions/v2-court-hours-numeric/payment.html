@@ -1,0 +1,3003 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<title>เก็บเงิน — ก๊วนอยากตี ต้องได้ตี</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:      #0c0d10;
+  --card:    #16181d;
+  --card2:   #1c1e24;
+  --input:   #1e2028;
+  --border:  #2e3038;
+  --ink:     #f5f3ee;
+  --soft:    #c9c7c0;
+  --mute:    #8e8c85;
+  --accent:  #c8f135;
+  --green:   #22c55e;
+  --gbg:     #14532d;
+  --gtxt:    #bbf7d0;
+  --blue:    #3b82f6;
+  --bbg:     #1e3a5f;
+  --btxt:    #bfdbfe;
+  --red:     #ef4444;
+  --radius:  14px;
+  --rsm:     10px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:'DM Sans',system-ui,sans-serif;font-size:16px;
+  line-height:1.45;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh}
+
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 120px}
+
+/* ── Header card ── */
+.header-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;margin:14px 0 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.header-card .brand{font-size:16px;font-weight:800;color:var(--ink);line-height:1.2;word-break:keep-all}
+.header-card .brand span{color:var(--accent);display:block}
+.header-card .brand-sub{
+  font-size:10px;font-weight:600;color:var(--mute);margin-top:2px;
+  letter-spacing:.02em;
+}
+.header-card .date-box{text-align:right;flex:0 1 auto;margin-right:4px}
+.header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
+.header-card .date-box .date-sub{font-size:10px;color:var(--mute);margin-top:1px}
+@media (min-width:520px){
+  .header-card{padding:18px 20px;margin:16px 0 12px;gap:12px}
+  .header-card .brand{font-size:18px;line-height:1.15}
+  .header-card .brand span{display:inline}
+  .header-card .brand-sub{font-size:11px}
+  .header-card .date-box{flex:1;margin-right:8px}
+  .header-card .date-box .date-big{font-size:15px}
+  .header-card .date-box .date-sub{font-size:11px}
+}
+.history-icon-btn{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  background:var(--card2);border:1.5px solid var(--border);
+  color:var(--ink);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;
+}
+@media (min-width:520px){
+  .history-icon-btn{width:44px;height:44px;border-radius:12px;font-size:20px}
+  .header-card .brand-logo{width:46px!important;height:46px!important}
+}
+.history-icon-btn:active{transform:scale(.92);border-color:var(--accent)}
+.back-btn{
+  width:100%;padding:12px 16px;margin-bottom:12px;
+  background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+}
+.back-btn:active{background:var(--card)}
+
+/* ── Cost breakdown card ── */
+.cost-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+  transition:padding .2s ease;
+}
+.cost-card.collapsed{padding:12px 16px}
+.cost-card .cost-head{
+  font-size:13px;font-weight:800;color:var(--mute);
+  letter-spacing:.08em;text-transform:uppercase;
+  font-family:'IBM Plex Mono',monospace;
+  margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.cost-card.collapsed .cost-head{margin-bottom:0}
+.cost-head .c-toggle{
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  -webkit-tap-highlight-color:transparent;
+}
+.cost-head .c-toggle:active{transform:scale(.94)}
+.cost-head .c-toggle .chev{transition:transform .2s;display:inline-block}
+.cost-card.collapsed .c-toggle .chev{transform:rotate(-90deg)}
+.cost-card .c-summary{
+  display:none;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;
+  color:var(--soft);letter-spacing:.02em;margin-top:8px;
+}
+.cost-card .c-summary b{color:var(--accent);font-weight:800}
+.cost-card.collapsed .c-summary{display:block}
+.cost-card.collapsed .cost-row,
+.cost-card.collapsed .cost-total-row{display:none}
+.cost-row{
+  display:grid;grid-template-columns:1fr 96px 36px;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px dashed var(--border);
+}
+.cost-row:last-of-type{border-bottom:none;margin-bottom:2px}
+.cost-row .c-label{font-size:15px;font-weight:700;color:var(--ink)}
+.cost-row .c-input{
+  padding:10px 12px;border-radius:var(--rsm);
+  border:1.5px solid var(--border);background:var(--input);color:var(--ink);
+  font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;
+  text-align:right;outline:none;width:100%;
+}
+.cost-row .c-input:focus{border-color:var(--accent)}
+.cost-row .c-unit{font-size:13px;font-weight:700;color:var(--mute);text-align:left}
+
+.cost-total-row{
+  display:grid;grid-template-columns:1fr auto 36px;align-items:baseline;gap:10px;
+  padding:10px 0 6px;
+}
+.cost-total-row.divider-top{border-top:1.5px solid var(--border);margin-top:4px;padding-top:12px;}
+.cost-total-row .t-label{font-size:14px;font-weight:700;color:var(--soft)}
+.cost-total-row .t-num{
+  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
+  color:var(--ink);text-align:right;
+}
+.cost-total-row .t-unit{font-size:12px;font-weight:700;color:var(--mute);text-align:left}
+.cost-total-row.accent .t-label{color:var(--accent);font-size:15px;font-weight:800}
+.cost-total-row.accent .t-num{color:var(--accent);font-size:28px}
+.cost-total-row.accent .t-unit{color:var(--accent)}
+
+/* ── Summary bar ── */
+.summary-bar{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  margin-bottom:12px;
+}
+.summary-bar .s-item{
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:12px 6px;text-align:center;
+}
+.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;line-height:1.1;color:var(--ink)}
+.summary-bar .s-num .baht{font-size:12px;font-weight:700;opacity:.7;margin-left:2px}
+.summary-bar .s-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:700}
+.summary-bar .s-item.cash{border-color:var(--green)60}
+.summary-bar .s-item.cash .s-num{color:var(--gtxt)}
+.summary-bar .s-item.transfer{border-color:var(--blue)60}
+.summary-bar .s-item.transfer .s-num{color:var(--btxt)}
+.summary-bar .s-item.total{border-color:var(--accent)60}
+.summary-bar .s-item.total .s-num{color:var(--accent)}
+
+/* ── Player table ── */
+/* ── Section title for member list ── */
+.section-head-row{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin:16px 2px 8px;
+}
+.section-head-title{
+  font-size:17px;font-weight:800;color:var(--ink);letter-spacing:.02em;
+}
+.section-head-count{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
+  color:var(--accent);background:#c8f13518;border:1px solid var(--accent)60;
+  padding:3px 10px;border-radius:100px;
+}
+
+.player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+
+.player-row{
+  display:grid;grid-template-columns:36px 1fr auto auto auto;
+  align-items:center;gap:8px;
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:14px 12px;
+  transition:border-color .2s;
+}
+.player-row.paid-both{border-color:var(--accent)30}
+.player-row.paid-cash{border-color:var(--green)50}
+.player-row.paid-transfer{border-color:var(--blue)50}
+
+.player-row .num{
+  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;
+  color:var(--mute);text-align:center;
+}
+.player-row .name{
+  font-size:19px;font-weight:800;color:var(--ink);line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* Toggle buttons */
+.pay-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  padding:7px 10px;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;
+  border:1.5px solid var(--border);background:var(--input);color:var(--mute);
+  cursor:pointer;transition:all .15s;white-space:nowrap;min-width:64px;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.pay-btn:active{transform:scale(.95)}
+.pay-btn.on.cash{background:var(--gbg);border-color:var(--green);color:var(--gtxt)}
+.pay-btn.on.transfer{background:var(--bbg);border-color:var(--blue);color:var(--btxt)}
+
+.del-btn{
+  width:32px;height:32px;border-radius:8px;border:none;
+  background:transparent;color:var(--mute);font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .15s;flex-shrink:0;
+}
+.del-btn:active{background:#ef444420;color:var(--red)}
+
+/* ── Add player form ── */
+.add-form{
+  display:flex;gap:8px;margin-bottom:12px;
+}
+.add-form input{
+  flex:1;padding:14px 16px;border-radius:var(--rsm);
+  border:1.5px solid var(--border);background:var(--input);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
+  outline:none;transition:border-color .15s;
+}
+.add-form input::placeholder{color:var(--mute)}
+.add-form input:focus{border-color:var(--accent)}
+.add-form .add-btn{
+  padding:14px 18px;border-radius:var(--rsm);
+  border:none;background:var(--accent);color:#111;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;flex-shrink:0;transition:opacity .15s;
+}
+.add-form .add-btn:active{opacity:.8}
+
+/* ── Share-to-LINE card ── */
+.share-card{
+  background:var(--card);border:1.5px solid #06c75550;
+  border-radius:var(--radius);padding:14px 16px;margin-top:14px;
+}
+.share-card-head{
+  font-size:12px;font-weight:800;color:#06c755;letter-spacing:.08em;
+  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;
+}
+.btn-share-line{
+  width:100%;padding:14px 16px;border:none;border-radius:var(--rsm);
+  background:#06c755;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  -webkit-tap-highlight-color:transparent;transition:opacity .15s;margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.btn-share-line:last-child{margin-bottom:0}
+.btn-share-line:active{opacity:.8}
+.btn-share-line.status{background:#3b82f6}
+.btn-share-line small{font-size:11px;font-weight:600;opacity:.85}
+
+/* ── Action buttons ── */
+.action-row{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.btn-complete{
+  width:100%;padding:18px;border-radius:var(--radius);border:none;
+  background:var(--accent);color:#111;
+  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:800;
+  cursor:pointer;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-complete:active{opacity:.8}
+.btn-complete:disabled{opacity:.4;cursor:not-allowed}
+.btn-save{
+  width:100%;padding:16px;border-radius:var(--radius);
+  border:1.5px solid var(--accent);background:transparent;color:var(--accent);
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-save:active{background:#c8f13510}
+.btn-save:disabled{opacity:.4;cursor:not-allowed}
+.btn-clear{
+  width:100%;padding:14px;border-radius:var(--radius);
+  border:1.5px solid var(--border);background:transparent;color:var(--soft);
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.btn-clear:active{background:var(--card)}
+
+/* ── History list ── */
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+}
+.history-card .hc-head{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+}
+.history-card .hc-date{font-size:15px;font-weight:800;color:var(--ink)}
+.history-card .hc-badge{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:20px;
+}
+.hc-badge.complete{background:#c8f13520;color:var(--accent);border:1px solid var(--accent)40}
+.hc-badge.open{background:#fbbf2420;color:#fbbf24;border:1px solid #fbbf2440}
+.history-card .hc-stats{
+  display:flex;gap:16px;margin-bottom:12px;
+}
+.hc-stat{font-size:13px;color:var(--soft)}
+.hc-stat strong{font-weight:800;color:var(--ink)}
+.history-card .hc-names{
+  font-size:12px;color:var(--mute);line-height:1.8;
+  border-top:1px solid var(--border);padding-top:10px;
+}
+.history-card .hc-actions{display:flex;gap:8px;margin-top:12px}
+.hc-btn{
+  flex:1;padding:10px;border-radius:var(--rsm);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;border:1.5px solid var(--border);
+  background:var(--input);color:var(--soft);
+}
+.hc-btn.edit{border-color:var(--accent)60;color:var(--accent)}
+.hc-btn.view{border-color:#3b82f680;color:#93c5fd}
+.hc-btn:active{opacity:.7}
+
+/* ===== View-session modal ===== */
+.vm-overlay{
+  position:fixed;inset:0;z-index:200;background:#000c;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0;animation:vmFade .2s ease;
+}
+@keyframes vmFade{from{opacity:0}to{opacity:1}}
+@keyframes vmSlide{from{transform:translateY(40px)}to{transform:translateY(0)}}
+.vm-panel{
+  background:var(--card);width:100%;max-width:560px;max-height:92dvh;
+  border-radius:20px 20px 0 0;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 -8px 40px #000a;animation:vmSlide .25s cubic-bezier(.2,.9,.3,1.2);
+}
+.vm-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 14px;border-bottom:1.5px solid var(--border);gap:12px;
+  background:var(--card2);
+}
+.vm-title{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2}
+.vm-sub{font-size:12px;color:var(--mute);margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:600}
+.vm-close{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  font-size:16px;cursor:pointer;font-weight:700;
+}
+.vm-close:active{background:var(--border)}
+.vm-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
+.vm-foot{
+  padding:14px 20px 20px;border-top:1.5px solid var(--border);
+  background:var(--card);
+}
+.vm-share-btn{
+  width:100%;padding:15px;border-radius:var(--radius);border:none;
+  background:#06c755;color:#fff;font-family:'DM Sans',sans-serif;
+  font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity .15s;-webkit-tap-highlight-color:transparent;
+}
+.vm-share-btn:active{opacity:.75}
+.vm-share-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.vm-block{margin-bottom:18px}
+.vm-block-head{
+  font-size:11px;font-weight:800;color:var(--mute);letter-spacing:.1em;
+  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;
+}
+.vm-cost-grid{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:15px}
+.vm-cost-grid .k{color:var(--soft)}
+.vm-cost-grid .v{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ink);text-align:right}
+.vm-cost-grid .total{border-top:1.5px dashed var(--border);padding-top:8px;margin-top:4px}
+.vm-cost-grid .total.k{font-weight:800}
+.vm-cost-grid .total.v{font-size:17px;color:var(--ink)}
+.vm-cost-grid .per.k{font-weight:800;color:var(--accent)}
+.vm-cost-grid .per.v{font-size:20px;color:var(--accent);font-weight:800}
+
+.vm-sum-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px}
+.vm-sum-item{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center}
+.vm-sum-item.cash{border-color:var(--green)50}
+.vm-sum-item.transfer{border-color:var(--blue)50}
+.vm-sum-item.unpaid{border-color:#fbbf2450}
+.vm-sum-num{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;color:var(--ink)}
+.vm-sum-item.cash .vm-sum-num{color:var(--gtxt)}
+.vm-sum-item.transfer .vm-sum-num{color:var(--btxt)}
+.vm-sum-item.unpaid .vm-sum-num{color:#fcd34d}
+.vm-sum-lbl{font-size:11px;color:var(--mute);margin-top:3px;font-weight:700}
+
+.vm-player-list{display:flex;flex-direction:column;gap:6px}
+.vm-player{
+  display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;
+  padding:10px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;
+}
+.vm-player.paid-cash{border-color:var(--green)50}
+.vm-player.paid-transfer{border-color:var(--blue)50}
+.vm-player.unpaid{border-color:#2e3038;opacity:.85}
+.vm-player .vp-num{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--mute);text-align:center;font-weight:700}
+.vm-player .vp-name{font-size:16px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vm-player .vp-status{
+  font-size:12px;font-weight:800;padding:5px 10px;border-radius:100px;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}
+.vm-player .vp-status.cash{background:var(--gbg);color:var(--gtxt);border:1px solid var(--green)80}
+.vm-player .vp-status.transfer{background:var(--bbg);color:var(--btxt);border:1px solid var(--blue)80}
+.vm-player .vp-status.unpaid{background:transparent;color:#fcd34d;border:1px solid #fbbf2460}
+
+/* ── Empty state ── */
+.empty{
+  text-align:center;padding:48px 20px;
+  color:var(--mute);font-size:15px;line-height:1.8;
+}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--accent);color:#111;
+  padding:13px 24px;border-radius:100px;
+  font-size:14px;font-weight:800;
+  opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
+  z-index:99;pointer-events:none;box-shadow:0 8px 24px #000a;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Saved chip ── */
+.autosave{
+  font-size:11px;color:var(--mute);text-align:center;
+  padding:6px 0;font-family:'IBM Plex Mono',monospace;
+}
+
+/* ──────────────────────────────────────────────
+   NEW: Sub-tabs (รายชื่อ | เก็บเงิน) + member grid
+   ────────────────────────────────────────────── */
+.sub-tabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:4px;margin:14px 0 12px;
+}
+.sub-tab{
+  padding:13px 8px;border:none;border-radius:10px;
+  background:transparent;color:var(--mute);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  -webkit-tap-highlight-color:transparent;
+}
+.sub-tab.active{background:var(--accent);color:#111}
+.sub-tab .badge{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
+  background:#0009;color:var(--accent);padding:2px 9px;border-radius:100px;
+  min-width:22px;text-align:center;
+}
+.sub-tab.active .badge{background:#111;color:var(--accent)}
+
+/* Selected count strip */
+.member-summary-strip{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:11px 14px;margin-bottom:10px;
+}
+.member-summary-strip .left{font-size:13px;color:var(--soft);font-weight:600}
+.member-summary-strip .left b{
+  font-size:18px;color:var(--accent);font-weight:800;
+  font-family:'IBM Plex Mono',monospace;margin:0 4px;
+}
+.member-summary-strip .clear-btn{
+  padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);
+  background:transparent;color:var(--mute);font-size:12px;font-weight:700;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.member-summary-strip .clear-btn:active{background:var(--card)}
+
+/* Member toolbar (search) */
+.member-toolbar{display:flex;gap:8px;margin-bottom:10px}
+.member-toolbar input{
+  flex:1;padding:13px 16px;border-radius:var(--rsm);
+  border:1.5px solid var(--border);background:var(--input);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  outline:none;transition:border-color .15s;
+}
+.member-toolbar input::placeholder{color:var(--mute)}
+.member-toolbar input:focus{border-color:var(--accent)}
+
+/* Member grid (selectable chips) */
+.member-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));
+  gap:8px;margin-bottom:14px;min-height:60px;
+}
+.member-chip{
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  padding:14px 8px;min-height:56px;
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--rsm);
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .15s;text-align:center;line-height:1.25;
+  -webkit-tap-highlight-color:transparent;user-select:none;word-break:break-word;
+}
+.member-chip:active{transform:scale(.96)}
+.member-chip.selected{
+  background:var(--accent);color:#111;border-color:var(--accent);
+}
+.member-chip .freq-dot{
+  position:absolute;top:5px;right:7px;
+  font-size:9px;font-weight:700;color:var(--mute);
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;
+}
+.member-chip.selected .freq-dot{color:#1118;opacity:.7}
+.member-chip.top-frequent::before{
+  content:'⭐';position:absolute;top:5px;left:7px;font-size:10px;opacity:.85;
+}
+.member-chip.selected.top-frequent::before{opacity:.95}
+
+/* Go to payment button */
+.go-payment-btn{
+  width:100%;padding:16px;border-radius:var(--radius);border:none;
+  background:var(--accent);color:#111;
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:800;
+  cursor:pointer;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  -webkit-tap-highlight-color:transparent;margin-top:6px;
+}
+.go-payment-btn:active{opacity:.8}
+.go-payment-btn:disabled{opacity:.4;cursor:not-allowed;background:var(--card2);color:var(--mute);border:1.5px solid var(--border)}
+
+/* iPad / large screens: more columns + wider container */
+@media (min-width:768px){
+  .wrap{max-width:880px}
+  .member-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .member-chip{min-height:62px;font-size:16px;padding:16px 10px}
+  .player-row .name{font-size:21px}
+}
+@media (min-width:1100px){
+  .wrap{max-width:1100px}
+  .member-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+}
+
+/* ──────────────────────────────────────────────
+   v2 redesign: setup card / big pay buttons / hour stepper / chip delete
+   ────────────────────────────────────────────── */
+
+/* ── Setup card (replaces cost-card visually) ── */
+.setup-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;margin:0 0 14px;
+}
+.setup-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;
+  margin-bottom:14px;
+}
+.setup-card.collapsed .setup-head{margin-bottom:0}
+.setup-title{font-size:16px;font-weight:800;color:var(--ink);flex:0 0 auto}
+.setup-collapsed-summary{
+  display:none;flex:1;text-align:right;
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--soft);
+}
+.setup-collapsed-summary .t{margin-left:10px}
+.setup-collapsed-summary b{color:var(--accent);font-weight:800}
+.setup-card.collapsed .setup-collapsed-summary{display:block}
+.setup-toggle{
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  -webkit-tap-highlight-color:transparent;flex:0 0 auto;
+}
+.setup-toggle .chev{transition:transform .2s;display:inline-block}
+.setup-card.collapsed .setup-toggle .chev{transform:rotate(-90deg)}
+.setup-card.collapsed .setup-body{display:none}
+
+.setup-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px 12px;margin-bottom:14px;
+}
+.stp-field{
+  display:flex;flex-direction:column;gap:5px;
+  background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);padding:10px 12px;
+}
+.stp-field label{font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.02em}
+.stp-field-row{display:flex;align-items:center;gap:8px}
+.stp-field input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;
+  padding:0;text-align:left;width:100%;min-width:0;
+}
+.stp-field input::-webkit-outer-spin-button,
+.stp-field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stp-field .suf{font-size:12px;font-weight:700;color:var(--mute);flex:0 0 auto}
+.stp-field:focus-within{border-color:var(--accent)}
+.stp-field.need-fill{
+  border-color:#fbbf24;background:#fbbf2410;
+  animation:nudge .8s ease-in-out infinite;
+}
+.stp-field.need-fill label{color:#fbbf24}
+@keyframes nudge{
+  0%,100%{box-shadow:0 0 0 0 #fbbf2400}
+  50%{box-shadow:0 0 0 4px #fbbf2440}
+}
+
+.setup-totals{
+  display:flex;flex-direction:column;gap:6px;
+  padding:12px 4px 4px;border-top:1.5px solid var(--border);margin-top:4px;
+}
+.stp-row{
+  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  font-size:13px;color:var(--soft);
+}
+.stp-row small{color:var(--mute);font-size:10px;font-weight:600;margin-left:6px;font-family:'IBM Plex Mono',monospace}
+.stp-row b{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:800;color:var(--ink)}
+.stp-row.big{font-size:14px;color:var(--ink);font-weight:700;padding-top:6px;margin-top:2px;border-top:1px dashed var(--border)}
+.stp-row.big b{font-size:22px}
+.stp-row.big.accent{color:var(--accent)}
+.stp-row.big.accent b{font-size:28px;color:var(--accent)}
+
+/* ราคาที่จะแจ้ง (override) */
+.stp-override{
+  background:#c8f13510;border:1.5px solid var(--accent);
+  border-radius:12px;padding:12px 14px;margin-top:10px;
+}
+.ov-label{font-size:13px;font-weight:800;color:var(--accent);margin-bottom:8px}
+.ov-label small{font-weight:500;color:var(--soft);margin-left:4px}
+.ov-row{display:flex;align-items:center;gap:8px}
+.ov-row input{
+  flex:1;background:var(--input);border:1.5px solid var(--accent);border-radius:8px;
+  padding:10px 14px;color:var(--accent);
+  font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:800;
+  text-align:right;outline:none;
+}
+.ov-row input::-webkit-outer-spin-button,
+.ov-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ov-unit{font-size:13px;font-weight:700;color:var(--accent)}
+.ov-hint{font-size:11px;color:var(--mute);margin-top:6px;font-style:italic}
+.ov-hint.active{color:var(--accent);font-style:normal;font-weight:700}
+
+/* กองกลาง row */
+.gongklang-row{
+  margin-top:8px;padding:8px 12px;border-radius:8px;
+  background:var(--accent);color:#111;
+  font-size:13px;font-weight:700;text-align:center;
+}
+.gongklang-row b{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:800}
+
+/* Sub-tabs (3 columns) */
+.sub-tabs.three{grid-template-columns:repeat(3,1fr)}
+.sub-tabs.three .sub-tab{padding:13px 4px;font-size:13px;gap:4px}
+.sub-tabs.three .sub-tab .badge{font-size:10px;padding:2px 7px;min-width:18px}
+@media (min-width:520px){
+  .sub-tabs.three .sub-tab{padding:13px 8px;font-size:14px;gap:6px}
+}
+
+/* ── Paste card (รายชื่อ tab) ── */
+.paste-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+}
+.paste-label{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
+.paste-card textarea{
+  width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:var(--rsm);
+  padding:12px 14px;color:var(--ink);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;line-height:1.5;
+  outline:none;resize:vertical;min-height:120px;
+}
+.paste-card textarea:focus{border-color:var(--accent)}
+.paste-card textarea::placeholder{color:var(--mute);font-weight:400}
+.paste-btn{
+  width:100%;margin-top:10px;padding:14px;border:none;border-radius:var(--radius);
+  background:var(--accent);color:#111;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;
+  transition:opacity .15s;-webkit-tap-highlight-color:transparent;
+}
+.paste-btn:active{opacity:.85}
+.paste-hint{font-size:11px;color:var(--mute);margin-top:8px;text-align:center;font-style:italic}
+
+/* ── Player list mini (รายชื่อ tab) ── */
+.player-list{
+  display:flex;flex-direction:column;gap:4px;
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--rsm);padding:6px;margin-top:10px;min-height:80px;
+}
+.player-list .empty{padding:24px 12px;font-size:13px}
+.player-list-item{
+  display:grid;grid-template-columns:32px 1fr 32px;align-items:center;gap:8px;
+  padding:10px 12px;background:var(--card2);border-radius:8px;
+  font-size:15px;
+}
+.player-list-item .num{
+  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--mute);
+  text-align:center;
+}
+.player-list-item .name{font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-list-item .del{
+  width:28px;height:28px;border-radius:50%;border:none;padding:0;
+  background:transparent;color:var(--mute);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.player-list-item .del:active{background:#ef444420;color:var(--red)}
+
+/* iPad: player-list 2 columns */
+@media (min-width:768px){
+  .player-list{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+}
+
+/* ── Mismatch banner (รับเงิน tab) ── */
+.mismatch-banner{
+  padding:12px 14px;border-radius:var(--rsm);margin-bottom:12px;
+  font-size:13px;font-weight:700;line-height:1.5;text-align:center;
+}
+.mismatch-banner.warn{
+  background:#fbbf2418;color:#fbbf24;border:1.5px solid #fbbf2480;
+}
+.mismatch-banner.ok{
+  background:#22c55e18;color:#bbf7d0;border:1.5px solid #22c55e80;
+}
+.mismatch-banner b{font-weight:800;font-family:'IBM Plex Mono',monospace}
+
+.big-share-btn{
+  width:100%;margin-top:14px;padding:18px;border:none;border-radius:var(--radius);
+  background:#06c755;color:#fff;
+  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:800;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  transition:opacity .15s;-webkit-tap-highlight-color:transparent;line-height:1.2;
+}
+.big-share-btn:active{opacity:.85}
+.big-share-btn small{font-size:11px;font-weight:600;opacity:.85}
+
+/* ── Member chip × delete ── */
+.member-chip .del-x{
+  position:absolute;top:3px;right:3px;width:22px;height:22px;
+  border-radius:50%;border:none;padding:0;
+  background:rgba(255,255,255,.06);color:var(--mute);
+  font-size:11px;font-weight:700;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;transition:all .15s;opacity:.6;
+}
+.member-chip .del-x:hover,.member-chip .del-x:active{
+  background:#ef4444;color:#fff;opacity:1;
+}
+.member-chip.selected .del-x{background:#1118;color:#fffa}
+.member-chip.selected .del-x:hover{background:#ef4444;color:#fff}
+
+/* ── Player card (large, button-first) ── */
+.player-card{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+  transition:border-color .2s;position:relative;
+}
+.player-card.paid-cash{border-color:var(--green)}
+.player-card.paid-transfer{border-color:var(--blue)}
+.player-card.paid-both{border-color:var(--accent)}
+
+.pc-head{
+  display:flex;align-items:center;gap:10px;
+}
+.pc-num{
+  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--mute);
+  width:24px;text-align:center;flex:0 0 auto;
+}
+.pc-name{
+  flex:1;font-size:19px;font-weight:800;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
+}
+.pc-amt{
+  font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;color:var(--accent);
+  flex:0 0 auto;white-space:nowrap;
+}
+.pc-amt small{font-size:11px;font-weight:700;opacity:.7;margin-left:2px}
+.pc-del{
+  position:absolute;top:6px;right:6px;
+  width:26px;height:26px;border-radius:50%;border:none;padding:0;
+  background:transparent;color:var(--mute);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;opacity:.5;
+}
+.pc-del:active{background:#ef444420;color:var(--red);opacity:1}
+
+/* BIG pay buttons */
+.pc-pay-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;
+}
+.pay-btn-big{
+  padding:18px 12px;border-radius:var(--radius);
+  border:2px solid var(--border);background:var(--input);color:var(--soft);
+  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:800;
+  cursor:pointer;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  min-height:60px;-webkit-tap-highlight-color:transparent;user-select:none;
+}
+.pay-btn-big:active{transform:scale(.97)}
+.pay-btn-big.cash.on{background:var(--gbg);border-color:var(--green);color:var(--gtxt)}
+.pay-btn-big.transfer.on{background:var(--bbg);border-color:var(--blue);color:var(--btxt)}
+.pay-btn-big .ic{font-size:22px;line-height:1}
+
+/* Edit section in setup card (when a complete session is being edited) */
+.setup-card.locked .stp-field input{color:var(--mute)}
+
+/* Court Breakdown Section (ใหม่) */
+.court-breakdown-section{
+  margin:16px 0 12px;padding:14px 12px;
+  background:var(--card2);border:1.5px solid var(--border);
+  border-radius:var(--rsm);
+}
+.breakdown-label{
+  font-size:13px;font-weight:700;color:var(--mute);
+  letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:10px;font-family:'IBM Plex Mono',monospace;
+}
+.court-items-wrapper{margin-bottom:10px}
+.breakdown-header{
+  display:grid;grid-template-columns:1fr 80px 36px;gap:8px;
+  font-size:11px;font-weight:700;color:var(--mute);
+  text-transform:uppercase;padding:8px 0;border-bottom:1px solid var(--border);
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;
+}
+.court-items{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.court-item{
+  display:grid;grid-template-columns:1fr 80px 36px;gap:8px;align-items:center;
+}
+.court-item .court-name,
+.court-item .court-hours{
+  padding:9px 10px;border:1.5px solid var(--border);
+  background:var(--input);border-radius:var(--rsm);
+  color:var(--ink);font-size:14px;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;outline:none;
+}
+.court-item .court-name{text-align:center}
+.court-item .court-hours{text-align:right}
+.court-item .court-name:focus,
+.court-item .court-hours:focus{border-color:var(--accent)}
+.btn-del-court{
+  padding:8px 0;border:none;background:transparent;
+  color:var(--mute);font-size:18px;cursor:pointer;
+  font-weight:700;transition:color .15s;-webkit-tap-highlight-color:transparent;
+}
+.btn-del-court:active{color:var(--red)}
+.btn-add-court{
+  width:100%;padding:10px;border:1.5px dashed var(--border);
+  background:transparent;border-radius:var(--rsm);
+  color:var(--accent);font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;
+  font-family:inherit;
+}
+.btn-add-court:active{background:var(--border)60;border-color:var(--accent)}
+
+/* iPad layout: payment cards in 2 columns */
+@media (min-width:768px){
+  .setup-grid{grid-template-columns:repeat(3,1fr)}
+  .player-table{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .pay-btn-big{font-size:17px;min-height:68px}
+}
+@media (min-width:1100px){
+  .player-table{grid-template-columns:repeat(3,1fr)}
+}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header-card">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+      <img src="logo-small.png" alt="" class="brand-logo" style="width:38px;height:38px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
+      <div style="min-width:0">
+        <div class="brand">ก๊วนอยากตี<span>ต้องได้ตี</span></div>
+        <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
+      </div>
+    </div>
+    <div class="date-box">
+      <div class="date-big" id="date-big">—</div>
+      <div class="date-sub">วันที่เก็บเงิน</div>
+    </div>
+    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
+  </div>
+
+  <!-- ============ TAB: COLLECT ============ -->
+  <div id="view-collect">
+
+    <!-- Edit-mode banner: แสดงเฉพาะตอนแก้ไขรอบที่จบแล้ว -->
+    <div id="edit-complete-banner" style="display:none;background:#fbbf24;color:#1f2937;padding:12px 14px;border-radius:10px;margin-bottom:12px;font-weight:700;font-size:14px;text-align:center;line-height:1.5">
+      <div>✅ รอบนี้จบแล้ว · กำลังแก้ไข</div>
+      <div style="font-weight:500;font-size:11px;opacity:.85;margin-top:2px">บันทึกอัตโนมัติทุกครั้งที่แก้ · สถานะ "จ่ายครบ" คงเดิม</div>
+      <button onclick="exitEditMode()" style="margin-top:10px;background:#1f2937;color:#fbbf24;border:none;border-radius:8px;padding:8px 18px;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent">
+        ✓ เสร็จแล้ว · ออกจากการแก้ไข
+      </button>
+    </div>
+
+    <!-- Hidden compat fields -->
+    <input type="hidden" id="court-fee" value="0"/>
+    <input type="hidden" id="per-person" value="0"/>
+
+    <!-- ── Sub-tabs (3): รายชื่อ | คำนวณราคา | รับเงิน ── -->
+    <div class="sub-tabs three">
+      <button class="sub-tab active" id="sub-tab-members" onclick="switchSection('members')">
+        🧑 รายชื่อ <span class="badge" id="sel-count">0</span>
+      </button>
+      <button class="sub-tab" id="sub-tab-price" onclick="switchSection('price')">
+        💰 คำนวณราคา
+      </button>
+      <button class="sub-tab" id="sub-tab-payment" onclick="switchSection('payment')">
+        📥 รับเงิน
+      </button>
+    </div>
+
+    <!-- ════════════════ Section: รายชื่อ ════════════════ -->
+    <div id="section-members">
+      <!-- 1. paste จาก LINE -->
+      <div class="paste-card">
+        <div class="paste-label">📋 paste รายชื่อจาก LINE</div>
+        <textarea id="paste-input" rows="6" placeholder="วางข้อความจาก LINE ที่นี่...&#10;เช่น&#10;1. กิ๊ฟ&#10;2. กฤต&#10;3. โบว์&#10;..." autocomplete="off"></textarea>
+        <button class="paste-btn" onclick="addPlayersFromPaste()">📥 เพิ่มผู้เล่น (ทับของเดิม)</button>
+        <div class="paste-hint" id="paste-hint">ระบบจะตัด "1.", "2.", emoji header ออกอัตโนมัติ</div>
+      </div>
+
+      <!-- 2. count + clear -->
+      <div class="member-summary-strip">
+        <div class="left">👥 ผู้เล่นวันนี้ <b id="sel-count-big">0</b> คน</div>
+        <button class="clear-btn" onclick="clearMemberSelection()">เคลียร์ทั้งหมด</button>
+      </div>
+
+      <!-- 3. manual single add -->
+      <div class="add-form">
+        <input type="text" id="new-member-name" placeholder="+ พิมพ์ชื่อเพิ่มทีละคน..." maxlength="30" autocomplete="off"/>
+        <button class="add-btn" onclick="addNewMember()">+ เพิ่ม</button>
+      </div>
+
+      <!-- 4. player list mini -->
+      <div class="player-list" id="player-list-mini">
+        <div class="empty">ยังไม่มีผู้เล่น<br>paste จาก LINE ด้านบน หรือพิมพ์ทีละชื่อ</div>
+      </div>
+    </div>
+
+    <!-- ════════════════ Section: คำนวณราคา ════════════════ -->
+    <div id="section-price" style="display:none">
+      <div class="setup-card" id="setup-card">
+        <div class="setup-head" onclick="toggleSetup()">
+          <div class="setup-title">💰 ตั้งค่ารอบ</div>
+          <div class="setup-collapsed-summary">
+            <span class="t">รวม <b id="c-sum-total">0฿</b></span>
+            <span class="t">เฉลี่ย <b id="c-sum-per">0฿</b>/คน</span>
+          </div>
+          <button class="setup-toggle" type="button" onclick="event.stopPropagation();toggleSetup()">
+            <span class="chev">▼</span><span id="c-toggle-label">ย่อ</span>
+          </button>
+        </div>
+        <div class="setup-body">
+          <div class="setup-grid">
+            <div class="stp-field">
+              <label>คนที่จะมา</label>
+              <div class="stp-field-row">
+                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric"/>
+                <span class="suf">คน</span>
+              </div>
+            </div>
+            <div class="stp-field">
+              <label>ค่าคอร์ท/ชั่วโมง</label>
+              <div class="stp-field-row">
+                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
+                <span class="suf">฿</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Court Breakdown Section (ใหม่) -->
+          <div class="court-breakdown-section">
+            <div class="breakdown-label">🏸 คอร์ท</div>
+            <div class="court-items-wrapper">
+              <div class="breakdown-header">
+                <span>ชื่อ</span>
+                <span>ชั่วโมง</span>
+                <span></span>
+              </div>
+              <div id="court-list" class="court-items">
+                <div class="court-item" data-court-id="3">
+                  <input class="court-name" type="text" value="3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn-add-court" onclick="addNewCourt()">+ เพิ่มคอร์ท</button>
+          </div>
+
+          <div class="setup-grid">
+            <div class="stp-field">
+              <label>ลูกแบด/ลูก</label>
+              <div class="stp-field-row">
+                <input type="number" id="shuttle-price" value="75" min="0" step="5" inputmode="numeric"/>
+                <span class="suf">฿</span>
+              </div>
+            </div>
+            <div class="stp-field">
+              <label>จำนวนลูก</label>
+              <div class="stp-field-row">
+                <input type="number" id="shuttle-count" value="0" min="0" step="1" inputmode="numeric"/>
+                <span class="suf">ลูก</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-totals">
+            <div class="stp-row">
+              <span>ค่าคอร์ท <small id="court-formula"></small></span>
+              <span><b id="court-cost-display">0</b> ฿</span>
+            </div>
+            <div class="stp-row">
+              <span>ค่าลูก <small id="shuttle-formula"></small></span>
+              <span><b id="shuttle-cost-display">0</b> ฿</span>
+            </div>
+            <div class="stp-row big total">
+              <span>รวมทั้งสิ้น</span>
+              <span><b id="cost-total">0</b> ฿</span>
+            </div>
+            <div class="stp-row big">
+              <span>เฉลี่ย/คน <small id="per-note"></small></span>
+              <span><b id="cost-per-person">0</b> ฿</span>
+            </div>
+            <!-- ปรับยอดที่จะแจ้งจริง — auto ปัดเต็ม 10 · พิมพ์ทับเองได้ -->
+            <div class="stp-override">
+              <div class="ov-label">📢 ราคาที่จะแจ้ง <small>(ปัดเต็ม 10 · พิมพ์ทับได้)</small></div>
+              <div class="ov-row">
+                <input type="number" id="price-override" placeholder="0" min="0" step="5" inputmode="numeric"/>
+                <span class="ov-unit">฿/คน</span>
+              </div>
+              <div class="ov-hint" id="ov-hint">ระบบปัดขึ้นเต็ม 10 ให้แล้ว · พิมพ์เพื่อปรับเอง</div>
+              <div class="gongklang-row" id="gongklang-row" style="display:none">
+                💰 เก็บเข้ากองกลาง: <b id="gongklang-amt">0</b> ฿
+              </div>
+            </div>
+          </div>
+
+          <button class="big-share-btn" onclick="sharePriceCurrent()">
+            <span>📢 แจ้งราคาก๊วนทาง LINE</span>
+            <small>ราคา + QR โอน · ระบบจะให้ยืนยันก่อนส่ง</small>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ Section: รับเงิน ════════════════ -->
+    <div id="section-payment" style="display:none">
+      <!-- Mismatch banner: เตือนถ้าจำนวนผู้เล่น ≠ คนที่ใช้คำนวณ -->
+      <div id="mismatch-banner" class="mismatch-banner" style="display:none"></div>
+
+      <!-- Summary (in baht) -->
+      <div class="summary-bar">
+        <div class="s-item total">
+          <div class="s-num" id="sum-total-baht">0<span class="baht">฿</span></div>
+          <div class="s-lbl">รวมทั้งหมด</div>
+        </div>
+        <div class="s-item cash">
+          <div class="s-num" id="sum-cash-baht">0<span class="baht">฿</span></div>
+          <div class="s-lbl">💵 เงินสด</div>
+        </div>
+        <div class="s-item transfer">
+          <div class="s-num" id="sum-transfer-baht">0<span class="baht">฿</span></div>
+          <div class="s-lbl">📲 โอน</div>
+        </div>
+      </div>
+
+      <div class="section-head-row">
+        <div class="section-head-title">👥 สมาชิกวันนี้</div>
+        <div class="section-head-count" id="player-count-badge">0 คน</div>
+      </div>
+      <div class="player-table" id="player-table"></div>
+
+      <!-- Share status to LINE -->
+      <div class="share-card">
+        <div class="share-card-head">📲 ส่งเข้าไลน์</div>
+        <button class="btn-share-line status" onclick="shareStatusCurrent()">
+          📊 สรุปการจ่ายเงิน <small>(ใครจ่ายแล้ว / ยังไม่จ่าย)</small>
+        </button>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-row">
+        <button class="btn-save" id="btn-save" onclick="saveSessionNow()">
+          💾 บันทึกรายการ
+        </button>
+        <button class="btn-complete" id="btn-complete" onclick="completeSession()" style="display:none">
+          🎉 จบรอบ (จ่ายครบแล้ว)
+        </button>
+        <button class="btn-clear" onclick="clearSession()">🗑 ล้างรายชื่อทั้งหมด</button>
+      </div>
+
+      <div class="autosave" id="autosave-label"></div>
+    </div><!-- /section-payment -->
+  </div>
+
+  <!-- ============ TAB: HISTORY ============ -->
+  <div id="view-history" style="display:none">
+    <button class="back-btn" onclick="switchTab('collect')">← กลับหน้าเก็บเงิน</button>
+    <h3 style="margin:0 0 12px;font-size:17px;color:var(--ink);font-weight:800">📋 ประวัติการเก็บเงิน</h3>
+    <div class="history-list" id="history-list">
+      <div class="empty">กำลังโหลด...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== View-session modal ===== -->
+<div class="vm-overlay" id="view-modal" style="display:none" onclick="if(event.target===this)closeViewModal()">
+  <div class="vm-panel">
+    <div class="vm-head">
+      <div>
+        <div class="vm-title" id="vm-title">—</div>
+        <div class="vm-sub" id="vm-sub">—</div>
+      </div>
+      <button class="vm-close" onclick="closeViewModal()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="vm-body" id="vm-body"></div>
+    <div class="vm-foot">
+      <button class="vm-share-btn" id="vm-share-btn" onclick="shareCurrentSession()">
+        📲 แชร์สรุปเข้าไลน์
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================================================================
+   CONFIG
+   ================================================================ */
+const FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyCi2kIvaA9zk_2whDe-SlHW9ngnVWuIhEQ',
+  authDomain:        'badminton-642a3.firebaseapp.com',
+  projectId:         'badminton-642a3',
+  storageBucket:     'badminton-642a3.firebasestorage.app',
+  messagingSenderId: '65806979876',
+  appId:             '1:65806979876:web:3ee9d17c6f0ede5b2819b1',
+};
+
+// LIFF ID สำหรับ payment.html — "Badminton Payment"
+// Endpoint: https://satirap.github.io/badminton/payment.html
+// shareTargetPicker: ON
+const LIFF_ID = '2009832825-Uo5Kt0iQ';
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const DRAFT_KEY = 'payment_draft';
+
+let session = null;   // { id, date, dateDisplay, status, players[], createdAt, completedAt }
+let editingId = null; // Firestore doc ID being edited
+
+/* ================================================================
+   DATE HELPERS
+   ================================================================ */
+function todayISO(){
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function thaiDate(isoStr){
+  const d = isoStr ? new Date(isoStr + 'T12:00:00') : new Date();
+  return d.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'});
+}
+
+function thaiDateShort(isoStr){
+  const d = isoStr ? new Date(isoStr + 'T12:00:00') : new Date();
+  return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+}
+
+/* ================================================================
+   SESSION MANAGEMENT
+   ================================================================ */
+function newSession(){
+  const iso = todayISO();
+  return {
+    id:          null,
+    date:        iso,
+    dateDisplay: thaiDate(iso),
+    status:      'open',
+    // ── Court Breakdown (ใหม่) — แต่ละคอร์ทมีชั่วโมงแยก
+    courtRate:     220,  // default ค่าคอร์ท/ชม.
+    courts:        [{name: '3', hours: 2}],  // court breakdown array (default: 3, then 4, 5, 6...)
+    courtFee:      0,    // = total court-hours × courtRate
+    shuttlePrice:  75,   // default ค่าลูก/ลูก
+    shuttleCount:  0,
+    memberEstimate: 0,   // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
+    priceOverride: 0,    // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
+    players:       [],
+    createdAt:     new Date().toISOString(),
+    completedAt:   null,
+  };
+}
+
+/** เปิด/ปิดการ์ดรายละเอียดค่าใช้จ่าย — จำสถานะไว้ใน localStorage */
+function toggleSetup(force){
+  const card = document.getElementById('setup-card');
+  if(!card) return;
+  const shouldCollapse = typeof force === 'boolean' ? force : !card.classList.contains('collapsed');
+  card.classList.toggle('collapsed', shouldCollapse);
+  const lbl = document.getElementById('c-toggle-label');
+  if(lbl) lbl.textContent = shouldCollapse ? 'แสดง' : 'ย่อ';
+  try{ localStorage.setItem('payment_cost_collapsed', shouldCollapse ? '1' : '0'); }catch(e){}
+}
+// alias เพื่อ compat กับโค้ดเก่า
+function toggleCostCard(force){ return toggleSetup(force); }
+
+function getNumInput(id){
+  const v = parseInt(document.getElementById(id)?.value, 10);
+  return isNaN(v) || v < 0 ? 0 : v;
+}
+function getFloatInput(id, def){
+  const v = parseFloat(document.getElementById(id)?.value);
+  return isNaN(v) || v < 0 ? (def||0) : v;
+}
+
+function getTotalCourtHours(){
+  // Sum all court hours from the breakdown
+  const items = document.querySelectorAll('.court-item .court-hours');
+  let total = 0;
+  items.forEach(input => {
+    const val = parseFloat(input.value) || 0;
+    if(val > 0) total += val;
+  });
+  return total;
+}
+
+function getCostBreakdown(){
+  const courtRate    = getNumInput('court-rate');
+  const courtHours   = getTotalCourtHours();
+  const shuttlePrice = getNumInput('shuttle-price');
+  const shuttleCount = getNumInput('shuttle-count');
+  const courtFee     = courtHours * courtRate; // court-hours × rate
+  const shuttleCost  = shuttlePrice * shuttleCount;
+  const totalCost    = courtFee + shuttleCost;
+  return { courtHours, courtRate, courtFee, shuttlePrice, shuttleCount, shuttleCost, totalCost };
+}
+
+/** จำนวนคนที่ใช้คำนวณราคา — ใช้ member-est เป็นหลัก, fallback ไป players.length */
+function getBillingHeadcount(){
+  const memberEst = getNumInput('member-est');
+  if(memberEst > 0) return memberEst;
+  return session?.players?.length || 0;
+}
+
+/** ยอดเฉลี่ย/คน — totalCost ÷ headcount (ปัดขึ้น) */
+function getPerPerson(){
+  const { totalCost } = getCostBreakdown();
+  const n = getBillingHeadcount();
+  return n > 0 ? Math.ceil(totalCost / n) : 0;
+}
+
+/** ราคาที่จะคิดจริง (ใช้ override ถ้ามี ไม่งั้น = pp) */
+function getEffectivePrice(){
+  const override = getNumInput('price-override');
+  if(override > 0) return override;
+  return getPerPerson();
+}
+
+/** ทุกคนจ่ายเท่ากัน = effective price */
+function getPlayerShare(p){
+  if(!p) return 0;
+  return getEffectivePrice();
+}
+
+/** เก็บเข้ากองกลาง = (ราคาที่แจ้ง × headcount) − totalCost */
+function getGongklangAmount(){
+  const { totalCost } = getCostBreakdown();
+  const headcount = getBillingHeadcount();
+  const effective = getEffectivePrice();
+  if(headcount <= 0 || effective <= 0 || totalCost <= 0) return 0;
+  return Math.max(0, effective * headcount - totalCost);
+}
+
+function fmtBaht(n){
+  return Math.round(n).toLocaleString('en-US');
+}
+
+function loadDraft(){
+  try{
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if(raw){
+      session = JSON.parse(raw);
+      // assign temp ids if missing
+      session.players.forEach((p,i) => { if(!p.id) p.id = 'p'+Date.now()+i; });
+      // ✅ กู้ editingId จาก session.id เผื่อ reload กลางทาง — กันสร้าง doc ซ้ำ
+      if(session.id) editingId = session.id;
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+function saveDraft(){
+  try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  updateAutosaveLabel('local');
+  scheduleCloudSync();
+}
+
+function clearDraft(){
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+function updateAutosaveLabel(mode){
+  const el = document.getElementById('autosave-label');
+  if(!el) return;
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if(mode==='cloud') el.textContent = `☁️ บันทึกขึ้น cloud แล้ว ${hhmm}`;
+  else if(mode==='syncing') el.textContent = `⏳ กำลังบันทึก...`;
+  else if(mode==='error') el.textContent = `⚠️ บันทึก cloud ไม่สำเร็จ (local ok)`;
+  else el.textContent = `💾 บันทึก local แล้ว ${hhmm}`;
+}
+
+/* ── Debounced auto-save to Firestore (กันกดเร็วเขียนบ่อย) ── */
+let _syncTimer = null;
+function scheduleCloudSync(){
+  if(_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => { cloudSync().catch(e => console.warn('sync', e)); }, 800);
+}
+
+/* ── Real-time listener (multi-user) — onSnapshot subscribe ── */
+let _docUnsubscribe = null;
+let _subscribedDocId = null;
+
+function subscribeToSession(docId){
+  if(!docId) return;
+  if(_subscribedDocId === docId) return; // already listening
+  unsubscribeFromSession();
+  _subscribedDocId = docId;
+  _docUnsubscribe = db.collection('payment_sessions').doc(docId)
+    .onSnapshot(snap => {
+      if(!snap.exists) return;
+      // ✅ Skip own pending writes — มันจะ echo กลับมา แต่เรามี state local อยู่แล้ว
+      if(snap.metadata.hasPendingWrites) return;
+      const d = snap.data();
+      mergeRemoteIntoSession(d);
+      const lbl = document.getElementById('autosave-label');
+      if(lbl){
+        const t = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+        lbl.textContent = `🔄 sync จาก cloud · ${t}`;
+      }
+    }, err => { console.warn('snapshot error', err); });
+}
+
+function unsubscribeFromSession(){
+  if(_docUnsubscribe){
+    try{ _docUnsubscribe(); }catch(e){}
+    _docUnsubscribe = null;
+  }
+  _subscribedDocId = null;
+}
+
+/* ── Query listener (multi-user discovery) — รอ doc "open today" ใหม่ ── */
+let _queryUnsubscribe = null;
+
+function subscribeToTodayOpenQuery(){
+  if(_queryUnsubscribe) return;
+  const iso = todayISO();
+  _queryUnsubscribe = db.collection('payment_sessions')
+    .where('date','==',iso)
+    .where('status','==','open')
+    .onSnapshot(snap => {
+      if(snap.empty) return;
+      if(session?.id) return; // มี session แล้ว → doc listener จัดการต่อ
+      // เจอ doc ที่ confirmed แล้ว (ไม่ใช่ pending write ของเรา) → adopt
+      for(const doc of snap.docs){
+        if(doc.metadata.hasPendingWrites) continue;
+        adoptSession(doc.id, doc.data());
+        break;
+      }
+    }, err => console.warn('query snapshot', err));
+}
+
+function unsubscribeFromTodayOpenQuery(){
+  if(_queryUnsubscribe){
+    try{ _queryUnsubscribe(); }catch(e){}
+    _queryUnsubscribe = null;
+  }
+}
+
+/** Adopt — เจอ doc ของคนอื่นที่กำลังเปิดอยู่ → switch มาใช้ doc นั้น */
+function adoptSession(docId, d){
+  editingId = docId;
+  session.id = docId;
+  mergeRemoteIntoSession(d);
+  subscribeToSession(docId);
+  unsubscribeFromTodayOpenQuery();
+  toast('🔄 พบรอบที่เปิดอยู่ · sync แล้ว');
+}
+
+/** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
+function mergeRemoteIntoSession(d){
+  if(!d) return;
+  // player list — main reason สำหรับ multi-user
+  if(Array.isArray(d.players)){
+    session.players = d.players.map(p => ({
+      ...p,
+      id: p.id || ('p' + Date.now() + Math.random().toString(36).slice(2,5))
+    }));
+  }
+  // cost setup — update เฉพาะ field ที่ user ไม่ได้ focus อยู่
+  const setIfNotFocused = (id, v) => {
+    const el = document.getElementById(id);
+    if(el && document.activeElement !== el){
+      el.value = (v ?? 0);
+    }
+  };
+  if(d.courts        !== undefined){
+    session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
+    setSetupInputsFromSession(); // Rebuild court items
+  }
+  if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
+  if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
+  if(d.shuttleCount  !== undefined){ session.shuttleCount  = d.shuttleCount || 0; setIfNotFocused('shuttle-count', session.shuttleCount); }
+  if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
+  if(d.priceOverride !== undefined){ session.priceOverride = d.priceOverride || 0; setIfNotFocused('price-override', session.priceOverride); }
+  if(d.courtFee !== undefined) session.courtFee = d.courtFee || 0;
+  if(d.status) session.status = d.status;
+  if(d.completedAt && d.completedAt.toDate){
+    session.completedAt = d.completedAt.toDate().toISOString();
+  }
+  // persist local
+  try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  // re-render
+  renderTable();
+  renderSummary();
+  renderPlayerListMini();
+}
+
+async function cloudSync(){
+  if(!session || !session.players) return;
+  // ไม่ sync session เปล่า (ยังไม่มีคน)
+  if(session.players.length === 0 && !editingId) return;
+
+  updateAutosaveLabel('syncing');
+  try{
+    const cashN   = session.players.filter(p => p.cash).length;
+    const transN  = session.players.filter(p => p.transfer).length;
+    const breakdown = getCostBreakdown();
+    const effective = getEffectivePrice(); // ✅ ราคาที่จะแจ้ง (ปัดเต็ม 10 หรือ override)
+    // ผลรวมตามจริงของแต่ละคน
+    let totalAmt = 0, cashAmt = 0, transAmt = 0;
+    session.players.forEach(p => {
+      const s = getPlayerShare(p);
+      totalAmt += s;
+      if(p.cash)     cashAmt  += s;
+      if(p.transfer) transAmt += s;
+    });
+    const memberEst = getNumInput('member-est');
+    // ✅ กองกลาง = (ราคา × headcount) − ค่าใช้จ่ายจริง (ส่วนเกินจากการปัดเต็ม 10)
+    const headcountForGk = getBillingHeadcount();
+    const gongklang = (headcountForGk > 0 && effective > 0 && breakdown.totalCost > 0)
+      ? Math.max(0, effective * headcountForGk - breakdown.totalCost)
+      : 0;
+    const payload = {
+      date:           session.date,
+      dateDisplay:    session.dateDisplay,
+      players:        session.players,
+      // Cost breakdown
+      courts:         session.courts, // court breakdown array
+      courtRate:      breakdown.courtRate,
+      courtFee:       breakdown.courtFee,
+      shuttlePrice:   breakdown.shuttlePrice,
+      shuttleCount:   breakdown.shuttleCount,
+      shuttleCost:    breakdown.shuttleCost,
+      totalCost:      breakdown.totalCost,
+      memberEstimate: memberEst,
+      priceOverride:  getNumInput('price-override'),
+      gongklang:      gongklang, // ✅ ส่วนเกินเข้ากองกลาง
+      // ✅ perPerson = effective price (ราคาที่ใช้จริงในการเก็บ — ปัดเต็ม 10 แล้ว)
+      perPerson:      effective,
+      cashCount:      cashN,
+      transferCount:  transN,
+      totalCount:     session.players.length,
+      paidCount:      cashN + transN,
+      cashAmount:     cashAmt,
+      transferAmount: transAmt,
+      totalAmount:    totalAmt,
+      createdAt:      session.createdAt ? new Date(session.createdAt) : new Date(),
+      updatedAt:      new Date(),
+    };
+    if(editingId){
+      // doc เดิม — merge:true ไม่แตะ status field (คงค่าเดิม)
+      await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
+    } else {
+      // doc ใหม่ — initialize status เป็น 'open'
+      payload.status = 'open';
+      const ref = await db.collection('payment_sessions').add(payload);
+      editingId = ref.id;
+      session.id = ref.id;
+      try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+      unsubscribeFromTodayOpenQuery(); // ✅ เป็นเจ้าของ doc แล้ว ไม่ต้องฟัง query
+      subscribeToSession(editingId);   // ✅ ฟัง doc ตรง ๆ แทน
+    }
+    updateAutosaveLabel('cloud');
+  }catch(e){
+    updateAutosaveLabel('error');
+    console.error('cloud sync', e);
+  }
+}
+
+/** ค้นหา open session ของวันนี้ — ให้อีกคนที่เตรียมไว้ ใช้ต่อได้ */
+async function loadTodayOpenSession(){
+  try{
+    const iso = todayISO();
+    const snap = await db.collection('payment_sessions')
+      .where('date','==',iso)
+      .where('status','==','open')
+      .limit(1).get();
+    if(snap.empty) return false;
+    const doc = snap.docs[0];
+    const d = doc.data();
+    editingId = doc.id;
+    session = {
+      id:          doc.id,
+      date:        d.date || iso,
+      dateDisplay: d.dateDisplay || thaiDate(iso),
+      status:      'open',
+      courts:        Array.isArray(d.courts) ? d.courts : [{name: 'A', hours: 2}],
+      courtRate:     d.courtRate || 0,
+      courtFee:      d.courtFee     || 0,
+      shuttlePrice:  d.shuttlePrice || 0,
+      shuttleCount:  d.shuttleCount || 0,
+      memberEstimate: d.memberEstimate || 0,
+      priceOverride: d.priceOverride || 0,
+      perPerson:     d.perPerson    || 0,
+      players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
+      createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      completedAt: null,
+    };
+    // backfill: ถ้า doc เก่ามี courtFee แต่ไม่มี courtRate/hours → guess values
+    if(!d.courtRate && !d.hours && d.courtFee){
+      session.courtRate = d.courtFee;
+      session.hours = 1;
+      session.courts = 1;
+    }
+    try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+    subscribeToSession(doc.id); // ✅ เริ่มฟัง real-time
+    return true;
+  }catch(e){ console.warn('loadTodayOpenSession', e); return false; }
+}
+
+/** Save ทันทีโดยไม่รอ debounce */
+async function saveSessionNow(){
+  if(!session.players.length){ toast('ยังไม่มีรายชื่อ'); return; }
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = '⏳ กำลังบันทึก...';
+  if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+  try{
+    await cloudSync();
+    toast('บันทึกแล้ว ☁️');
+  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  btn.disabled = false;
+  renderSummary(); // restore text
+}
+
+/* ================================================================
+   PLAYER OPERATIONS
+   ================================================================ */
+// (legacy) ตอนนี้เพิ่มผู้เล่นผ่าน member chip / addNewMember แทน — เก็บไว้กัน external caller
+function addPlayer(name){
+  const trimmed = (name || '').trim();
+  if(!trimmed) return;
+  session.players.push({ id:'p'+Date.now(), name: trimmed, cash:false, transfer:false });
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
+function deletePlayer(id){
+  session.players = session.players.filter(p => p.id !== id);
+  syncHeadcountInput();
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
+function togglePay(id, type){
+  const p = session.players.find(p => p.id === id);
+  if(!p) return;
+  if(type === 'cash'){
+    p.cash = !p.cash;
+    if(p.cash) p.transfer = false; // เลือก cash → ยกเลิก transfer
+  } else {
+    p.transfer = !p.transfer;
+    if(p.transfer) p.cash = false; // เลือก transfer → ยกเลิก cash
+  }
+  saveDraft();
+  renderTable();
+  renderSummary();
+}
+
+/* ================================================================
+   RENDER
+   ================================================================ */
+function renderTable(){
+  const el = document.getElementById('player-table');
+  if(!session.players.length){
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1">ยังไม่มีรายชื่อ<br>กลับไปเลือกที่ tab "🧑 รายชื่อ"</div>';
+    return;
+  }
+  el.innerHTML = session.players.map((p,i) => {
+    const cls = p.cash && p.transfer ? 'paid-both'
+              : p.cash ? 'paid-cash'
+              : p.transfer ? 'paid-transfer' : '';
+    const share = getPlayerShare(p);
+    return `<div class="player-card ${cls}">
+      <button class="pc-del" onclick="deletePlayer('${p.id}')" title="ลบ">✕</button>
+      <div class="pc-head">
+        <div class="pc-num">${i+1}</div>
+        <div class="pc-name">${escHtml(p.name)}</div>
+        <div class="pc-amt">${fmtBaht(share)}<small>฿</small></div>
+      </div>
+      <div class="pc-pay-row">
+        <button class="pay-btn-big cash ${p.cash?'on':''}" onclick="togglePay('${p.id}','cash')">
+          <span class="ic">💵</span><span>เงินสด</span>
+        </button>
+        <button class="pay-btn-big transfer ${p.transfer?'on':''}" onclick="togglePay('${p.id}','transfer')">
+          <span class="ic">📲</span><span>โอน</span>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSummary(){
+  const total    = session.players.length;
+  const cashN    = session.players.filter(p => p.cash).length;
+  const transN   = session.players.filter(p => p.transfer).length;
+  const paidN    = cashN + transN;
+  const bd = getCostBreakdown();
+  const { totalCost, courtHours, courtRate, courtFee, shuttlePrice, shuttleCount, shuttleCost } = bd;
+  const pp = getPerPerson();
+
+  // ผลรวมจริงตามคน (รองรับเล่นไม่เท่ากัน)
+  let totalB = 0, cashB = 0, transB = 0;
+  session.players.forEach(p => {
+    const s = getPlayerShare(p);
+    totalB += s;
+    if(p.cash)     cashB  += s;
+    if(p.transfer) transB += s;
+  });
+  if(total === 0){
+    const memberEst = getNumInput('member-est');
+    totalB = memberEst > 0 ? pp * memberEst : 0;
+  }
+
+  // อัปเดต breakdown ใน setup card
+  const courtCostEl    = document.getElementById('court-cost-display');
+  const shuttleCostEl  = document.getElementById('shuttle-cost-display');
+  const courtFormulaEl = document.getElementById('court-formula');
+  const shuttleFormEl  = document.getElementById('shuttle-formula');
+  const costTotalEl    = document.getElementById('cost-total');
+  const costPerEl      = document.getElementById('cost-per-person');
+  const perNoteEl      = document.getElementById('per-note');
+  if(courtCostEl)    courtCostEl.textContent    = fmtBaht(courtFee);
+  if(shuttleCostEl)  shuttleCostEl.textContent  = fmtBaht(shuttleCost);
+  if(courtFormulaEl) courtFormulaEl.textContent = (courtHours && courtRate) ? `${courtHours} court-hours @ ${courtRate}฿` : '';
+  if(shuttleFormEl)  shuttleFormEl.textContent  = (shuttlePrice && shuttleCount) ? `(${shuttlePrice}×${shuttleCount})` : '';
+  if(costTotalEl)    costTotalEl.textContent    = fmtBaht(totalCost);
+  if(costPerEl)      costPerEl.textContent      = fmtBaht(pp);
+  if(perNoteEl){
+    const memberEst = getNumInput('member-est');
+    perNoteEl.textContent = total > 0 ? `(${total} คน)` : (memberEst > 0 ? `(ประมาณ ${memberEst} คน)` : '');
+  }
+  // Hint สำหรับ override + กองกลาง
+  const ovHint = document.getElementById('ov-hint');
+  const ovInp  = document.getElementById('price-override');
+  const gkRow  = document.getElementById('gongklang-row');
+  const gkAmt  = document.getElementById('gongklang-amt');
+  const headcount = getBillingHeadcount();
+  const override = ovInp ? parseInt(ovInp.value, 10) || 0 : 0;
+  const gongklang = (override > 0 && headcount > 0) ? Math.max(0, override * headcount - totalCost) : 0;
+  if(ovHint && ovInp){
+    if(override > 0 && override !== pp){
+      ovHint.textContent = `จะแจ้ง ${fmtBaht(override)} ฿/คน · เฉลี่ยจริง ${fmtBaht(pp)} ฿/คน · ส่วนต่าง ${override > pp ? '+' : ''}${fmtBaht(override - pp)} ฿`;
+      ovHint.classList.add('active');
+    } else {
+      ovHint.textContent = 'ระบบปัดเต็ม 10 ให้อัตโนมัติ · พิมพ์ทับเพื่อปรับเอง (cost เปลี่ยน = reset)';
+      ovHint.classList.remove('active');
+    }
+  }
+  if(gkRow && gkAmt){
+    if(gongklang > 0){
+      gkAmt.textContent = fmtBaht(gongklang);
+      gkRow.style.display = 'block';
+    } else {
+      gkRow.style.display = 'none';
+    }
+  }
+
+  // summary line ตอน collapse
+  const sumT = document.getElementById('c-sum-total');
+  const sumP = document.getElementById('c-sum-per');
+  if(sumT) sumT.textContent = fmtBaht(totalCost) + '฿';
+  if(sumP) sumP.textContent = fmtBaht(pp) + '฿';
+  // badge จำนวนสมาชิก
+  const countBadge = document.getElementById('player-count-badge');
+  if(countBadge) countBadge.textContent = total + ' คน';
+  const ppInput = document.getElementById('per-person');
+  if(ppInput) ppInput.value = pp;
+  // sync hidden court-fee เพื่อ compat
+  const cfInput = document.getElementById('court-fee');
+  if(cfInput) cfInput.value = courtFee;
+
+  document.getElementById('sum-total-baht').innerHTML    = `${fmtBaht(totalB)}<span class="baht">฿</span>`;
+  document.getElementById('sum-cash-baht').innerHTML     = `${fmtBaht(cashB)}<span class="baht">฿</span>`;
+  document.getElementById('sum-transfer-baht').innerHTML = `${fmtBaht(transB)}<span class="baht">฿</span>`;
+
+  // Save button: disable when no players
+  const saveBtn = document.getElementById('btn-save');
+  if(saveBtn){
+    saveBtn.disabled = total === 0;
+    saveBtn.textContent = total === 0
+      ? '💾 บันทึกรายการ'
+      : `💾 บันทึกรายการ (${paidN}/${total} จ่าย · ${fmtBaht(cashB+transB)}฿)`;
+  }
+
+  // Mismatch banner: เตือนถ้าจำนวนผู้เล่น ≠ คนที่ใช้คำนวณ
+  const mismatchBanner = document.getElementById('mismatch-banner');
+  const memberEstNow = getNumInput('member-est');
+  const playerCount = total;
+  let mismatch = false;
+  if(mismatchBanner){
+    if(memberEstNow > 0 && playerCount > 0 && memberEstNow !== playerCount){
+      mismatch = true;
+      const diff = Math.abs(memberEstNow - playerCount);
+      const word = playerCount < memberEstNow ? 'ขาด' : 'เกิน';
+      mismatchBanner.innerHTML = `⚠️ ผู้เล่น <b>${playerCount} คน</b> · คำนวณราคาจาก <b>${memberEstNow} คน</b> · ${word} <b>${diff} คน</b><br><span style="font-size:11px;font-weight:500;opacity:.85">แก้ "คนที่จะมา" ใน 💰 คำนวณราคา หรือเพิ่ม/ลบรายชื่อให้ตรง</span>`;
+      mismatchBanner.classList.add('warn');
+      mismatchBanner.classList.remove('ok');
+      mismatchBanner.style.display = 'block';
+    } else if(memberEstNow > 0 && playerCount > 0){
+      mismatchBanner.innerHTML = `✅ ผู้เล่น <b>${playerCount} คน</b> ตรงกับยอดคำนวณราคา`;
+      mismatchBanner.classList.add('ok');
+      mismatchBanner.classList.remove('warn');
+      mismatchBanner.style.display = 'block';
+    } else {
+      mismatchBanner.style.display = 'none';
+    }
+  }
+
+  // Finish button: แสดงเฉพาะ status='open' + จ่ายครบ
+  //   - status='complete' → ใช้ปุ่ม "เสร็จแล้ว" ใน banner สีเหลืองแทน
+  const finBtn = document.getElementById('btn-complete');
+  if(finBtn){
+    const allPaid = total > 0 && paidN >= total;
+    const isComplete = session?.status === 'complete';
+    finBtn.style.display = (allPaid && !isComplete) ? 'flex' : 'none';
+    finBtn.disabled = mismatch;
+    finBtn.textContent = mismatch
+      ? `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`
+      : `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
+  }
+
+  // Edit-mode banner (เฉพาะรอบที่จบแล้วและกำลังแก้ไข)
+  const banner = document.getElementById('edit-complete-banner');
+  if(banner){
+    banner.style.display = (session?.status === 'complete') ? 'block' : 'none';
+  }
+
+  // อัปเดต badge ของ tab + sync player list mini
+  if(typeof updateSelectionCount === 'function') updateSelectionCount();
+  if(typeof renderPlayerListMini === 'function') renderPlayerListMini();
+}
+
+function renderDate(){
+  const el = document.getElementById('date-big');
+  if(el) el.textContent = thaiDateShort(session?.date || todayISO());
+}
+
+/* ================================================================
+   COMPLETE / CLEAR SESSION
+   ================================================================ */
+async function completeSession(){
+  if(!session.players.length){ toast('ยังไม่มีรายชื่อ'); return; }
+  const cashN  = session.players.filter(p => p.cash).length;
+  const transN = session.players.filter(p => p.transfer).length;
+  const paidN  = cashN + transN;
+  if(paidN < session.players.length){ toast('ยังไม่จ่ายครบ'); return; }
+  if(!confirm('จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?')) return;
+
+  const btn = document.getElementById('btn-complete');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังจบรอบ...';
+  if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+
+  try{
+    session.status = 'complete';
+    const breakdown = getCostBreakdown();
+    const effective = getEffectivePrice(); // ✅ ราคาที่ใช้จริง (ปัดเต็ม 10)
+    // ผลรวมตามจริงของแต่ละคน
+    let totalAmt = 0, cashAmt = 0, transAmt = 0;
+    session.players.forEach(p => {
+      const s = getPlayerShare(p);
+      totalAmt += s;
+      if(p.cash)     cashAmt  += s;
+      if(p.transfer) transAmt += s;
+    });
+    const memberEst = getNumInput('member-est');
+    // ✅ กองกลาง = (ราคา × headcount) − ค่าใช้จ่ายจริง
+    const headcountForGk = getBillingHeadcount();
+    const gongklang = (headcountForGk > 0 && effective > 0 && breakdown.totalCost > 0)
+      ? Math.max(0, effective * headcountForGk - breakdown.totalCost)
+      : 0;
+    const payload = {
+      date:        session.date,
+      dateDisplay: session.dateDisplay,
+      status:      'complete',
+      players:     session.players,
+      courts:        breakdown.courts,
+      courtRate:     breakdown.courtRate,
+      hours:         breakdown.hours,
+      courtFee:      breakdown.courtFee,
+      shuttlePrice:  breakdown.shuttlePrice,
+      shuttleCount:  breakdown.shuttleCount,
+      shuttleCost:   breakdown.shuttleCost,
+      totalCost:     breakdown.totalCost,
+      memberEstimate: memberEst,
+      priceOverride: getNumInput('price-override'),
+      gongklang:     gongklang, // ✅ ส่วนเกินเข้ากองกลาง
+      // ✅ perPerson = effective price (ราคาที่ใช้จริง — ปัดเต็ม 10)
+      perPerson:   effective,
+      cashCount:   cashN,
+      transferCount: transN,
+      totalCount:  session.players.length,
+      paidCount:   paidN,
+      cashAmount:     cashAmt,
+      transferAmount: transAmt,
+      totalAmount:    totalAmt,
+      createdAt:   session.createdAt ? new Date(session.createdAt) : new Date(),
+      completedAt: new Date(),
+      updatedAt:   new Date(),
+    };
+    if(editingId){
+      await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
+    } else {
+      const ref = await db.collection('payment_sessions').add(payload);
+      editingId = ref.id;
+    }
+    clearDraft();
+    toast('🎉 จบรอบเรียบร้อย');
+    setTimeout(() => {
+      unsubscribeFromSession();
+      editingId = null;
+      session = newSession();
+      try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+      setSetupInputsFromSession();
+      renderTable();
+      renderSummary();
+      renderDate();
+      renderPlayerListMini();
+      document.getElementById('autosave-label').textContent = '';
+      switchSection('members');
+      subscribeToTodayOpenQuery(); // ✅ เริ่มฟังรอบใหม่จากคนอื่น
+    }, 1500);
+  }catch(e){
+    console.error(e);
+    toast('จบรอบไม่สำเร็จ: ' + e.message);
+    btn.disabled = false;
+    renderSummary();
+  }
+}
+
+/** ออกจากโหมดแก้ไข (สำหรับรอบ complete) — ไม่เขียน DB ซ้ำ แค่รีเซ็ตหน้าจอ */
+function exitEditMode(){
+  if(!confirm('ออกจากการแก้ไข?\n(ข้อมูลถูกบันทึกอัตโนมัติแล้ว · พร้อมเริ่มรอบใหม่)')) return;
+  unsubscribeFromSession();
+  editingId = null;
+  session = newSession();
+  try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  setSetupInputsFromSession();
+  refreshAutoOverride();
+  renderTable();
+  renderSummary();
+  renderDate();
+  renderPlayerListMini();
+  const lbl = document.getElementById('autosave-label');
+  if(lbl) lbl.textContent = '';
+  switchSection('members');
+  subscribeToTodayOpenQuery(); // ✅ เริ่มฟังรอบใหม่จากคนอื่น
+  toast('✓ ออกจากการแก้ไขแล้ว · พร้อมเริ่มรอบใหม่');
+}
+
+function clearSession(){
+  if(!session.players.length) return;
+  if(!confirm('ล้างรายชื่อทั้งหมด?')) return;
+  unsubscribeFromSession();
+  editingId = null;
+  session = newSession();
+  saveDraft();
+  renderTable();
+  renderSummary();
+  renderDate();
+  renderPlayerListMini();
+  subscribeToTodayOpenQuery(); // ✅ เริ่มฟังรอบใหม่จากคนอื่น
+}
+
+/* ================================================================
+   HISTORY
+   ================================================================ */
+async function loadHistory(){
+  const el = document.getElementById('history-list');
+  el.innerHTML = '<div class="empty">กำลังโหลด...</div>';
+  try{
+    const snap = await db.collection('payment_sessions')
+      .orderBy('createdAt','desc').limit(30).get();
+    if(snap.empty){ el.innerHTML = '<div class="empty">ยังไม่มีประวัติ</div>'; return; }
+    el.innerHTML = snap.docs.map(doc => {
+      const d = doc.data();
+      const names = (d.players||[]).map(p => {
+        const icon = p.cash ? '💵' : p.transfer ? '📲' : '⬜';
+        return `${icon} ${escHtml(p.name)}`;
+      }).join('  ');
+      const isComplete = d.status === 'complete';
+      const badge = isComplete
+        ? '<span class="hc-badge complete">จ่ายครบ</span>'
+        : '<span class="hc-badge open">กำลังเก็บ</span>';
+      // ✅ ใช้ priceOverride (ปัดเต็ม 10) > perPerson > 0
+      const ppShow = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
+      // ✅ ยอดเก็บได้: ลำดับ fallback
+      //   1) d.totalAmount (newest)
+      //   2) cashAmount + transferAmount (paid only)
+      //   3) ppShow × totalCount (calc fallback)
+      const totalCollected = (d.totalAmount && d.totalAmount > 0)
+        ? d.totalAmount
+        : (((d.cashAmount||0) + (d.transferAmount||0)) || (ppShow * (d.totalCount||0)));
+      const cashAmt  = (d.cashAmount && d.cashAmount > 0) ? d.cashAmount : ((d.cashCount||0) * ppShow);
+      const transAmt = (d.transferAmount && d.transferAmount > 0) ? d.transferAmount : ((d.transferCount||0) * ppShow);
+      return `<div class="history-card">
+        <div class="hc-head">
+          <div class="hc-date">${escHtml(d.dateDisplay||d.date||'')}</div>
+          ${badge}
+        </div>
+        ${isComplete ? `
+        <div style="background:#c8f13518;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-size:13px;color:var(--soft);font-weight:600">💰 ยอดเก็บได้รอบนี้</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollected)} ฿</span>
+        </div>` : ''}
+        <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
+          <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
+          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(cashAmt)}฿</strong> (${d.cashCount||0})</span>
+          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(transAmt)}฿</strong> (${d.transferCount||0})</span>
+        </div>
+        ${(d.courtFee||d.shuttlePrice||d.shuttleCount) ? `
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px;line-height:1.6">
+          🏟 คอร์ท ${fmtBaht(d.courtFee||0)}฿ · 🏸 ${fmtBaht(d.shuttlePrice||0)}฿×${d.shuttleCount||0}ลูก = <strong style="color:var(--soft)">${fmtBaht(d.totalCost||0)}฿</strong><br>
+          เฉลี่ย ${fmtBaht(ppShow)}฿/คน · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน
+          ${d.gongklang > 0 ? `<br><span style="color:var(--accent);font-weight:700">💰 เข้ากองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}
+        </div>` : `
+        <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px">ยอดต่อคน ${fmtBaht(ppShow)} บาท · ยังไม่จ่าย ${(d.totalCount||0)-(d.paidCount||0)} คน${d.gongklang > 0 ? ` · <span style="color:var(--accent);font-weight:700">💰 กองกลาง ${fmtBaht(d.gongklang)} ฿</span>` : ''}</div>`}
+        <div class="hc-names">${names||'—'}</div>
+        <div class="hc-actions">
+          <button class="hc-btn view" onclick="viewSession('${doc.id}')">👁 เรียกดู</button>
+          <button class="hc-btn edit" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
+          <button class="hc-btn" onclick="deleteSession('${doc.id}',this)">🗑 ลบ</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML = `<div class="empty">โหลดไม่ได้: ${e.message}</div>`; }
+}
+
+async function viewSession(docId){
+  try{
+    const snap = await db.collection('payment_sessions').doc(docId).get();
+    if(!snap.exists){ toast('ไม่พบข้อมูล'); return; }
+    const d = snap.data();
+    renderViewModal(d);
+  }catch(e){ toast('โหลดไม่ได้: '+e.message); }
+}
+
+let _viewingSession = null; // เก็บข้อมูล session ที่กำลังดู (ใช้แชร์)
+
+function renderViewModal(d){
+  _viewingSession = d;
+  const players = d.players || [];
+  const cashN   = d.cashCount || players.filter(p=>p.cash).length;
+  const transN  = d.transferCount || players.filter(p=>p.transfer).length;
+  const total   = d.totalCount || players.length;
+  const unpaid  = total - (cashN + transN);
+  // ✅ priceOverride (ปัดเต็ม 10) > perPerson (อาจเป็น calc ไม่ปัด — กรณี data เก่า)
+  const pp      = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
+
+  document.getElementById('vm-title').textContent = d.dateDisplay || d.date || 'ประวัติการเก็บเงิน';
+  const statusTxt = d.status === 'complete'
+    ? `✅ จ่ายครบ · ${total} คน`
+    : `🕘 กำลังเก็บ · ${cashN + transN}/${total} คน`;
+  document.getElementById('vm-sub').textContent = statusTxt;
+
+  // Cost block (ถ้ามี breakdown ใหม่)
+  const hasBreakdown = d.courtFee || d.shuttlePrice || d.shuttleCount || d.totalCost;
+  const gongklang = d.gongklang || 0;
+  const gkRowHtml = gongklang > 0 ? `
+        <div class="k" style="color:var(--accent);font-weight:800">💰 เข้ากองกลาง</div>
+        <div class="v" style="color:var(--accent);font-weight:800">${fmtBaht(gongklang)} ฿</div>` : '';
+  const costHtml = hasBreakdown ? `
+    <div class="vm-block">
+      <div class="vm-block-head">💰 รายละเอียดค่าใช้จ่าย</div>
+      <div class="vm-cost-grid">
+        <div class="k">🏟 ค่าคอร์ทแบดฯ</div>
+        <div class="v">${fmtBaht(d.courtFee||0)} ฿</div>
+        <div class="k">🏸 ลูกแบดฯ ลูกละ</div>
+        <div class="v">${fmtBaht(d.shuttlePrice||0)} ฿</div>
+        <div class="k">จำนวนลูกที่ใช้</div>
+        <div class="v">${d.shuttleCount||0} ลูก</div>
+        <div class="k total">รวมทั้งสิ้น</div>
+        <div class="v total">${fmtBaht(d.totalCost||0)} ฿</div>
+        <div class="k per">เฉลี่ยต่อคน</div>
+        <div class="v per">${fmtBaht(pp)} ฿</div>
+        ${gkRowHtml}
+      </div>
+    </div>` : `
+    <div class="vm-block">
+      <div class="vm-block-head">💰 ยอดเก็บ</div>
+      <div class="vm-cost-grid">
+        <div class="k per">เฉลี่ยต่อคน</div>
+        <div class="v per">${fmtBaht(pp)} ฿</div>
+        ${gkRowHtml}
+      </div>
+    </div>`;
+
+  // Summary — ยอดรวม + breakdown
+  const cashAmtView  = (d.cashAmount && d.cashAmount > 0) ? d.cashAmount : (cashN * pp);
+  const transAmtView = (d.transferAmount && d.transferAmount > 0) ? d.transferAmount : (transN * pp);
+  const totalCollectedView = (d.totalAmount && d.totalAmount > 0)
+    ? d.totalAmount
+    : (cashAmtView + transAmtView + unpaid * pp);
+  const isCompleteView = d.status === 'complete';
+  const summaryHtml = `
+    <div class="vm-block">
+      <div class="vm-block-head">📊 สรุปการจ่าย</div>
+      ${isCompleteView ? `
+      <div style="background:#c8f13520;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:14px;font-weight:700;color:var(--accent)">💰 ยอดเก็บได้รอบนี้</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollectedView)} ฿</span>
+      </div>` : ''}
+      <div class="vm-sum-row">
+        <div class="vm-sum-item cash">
+          <div class="vm-sum-num">${fmtBaht(cashAmtView)}฿</div>
+          <div class="vm-sum-lbl">💵 เงินสด (${cashN})</div>
+        </div>
+        <div class="vm-sum-item transfer">
+          <div class="vm-sum-num">${fmtBaht(transAmtView)}฿</div>
+          <div class="vm-sum-lbl">📲 โอน (${transN})</div>
+        </div>
+        <div class="vm-sum-item unpaid">
+          <div class="vm-sum-num">${fmtBaht(unpaid*pp)}฿</div>
+          <div class="vm-sum-lbl">⬜ ค้าง (${unpaid})</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Player list
+  const playerRows = players.map((p, i) => {
+    let statusHtml, cls;
+    if(p.cash){ statusHtml = '<span class="vp-status cash">💵 เงินสด</span>'; cls = 'paid-cash'; }
+    else if(p.transfer){ statusHtml = '<span class="vp-status transfer">📲 โอน</span>'; cls = 'paid-transfer'; }
+    else { statusHtml = '<span class="vp-status unpaid">ยังไม่จ่าย</span>'; cls = 'unpaid'; }
+    return `<div class="vm-player ${cls}">
+      <div class="vp-num">${i+1}</div>
+      <div class="vp-name">${escHtml(p.name)}</div>
+      ${statusHtml}
+    </div>`;
+  }).join('');
+
+  const playersHtml = `
+    <div class="vm-block">
+      <div class="vm-block-head">👥 รายชื่อสมาชิก (${total} คน)</div>
+      <div class="vm-player-list">${playerRows || '<div class="empty">ไม่มีรายชื่อ</div>'}</div>
+    </div>`;
+
+  document.getElementById('vm-body').innerHTML = costHtml + summaryHtml + playersHtml;
+  document.getElementById('view-modal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeViewModal(){
+  document.getElementById('view-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  _viewingSession = null;
+}
+
+/* ================================================================
+   LINE FLEX MESSAGE — สรุปค่าใช้จ่ายสำหรับแชร์เข้ากลุ่ม
+   ================================================================ */
+
+/** สร้าง Flex bubble จากข้อมูล session */
+function buildPaymentFlex(d){
+  const players = d.players || [];
+  const total   = d.totalCount    || players.length;
+  const cashN   = d.cashCount     || players.filter(p=>p.cash).length;
+  const transN  = d.transferCount || players.filter(p=>p.transfer).length;
+  const unpaid  = total - (cashN + transN);
+  // ✅ priceOverride (ปัดเต็ม 10) > perPerson
+  const pp      = (d.priceOverride && d.priceOverride > 0) ? d.priceOverride : (d.perPerson || 0);
+  const courtFee     = d.courtFee     || 0;
+  const shuttlePrice = d.shuttlePrice || 0;
+  const shuttleCount = d.shuttleCount || 0;
+  const shuttleTotal = shuttlePrice * shuttleCount;
+  const totalCost    = d.totalCost || (courtFee + shuttleTotal);
+  const dateStr      = d.dateDisplay || d.date || '';
+
+  // ─── Cost breakdown rows ───
+  const costRows = [];
+  if(courtFee > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:'🏟 ค่าคอร์ท', size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(courtFee)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  if(shuttleCount > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:`🏸 ลูกแบด ${shuttleCount}×${fmtBaht(shuttlePrice)}฿`, size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(shuttleTotal)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  costRows.push({ type:'separator', margin:'md' });
+  costRows.push({
+    type:'box', layout:'horizontal', margin:'md',
+    contents:[
+      { type:'text', text:'รวมทั้งสิ้น', size:'md', weight:'bold', color:'#111111', flex:5 },
+      { type:'text', text:fmtBaht(totalCost)+' ฿', size:'md', weight:'bold', color:'#111111', align:'end', flex:4 },
+    ]
+  });
+
+  // ─── Member list (ตัด 20 คนเพื่อกัน flex เกิน limit) ───
+  const memberRows = players.slice(0, 20).map((p, i) => {
+    const status = p.cash     ? { t:'💵 เงินสด', c:'#16a34a' }
+                 : p.transfer ? { t:'📲 โอน',    c:'#3b82f6' }
+                 :              { t:'⬜ ค้าง',   c:'#d97706' };
+    return {
+      type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
+      contents:[
+        { type:'text', text:String(i+1)+'.', size:'sm', color:'#8e8c85', flex:1 },
+        { type:'text', text:p.name||'—',     size:'sm', color:'#111111', weight:'bold', flex:6, wrap:true },
+        { type:'text', text:status.t,        size:'xs', color:status.c, weight:'bold', align:'end', flex:4 },
+      ]
+    };
+  });
+  const extraMembers = players.length > 20 ? [{
+    type:'text', text:`…และอีก ${players.length-20} คน`, size:'xs',
+    color:'#8e8c85', align:'center', margin:'sm'
+  }] : [];
+
+  return {
+    type:'bubble',
+    size:'mega',
+    header:{
+      type:'box', layout:'vertical', paddingAll:'16px',
+      backgroundColor:'#16181d',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#c8f135', weight:'bold', size:'md' },
+        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
+      ]
+    },
+    body:{
+      type:'box', layout:'vertical', paddingAll:'16px', spacing:'md',
+      contents:[
+        // Cost breakdown
+        {
+          type:'box', layout:'vertical', spacing:'none',
+          contents:[
+            { type:'text', text:'💰 ค่าใช้จ่าย', size:'xs', color:'#8e8c85', weight:'bold' },
+            ...costRows,
+          ]
+        },
+        // Per-person highlight
+        {
+          type:'box', layout:'vertical',
+          backgroundColor:'#c8f135', cornerRadius:'10px', paddingAll:'14px',
+          margin:'md',
+          contents:[
+            { type:'text', text:`💸 เฉลี่ยต่อคน (${total} คน)`, color:'#1a1a1a', size:'xs', weight:'bold', align:'center' },
+            { type:'text', text:fmtBaht(pp)+' บาท', color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'xs' },
+          ]
+        },
+        // Payment status
+        {
+          type:'box', layout:'horizontal', margin:'md', spacing:'sm',
+          contents:[
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#f0fdf4', paddingAll:'10px', contents:[
+              { type:'text', text:String(cashN), size:'xl', weight:'bold', color:'#16a34a', align:'center' },
+              { type:'text', text:'💵 เงินสด', size:'xxs', color:'#166534', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#eff6ff', paddingAll:'10px', contents:[
+              { type:'text', text:String(transN), size:'xl', weight:'bold', color:'#3b82f6', align:'center' },
+              { type:'text', text:'📲 โอน', size:'xxs', color:'#1e40af', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#fffbeb', paddingAll:'10px', contents:[
+              { type:'text', text:String(unpaid), size:'xl', weight:'bold', color:'#d97706', align:'center' },
+              { type:'text', text:'⬜ ค้าง', size:'xxs', color:'#92400e', align:'center' },
+            ]},
+          ]
+        },
+        // Members
+        {
+          type:'box', layout:'vertical', margin:'lg',
+          contents:[
+            { type:'text', text:`👥 รายชื่อสมาชิก (${total} คน)`, size:'xs', color:'#8e8c85', weight:'bold', margin:'none' },
+            { type:'separator', margin:'sm' },
+            ...memberRows,
+            ...extraMembers,
+          ]
+        },
+      ]
+    },
+    footer:{
+      type:'box', layout:'vertical', paddingAll:'12px',
+      backgroundColor:'#f5f3ee',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
+      ]
+    }
+  };
+}
+
+/** Init LIFF ครั้งเดียว · cache promise */
+let _liffInitPromise = null;
+function ensureLiff(){
+  if(!_liffInitPromise) _liffInitPromise = liff.init({ liffId: LIFF_ID });
+  return _liffInitPromise;
+}
+
+/* ================================================================
+   FLEX: PRICE ANNOUNCEMENT — บอกราคาก๊วน + QR โอน
+   ================================================================ */
+const QR_PAYMENT_URL = 'https://satirap.github.io/badminton/qr-payment.png';
+
+function buildPriceFlex(s, opts){
+  const players      = s.players || [];
+  const courtFee     = s.courtFee     || 0;
+  const shuttlePrice = s.shuttlePrice || 0;
+  const shuttleCount = s.shuttleCount || 0;
+  const shuttleTotal = shuttlePrice * shuttleCount;
+  const totalCost    = courtFee + shuttleTotal;
+  // ใช้ headcount จาก opts หรือ s.memberEstimate หรือ players.length
+  const headcount = (opts && opts.headcount) || s.memberEstimate || players.length || 0;
+  const total = headcount;
+  const calculated = headcount > 0 ? Math.ceil(totalCost / headcount) : 0;
+  const pp = (opts && opts.effectivePp) || (s.priceOverride > 0 ? s.priceOverride : calculated);
+  const gongklang = (opts && opts.gongklang !== undefined)
+    ? opts.gongklang
+    : Math.max(0, pp * headcount - totalCost);
+  const dateStr      = s.dateDisplay || s.date || '';
+
+  const costRows = [];
+  if(courtFee > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:'🏟 ค่าคอร์ท', size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(courtFee)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  if(shuttleCount > 0){
+    costRows.push({
+      type:'box', layout:'horizontal', margin:'sm',
+      contents:[
+        { type:'text', text:`🏸 ลูกแบด ${shuttleCount}×${fmtBaht(shuttlePrice)}฿`, size:'sm', color:'#555555', flex:5 },
+        { type:'text', text:fmtBaht(shuttleTotal)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+      ]
+    });
+  }
+  costRows.push({
+    type:'box', layout:'horizontal', margin:'sm',
+    contents:[
+      { type:'text', text:'👥 สมาชิกวันนี้', size:'sm', color:'#555555', flex:5 },
+      { type:'text', text:`${total} คน`, size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
+    ]
+  });
+  costRows.push({ type:'separator', margin:'md' });
+  costRows.push({
+    type:'box', layout:'horizontal', margin:'md',
+    contents:[
+      { type:'text', text:'รวมทั้งสิ้น', size:'md', weight:'bold', color:'#111111', flex:5 },
+      { type:'text', text:fmtBaht(totalCost)+' ฿', size:'md', weight:'bold', color:'#111111', align:'end', flex:4 },
+    ]
+  });
+
+  return {
+    type:'bubble',
+    size:'mega',
+    header:{
+      type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
+      ]
+    },
+    body:{
+      type:'box', layout:'vertical', paddingAll:'16px', spacing:'none',
+      contents:[
+        { type:'text', text:'💰 ค่าใช้จ่าย', size:'xs', color:'#8e8c85', weight:'bold' },
+        ...costRows,
+        // Per-person highlight
+        {
+          type:'box', layout:'vertical', backgroundColor:'#c8f135',
+          cornerRadius:'12px', paddingAll:'16px', margin:'lg',
+          contents:[
+            { type:'text', text:'💸 ราคาต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
+            { type:'text', text:`${fmtBaht(pp)} บาท`, color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'sm' },
+          ]
+        },
+        // กองกลาง (เฉพาะตอนมีส่วนเกิน)
+        ...(gongklang > 0 ? [{
+          type:'box', layout:'horizontal',
+          backgroundColor:'#16181d', cornerRadius:'10px', paddingAll:'12px',
+          margin:'sm', spacing:'sm',
+          contents:[
+            { type:'text', text:'💰 เก็บเข้ากองกลาง', color:'#c9c7c0', size:'sm', weight:'bold', flex:6 },
+            { type:'text', text:`${fmtBaht(gongklang)} บาท`, color:'#c8f135', size:'sm', weight:'bold', align:'end', flex:4 },
+          ]
+        }] : []),
+        // QR section
+        { type:'separator', margin:'xl' },
+        { type:'text', text:'📲 โอนได้ที่ QR Code ด้านล่าง', size:'sm', weight:'bold', color:'#3b82f6', align:'center', margin:'lg' },
+        { type:'image', url:QR_PAYMENT_URL, size:'full', aspectRatio:'2:3', aspectMode:'fit', margin:'md' },
+      ]
+    },
+    footer:{
+      type:'box', layout:'vertical', paddingAll:'12px', backgroundColor:'#f5f3ee',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
+      ]
+    }
+  };
+}
+
+/* ================================================================
+   FLEX: PAYMENT STATUS — ใครจ่ายแล้ว/ยังไม่จ่าย
+   ================================================================ */
+function buildStatusFlex(s){
+  const players  = s.players || [];
+  const cashList = players.filter(p => p.cash);
+  const tranList = players.filter(p => p.transfer);
+  const unpaid   = players.filter(p => !p.cash && !p.transfer);
+  const total    = players.length;
+  const paidN    = cashList.length + tranList.length;
+  const dateStr  = s.dateDisplay || s.date || '';
+  // ✅ priceOverride (ปัดเต็ม 10) > perPerson — กัน data เก่าแสดงผิด
+  const pp = (s.priceOverride && s.priceOverride > 0)
+    ? s.priceOverride
+    : (s.perPerson || (total > 0 ? Math.ceil(((s.courtFee||0) + (s.shuttlePrice||0)*(s.shuttleCount||0)) / total) : 0));
+
+  const playerRow = (p, status) => ({
+    type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
+    contents:[
+      { type:'text', text:status.icon, size:'sm', flex:1, color:status.color },
+      { type:'text', text:p.name||'—', size:'sm', color:'#111111', weight:'bold', flex:6, wrap:true },
+      { type:'text', text:status.label, size:'xs', weight:'bold', color:status.color, align:'end', flex:4 },
+    ]
+  });
+
+  const sections = [];
+
+  // Cash + Transfer = paid
+  if(paidN > 0){
+    sections.push({ type:'text', text:`✅ จ่ายแล้ว (${paidN} คน)`, size:'sm', color:'#16a34a', weight:'bold', margin:'md' });
+    cashList.forEach(p => sections.push(playerRow(p, {icon:'💵', label:'เงินสด', color:'#16a34a'})));
+    tranList.forEach(p => sections.push(playerRow(p, {icon:'📲', label:'โอน',    color:'#3b82f6'})));
+  }
+  // Unpaid
+  if(unpaid.length > 0){
+    sections.push({ type:'separator', margin:'lg' });
+    sections.push({ type:'text', text:`⏳ ยังไม่จ่าย (${unpaid.length} คน)`, size:'sm', color:'#d97706', weight:'bold', margin:'md' });
+    unpaid.forEach(p => sections.push(playerRow(p, {icon:'⬜', label:'ค้างจ่าย', color:'#d97706'})));
+  }
+  if(!paidN && !unpaid.length){
+    sections.push({ type:'text', text:'ยังไม่มีรายชื่อ', size:'sm', color:'#888', align:'center', margin:'md' });
+  }
+
+  return {
+    type:'bubble',
+    size:'mega',
+    header:{
+      type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
+      contents:[
+        { type:'text', text:'📊 สรุปการจ่ายเงิน', color:'#c8f135', weight:'bold', size:'lg' },
+        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
+      ]
+    },
+    body:{
+      type:'box', layout:'vertical', paddingAll:'16px', spacing:'none',
+      contents:[
+        // Stats top
+        {
+          type:'box', layout:'horizontal', spacing:'sm',
+          contents:[
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#f0fdf4', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(cashList.length), size:'xl', weight:'bold', color:'#16a34a', align:'center' },
+              { type:'text', text:'💵 เงินสด', size:'xxs', color:'#166534', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#eff6ff', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(tranList.length), size:'xl', weight:'bold', color:'#3b82f6', align:'center' },
+              { type:'text', text:'📲 โอน', size:'xxs', color:'#1e40af', align:'center' },
+            ]},
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#fffbeb', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(unpaid.length), size:'xl', weight:'bold', color:'#d97706', align:'center' },
+              { type:'text', text:'⬜ ค้าง', size:'xxs', color:'#92400e', align:'center' },
+            ]},
+          ]
+        },
+        { type:'box', layout:'horizontal', margin:'lg', contents:[
+          { type:'text', text:`💸 คนละ ${fmtBaht(pp)} บาท`, size:'sm', color:'#16181d', weight:'bold', align:'center' },
+        ]},
+        { type:'separator', margin:'md' },
+        ...sections,
+      ]
+    },
+    footer:{
+      type:'box', layout:'vertical', paddingAll:'12px', backgroundColor:'#f5f3ee',
+      contents:[
+        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
+      ]
+    }
+  };
+}
+
+/* ================================================================
+   SHARE: ปุ่มแจ้งราคา / สรุปการจ่ายเงิน — สำหรับ session ปัจจุบัน
+   ================================================================ */
+async function shareLineFlex(flex, altText, btnElem){
+  const orig = btnElem ? btnElem.innerHTML : '';
+  if(btnElem){ btnElem.disabled = true; btnElem.innerHTML = '⏳ กำลังเตรียม...'; }
+  try{
+    await ensureLiff();
+    if(!liff.isLoggedIn()){
+      if(confirm('ต้อง login LINE ก่อน · ไปหน้า login?')){
+        liff.login({ redirectUri: window.location.href });
+      }
+      return;
+    }
+    if(!liff.isApiAvailable('shareTargetPicker')){
+      toast('เบราว์เซอร์นี้แชร์ไม่ได้ · ต้องเปิดจาก LINE');
+      return;
+    }
+    if(btnElem) btnElem.innerHTML = '⏳ เลือกผู้รับ...';
+    const res = await liff.shareTargetPicker([
+      { type:'flex', altText, contents: flex }
+    ], { isMultiple: true });
+    toast(res ? '✅ ส่งเรียบร้อย' : 'ยกเลิกการแชร์');
+  }catch(e){
+    console.error('share error', e);
+    toast('แชร์ไม่ได้: ' + (e.message||'ลองใหม่'));
+  }finally{
+    if(btnElem){ btnElem.disabled = false; btnElem.innerHTML = orig; }
+  }
+}
+
+/** ราคาที่จะแจ้งจริง — ใช้ override ถ้ากรอกไว้ ไม่งั้นใช้ค่าเฉลี่ย */
+function getEffectivePerPerson(){
+  const override = getNumInput('price-override');
+  if(override > 0) return override;
+  return getPerPerson();
+}
+
+/** Auto-fill ราคาที่จะแจ้ง = ceil(เฉลี่ย / 10) * 10
+ *  ทุกครั้งที่ค่าใน "ตั้งค่ารอบ" เปลี่ยน (cost / headcount) → บังคับปัดใหม่
+ *  (ผู้ใช้ยังพิมพ์ทับเองได้ในช่อง override แต่จะถูก overwrite ตอนเปลี่ยน cost ครั้งถัดไป)
+ */
+function refreshAutoOverride(){
+  const inp = document.getElementById('price-override');
+  if(!inp) return;
+  const totalCost = getCostBreakdown().totalCost;
+  const headcount = getBillingHeadcount();
+  const calc = getPerPerson();
+  const autoRounded = calc > 0 ? Math.ceil(calc / 10) * 10 : 0;
+
+  // UI hint: highlight "คนที่จะมา" ถ้ามี cost แต่ยังไม่ตั้งจำนวนคน
+  const memberEstInp = document.getElementById('member-est');
+  const needHeadcount = totalCost > 0 && headcount === 0;
+  if(memberEstInp){
+    const wrapper = memberEstInp.closest('.stp-field');
+    if(wrapper) wrapper.classList.toggle('need-fill', needHeadcount);
+  }
+  inp.placeholder = needHeadcount ? '⚠️ ใส่ "คนที่จะมา" ก่อน' : '0';
+
+  if(autoRounded > 0){
+    inp.value = String(autoRounded);
+    inp.dataset.autoLast = String(autoRounded);
+    session.priceOverride = autoRounded;
+  } else {
+    inp.value = '';
+    inp.dataset.autoLast = '';
+    session.priceOverride = 0;
+  }
+}
+
+async function sharePriceCurrent(){
+  const headcount = getBillingHeadcount();
+  if(headcount <= 0){
+    toast('กรอก "คนที่จะมา" ในแท็บคำนวณราคา หรือเพิ่มผู้เล่น');
+    return;
+  }
+  const totalCost = (session.courtFee||0) + (session.shuttlePrice||0)*(session.shuttleCount||0);
+  if(totalCost <= 0){
+    toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
+    return;
+  }
+  const calculated = Math.ceil(totalCost / headcount);
+  const override = getNumInput('price-override');
+  const effective = override > 0 ? override : calculated;
+  const gongklang = Math.max(0, effective * headcount - totalCost);
+
+  // ✅ ยืนยันก่อนส่ง — แสดงราคา + กองกลางให้ดูก่อน กันส่งพลาด
+  let confirmMsg = `📢 ส่งราคาก๊วนเข้า LINE?\n\n`;
+  confirmMsg += `จำนวน: ${headcount} คน\n`;
+  if(override > 0 && override !== calculated){
+    confirmMsg += `คำนวณได้: ${fmtBaht(calculated)} บาท/คน\n`;
+    confirmMsg += `จะแจ้ง:    ${fmtBaht(effective)} บาท/คน\n`;
+  } else {
+    confirmMsg += `ราคา:  ${fmtBaht(effective)} บาท/คน\n`;
+  }
+  confirmMsg += `เก็บได้: ${fmtBaht(effective * headcount)} ฿\n`;
+  if(gongklang > 0){
+    confirmMsg += `กองกลาง: ${fmtBaht(gongklang)} ฿\n`;
+  }
+  confirmMsg += `\nยืนยันส่ง?`;
+  if(!confirm(confirmMsg)) return;
+
+  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${headcount} คน · เฉลี่ย ${fmtBaht(effective)} บาท/คน`;
+  const btn = document.querySelector('.big-share-btn') || document.querySelector('.btn-share-line.price');
+  await shareLineFlex(buildPriceFlex(session, { effectivePp: effective, headcount, gongklang }), altText, btn);
+}
+
+async function shareStatusCurrent(){
+  if(!session || !session.players || !session.players.length){
+    toast('ยังไม่มีรายชื่อสมาชิก');
+    return;
+  }
+  const cashN = session.players.filter(p=>p.cash).length;
+  const tranN = session.players.filter(p=>p.transfer).length;
+  const total = session.players.length;
+  const altText = `📊 สรุปการจ่าย · ${cashN+tranN}/${total} คน จ่ายแล้ว`;
+  const btn = document.querySelector('.btn-share-line.status');
+  await shareLineFlex(buildStatusFlex(session), altText, btn);
+}
+
+/** แชร์ session ที่เปิดดูอยู่ไปยัง LINE (group/friend) ผ่าน share target picker */
+async function shareCurrentSession(){
+  if(!_viewingSession){ toast('ไม่พบข้อมูลที่จะแชร์'); return; }
+  const btn = document.getElementById('vm-share-btn');
+  btn.disabled = true;
+  const orig = btn.textContent;
+
+  try{
+    btn.textContent = '⏳ กำลังเตรียม...';
+    await ensureLiff();
+
+    if(!liff.isLoggedIn()){
+      if(confirm('ต้อง login LINE ก่อน · ไปหน้า login?')){
+        liff.login({ redirectUri: window.location.href });
+      }
+      btn.disabled = false; btn.textContent = orig;
+      return;
+    }
+
+    if(!liff.isApiAvailable('shareTargetPicker')){
+      toast('เบราว์เซอร์นี้แชร์ไม่ได้ · ต้องเปิดจาก LINE');
+      btn.disabled = false; btn.textContent = orig;
+      return;
+    }
+
+    const flex = buildPaymentFlex(_viewingSession);
+    const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${_viewingSession.dateDisplay||''} · เฉลี่ย ${fmtBaht(_viewingSession.perPerson||0)} บาท/คน`;
+
+    btn.textContent = '⏳ เลือกผู้รับ...';
+    const res = await liff.shareTargetPicker([
+      { type:'flex', altText, contents: flex }
+    ], { isMultiple: true });
+
+    if(res){ toast('✅ ส่งเรียบร้อย'); }
+    else   { toast('ยกเลิกการแชร์'); }
+  }catch(e){
+    console.error('share error', e);
+    toast('แชร์ไม่ได้: ' + (e.message||'ลองใหม่'));
+  }
+  btn.disabled = false; btn.textContent = orig;
+}
+
+/** รหัสผ่าน admin สำหรับแก้/ลบประวัติ — cache ในเซสชันเพื่อไม่ต้องถามซ้ำ */
+const ADMIN_PIN = '888';
+function requireAdminPin(action){
+  try{
+    if(sessionStorage.getItem('payment_admin_ok') === '1') return true;
+  }catch(e){}
+  const v = prompt(`🔒 ใส่รหัสผ่าน admin เพื่อ${action}\n(รหัสจะถูกจำไว้ชั่วคราวจนกว่าจะปิดแท็บ)`);
+  if(v === null) return false;
+  if(v.trim() !== ADMIN_PIN){
+    toast('รหัสไม่ถูกต้อง');
+    return false;
+  }
+  try{ sessionStorage.setItem('payment_admin_ok', '1'); }catch(e){}
+  return true;
+}
+
+async function editSession(docId){
+  if(!requireAdminPin('แก้ไข')) return;
+  try{
+    const snap = await db.collection('payment_sessions').doc(docId).get();
+    if(!snap.exists){ toast('ไม่พบข้อมูล'); return; }
+    const d = snap.data();
+    editingId = docId;
+    // ✅ FIX: คง status เดิมไว้ — เดิมบังคับเป็น 'open' ทำให้รอบที่จบแล้วถูก downgrade
+    const origStatus = d.status || 'open';
+    session = {
+      id:          docId,
+      date:        d.date,
+      dateDisplay: d.dateDisplay || thaiDate(d.date),
+      status:      origStatus,
+      courts:        Array.isArray(d.courts) ? d.courts : [{name: 'A', hours: 2}],
+      courtRate:     d.courtRate || 0,
+      courtFee:      d.courtFee     || 0,
+      shuttlePrice:  d.shuttlePrice || 0,
+      shuttleCount:  d.shuttleCount || 0,
+      memberEstimate: d.memberEstimate || 0,
+      priceOverride: d.priceOverride || 0,
+      perPerson:     d.perPerson    || 0,
+      players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
+      createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      completedAt: d.completedAt?.toDate?.()?.toISOString() || null,
+    };
+    // backfill: ถ้า doc เก่ามี courtFee แต่ไม่มี courtRate/hours → guess values
+    if(!d.courtRate && !d.hours && d.courtFee){
+      session.courtRate = d.courtFee;
+      session.hours = 1;
+      session.courts = 1;
+    }
+    saveDraft();
+    switchTab('collect');
+    switchSection('payment'); // edit mode ควรไปหน้ารับเงินตรง ๆ
+    renderDate();
+    setSetupInputsFromSession();
+    refreshAutoOverride();
+    renderTable();
+    renderSummary();
+    renderPlayerListMini();
+    subscribeToSession(docId); // ✅ เริ่มฟัง real-time
+    toast(origStatus === 'complete'
+      ? '🔒 รอบนี้จบแล้ว · ✏️ แก้ไขข้อมูลได้ (สถานะคงเดิม)'
+      : 'โหลดข้อมูลแล้ว ✏️ แก้ไขได้เลย');
+  }catch(e){ toast('เกิดข้อผิดพลาด: '+e.message); }
+}
+
+async function deleteSession(docId, btn){
+  if(!requireAdminPin('ลบ')) return;
+  if(!confirm('ลบประวัตินี้?')) return;
+  btn.disabled = true;
+  try{
+    await db.collection('payment_sessions').doc(docId).delete();
+    toast('ลบแล้ว');
+    loadHistory();
+  }catch(e){ toast('ลบไม่ได้: '+e.message); btn.disabled=false; }
+}
+
+/* ================================================================
+   TAB NAVIGATION
+   ================================================================ */
+function switchTab(tab){
+  document.getElementById('view-collect').style.display  = tab==='collect' ? 'block' : 'none';
+  document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
+  if(tab==='history') loadHistory();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ================================================================
+   PLAYER LIST (รายชื่อ tab) — paste จาก LINE / เพิ่มทีละชื่อ / ลบ
+   ================================================================ */
+let currentSection = 'members'; // 'members' | 'price' | 'payment'
+
+function switchSection(name){
+  currentSection = name;
+  const sm = document.getElementById('section-members');
+  const sp = document.getElementById('section-price');
+  const sy = document.getElementById('section-payment');
+  const tm = document.getElementById('sub-tab-members');
+  const tp = document.getElementById('sub-tab-price');
+  const ty = document.getElementById('sub-tab-payment');
+  if(sm) sm.style.display = name==='members' ? 'block' : 'none';
+  if(sp) sp.style.display = name==='price'   ? 'block' : 'none';
+  if(sy) sy.style.display = name==='payment' ? 'block' : 'none';
+  if(tm) tm.classList.toggle('active', name==='members');
+  if(tp) tp.classList.toggle('active', name==='price');
+  if(ty) ty.classList.toggle('active', name==='payment');
+  if(name==='members') renderPlayerListMini();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/** Parse รายชื่อจากข้อความ LINE — ตัด header, เลขลำดับ, จุด, ช่องว่าง
+ *
+ *  Logic: บรรทัดที่ขึ้นต้นด้วยตัวเลข → ลอกตัวเลข + จุด/วงเล็บ + space ออก
+ *  ถ้าหลังตัดเลขแล้วเป็นว่าง (เช่น "22.", "23", "24") → ข้าม ไม่ใช่ชื่อ
+ *  ถ้าหลังตัดเลขแล้วไม่มีตัวอักษร (เช่น ":00", "...") → ข้าม
+ *
+ *  รองรับ: "1.", "1. ", "1.<no space>", "1 ", "1)", "1)<no space>", "10.", etc.
+ *  ตัด: "22." (เลข+จุด เปล่า), "23" (เลขเปล่า), "24" (เลขเปล่า)
+ */
+function parsePlayersFromText(text){
+  if(!text) return [];
+  const lines = text.split(/\r?\n/);
+  const names = [];
+  // ✅ regex ใช้ (.*) ไม่ใช่ (.+?) — กันเลข backtrack มาเป็นชื่อ "."
+  const re = /^\s*\d+\s*[\.\)]?\s*(.*)$/;
+  // ชื่อต้องมีอักขระอย่างน้อย 1 ตัวที่ไม่ใช่ตัวเลข/ช่องว่าง/punctuation พื้นฐาน
+  // (อนุญาต Thai, English, อื่น ๆ — เพราะอาจมี Th@mmie, ฯลฯ)
+  const hasLetter = /[^\d\s\.\,\)\(\-:;\[\]]/;
+  for(const raw of lines){
+    const line = raw.trim();
+    if(!line) continue;
+    const m = line.match(re);
+    if(!m) continue; // ไม่ขึ้นต้นด้วยตัวเลข = header / non-list line
+    const name = m[1].trim();
+    if(!name) continue;             // "22.", "23" → ตัวเลขเปล่า ข้าม
+    if(!hasLetter.test(name)) continue; // ":00", "..." → ไม่มีตัวอักษร ข้าม
+    names.push(name);
+  }
+  return names;
+}
+
+/** Sync ค่า "คนที่จะมา" (member-est) ในหน้าคำนวณราคา = จำนวนผู้เล่นปัจจุบัน
+ *  เรียกทุกครั้งที่ player list เปลี่ยน — แต่ user ยัง override ได้ในหน้านั้น
+ */
+function syncHeadcountInput(){
+  const n = session?.players?.length || 0;
+  session.memberEstimate = n;
+  const inp = document.getElementById('member-est');
+  if(inp) inp.value = n;
+  refreshAutoOverride(); // headcount เปลี่ยน → auto-fill ราคาที่จะแจ้ง
+}
+
+/** กดปุ่ม "เพิ่มผู้เล่น" — REPLACE player list ทั้งหมดจากข้อความ paste */
+function addPlayersFromPaste(){
+  const ta = document.getElementById('paste-input');
+  const text = ta?.value || '';
+  const names = parsePlayersFromText(text);
+  if(names.length === 0){
+    toast('ไม่พบรายชื่อในข้อความ · ลองตรวจฟอร์แมต');
+    return;
+  }
+  // Replace player list ทั้งหมด (ไม่ append)
+  session.players = names.map((name, i) => ({
+    id: 'p' + Date.now() + '_' + i,
+    name,
+    cash: false,
+    transfer: false
+  }));
+  if(ta) ta.value = '';
+  syncHeadcountInput();
+  saveDraft();
+  renderPlayerListMini();
+  renderTable();
+  renderSummary();
+  toast(`เพิ่ม ${names.length} ผู้เล่นแล้ว`);
+}
+
+/** Render player list (compact) ใน tab รายชื่อ */
+function renderPlayerListMini(){
+  const el = document.getElementById('player-list-mini');
+  if(!el) return;
+  if(!session?.players?.length){
+    el.innerHTML = '<div class="empty">ยังไม่มีผู้เล่น<br>paste จาก LINE ด้านบน หรือพิมพ์ทีละชื่อ</div>';
+    updateSelectionCount();
+    return;
+  }
+  el.innerHTML = session.players.map((p,i) =>
+    `<div class="player-list-item">
+      <span class="num">${i+1}</span>
+      <span class="name">${escHtml(p.name)}</span>
+      <button class="del" onclick="deletePlayer('${p.id}')" title="ลบ">✕</button>
+    </div>`
+  ).join('');
+  updateSelectionCount();
+}
+
+function updateSelectionCount(){
+  const n = (session?.players?.length) || 0;
+  const a = document.getElementById('sel-count');
+  const b = document.getElementById('sel-count-big');
+  if(a) a.textContent = n;
+  if(b) b.textContent = n;
+}
+
+/** เพิ่มผู้เล่นทีละคน (manual จาก input) */
+function addNewMember(){
+  const inp = document.getElementById('new-member-name');
+  const name = (inp?.value || '').trim();
+  if(!name){ inp?.focus(); return; }
+  if(name.length > 30){ toast('ชื่อยาวเกินไป'); return; }
+
+  // ป้องกันชื่อซ้ำใน session ปัจจุบัน
+  if(session.players.some(p => (p.name||'').toLowerCase() === name.toLowerCase())){
+    toast(`มี "${name}" ในรายชื่อแล้ว`);
+    inp.value = '';
+    return;
+  }
+
+  session.players.push({
+    id: 'p' + Date.now(),
+    name,
+    cash: false,
+    transfer: false
+  });
+  inp.value = '';
+  inp.focus();
+  syncHeadcountInput();
+  saveDraft();
+  renderPlayerListMini();
+  renderTable();
+  renderSummary();
+  toast(`เพิ่ม "${name}" แล้ว`);
+}
+
+function clearMemberSelection(){
+  if(!session?.players?.length) return;
+  if(!confirm('เคลียร์รายชื่อผู้เล่นทั้งหมด?')) return;
+  session.players = [];
+  syncHeadcountInput();
+  saveDraft();
+  renderPlayerListMini();
+  renderTable();
+  renderSummary();
+}
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+function escHtml(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toast(msg,dur=2500){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+/* ================================================================
+   INPUT HOOKS (Enter / live search)
+   ================================================================ */
+document.getElementById('new-member-name').addEventListener('keydown', e => {
+  if(e.key === 'Enter') addNewMember();
+});
+
+// Court breakdown operations
+function addNewCourt(){
+  const list = document.getElementById('court-list');
+  const name = String(3 + list.children.length); // 4, 5, 6, ... (เพิ่มจากคอร์ท 3 ที่เริ่มต้น)
+  const item = document.createElement('div');
+  item.className = 'court-item';
+  item.dataset.courtId = name;
+  item.innerHTML = `
+    <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+    <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+    <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+  `;
+  list.appendChild(item);
+  updateCourtCalculation();
+}
+
+function removeCourt(btn){
+  const item = btn.closest('.court-item');
+  if(!confirm('ลบคอร์ท ' + item.dataset.courtId + '?')) return;
+  item.remove();
+  updateCourtCalculation();
+}
+
+function updateCourtCalculation(){
+  const courtHours = getTotalCourtHours();
+  const rate = getNumInput('court-rate');
+  const courtFee = courtHours * rate;
+
+  // 💾 Save current court breakdown to session
+  const courtItems = document.querySelectorAll('.court-item');
+  session.courts = Array.from(courtItems).map(item => ({
+    name: item.querySelector('.court-name')?.value || '?',
+    hours: parseFloat(item.querySelector('.court-hours')?.value) || 0
+  }));
+
+  // Update formula display
+  const formula = document.getElementById('court-formula');
+  if(formula) formula.textContent = `${courtHours} court-hours @ ${rate}฿`;
+
+  const display = document.getElementById('court-cost-display');
+  if(display) display.textContent = fmtBaht(courtFee);
+
+  onCostInputChange();
+}
+
+// Any setup input change → recompute summary + save
+function onCostInputChange(e){
+  const b = getCostBreakdown();
+  session.courtRate     = b.courtRate;
+  session.courtFee      = b.courtFee;
+  session.shuttlePrice  = b.shuttlePrice;
+  session.shuttleCount  = b.shuttleCount;
+  session.memberEstimate = getNumInput('member-est');
+  session.priceOverride  = getNumInput('price-override');
+  // ✅ เปลี่ยนค่า "ตั้งค่ารอบ" ใด ๆ → บังคับปัดราคาที่จะแจ้งเป็นเต็ม 10 ใหม่
+  //    ยกเว้นตอน user พิมพ์ใน price-override เอง (จะถูก overwrite ตอน cost เปลี่ยนรอบหน้า)
+  if(e?.target?.id !== 'price-override'){
+    refreshAutoOverride();
+  }
+  saveDraft();
+  renderSummary();
+  renderTable();
+}
+['member-est','court-rate','shuttle-price','shuttle-count','price-override'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', onCostInputChange);
+});
+
+/** Sync ค่าใน input fields จาก session.* — ใช้ตอน boot, edit, load */
+function setSetupInputsFromSession(){
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = (v ?? 0); };
+  set('member-est',     session.memberEstimate || 0);
+  set('court-rate',     session.courtRate || 0);
+  set('shuttle-price',  session.shuttlePrice || 0);
+  set('shuttle-count',  session.shuttleCount || 0);
+  set('court-fee',      session.courtFee || 0);
+  set('price-override', session.priceOverride || 0);
+
+  // Render court breakdown items
+  const courtList = document.getElementById('court-list');
+  if(courtList){
+    courtList.innerHTML = '';
+    const courts = session.courts || [{name: '3', hours: 2}];
+    (Array.isArray(courts) ? courts : [{name: '3', hours: 2}]).forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'court-item';
+      item.dataset.courtId = c.name;
+      item.innerHTML = `
+        <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
+        <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+        <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
+      `;
+      courtList.appendChild(item);
+    });
+  }
+  updateCourtCalculation();
+}
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+(async function boot(){
+  // 1) พยายามโหลด open session ของวันนี้จาก cloud ก่อน (คนเตรียมอาจเป็นคนละคน)
+  const loadedFromCloud = await loadTodayOpenSession();
+
+  if(!loadedFromCloud){
+    // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี
+    if(loadDraft()){
+      // ✅ ถ้า draft ไม่ใช่ของวันนี้ → reset (ไม่ติด doc เก่า)
+      //    ถ้าเป็นวันนี้ และมี session.id → subscribe real-time
+      if(session.date !== todayISO()){
+        session = newSession();
+        editingId = null;
+      } else if(session.id){
+        subscribeToSession(session.id);
+      }
+    } else {
+      session = newSession();
+    }
+  }
+
+  setSetupInputsFromSession();
+  refreshAutoOverride();  // Auto-fill ราคาที่จะแจ้ง (ปัดเต็ม 10) ตอนเริ่ม
+  renderDate();
+  renderTable();
+  renderSummary();
+  // คืนสถานะย่อ/ขยายจาก localStorage
+  try{
+    if(localStorage.getItem('payment_cost_collapsed') === '1') toggleSetup(true);
+  }catch(e){}
+  if(loadedFromCloud) updateAutosaveLabel('cloud');
+
+  renderPlayerListMini();
+  // เลือก section เริ่มต้น: tab รายชื่อ เสมอ
+  switchSection('members');
+
+  // ✅ ถ้ายังไม่มี session.id → ฟัง query "open today" เผื่อคนอื่นสร้าง doc ใหม่
+  if(!session?.id){
+    subscribeToTodayOpenQuery();
+  }
+})();
+</script>
+</body>
+</html>
