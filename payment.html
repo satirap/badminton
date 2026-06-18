@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<!-- ✅ Prevent browser from caching this HTML file (fix Cmd+Shift+R issue) -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>เก็บเงิน — ก๊วนอยากตี ต้องได้ตี</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,48 +16,74 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
 :root{
-  --bg:      #0c0d10;
-  --card:    #16181d;
-  --card2:   #1c1e24;
-  --input:   #1e2028;
-  --border:  #2e3038;
-  --ink:     #f5f3ee;
-  --soft:    #c9c7c0;
-  --mute:    #8e8c85;
-  --accent:  #A4D65E;
-  --green:   #9CCC65;
-  --gbg:     #2E7D32;
-  --gtxt:    #C8E6A0;
-  --blue:    #7CB342;
-  --bbg:     #3E8B41;
-  --btxt:    #C8E6A0;
-  --red:     #ef4444;
+  /* ── Apple.com inspired palette (light) ── */
+  --bg:      #f5f5f7;       /* Apple parchment */
+  --card:    #ffffff;        /* Pure white cards */
+  --card2:   #fbfbfd;        /* Pearl button bg */
+  --input:   #f5f5f7;        /* Subtle input fill */
+  --border:  #a8a8b0;        /* Visible border (darker for clarity) */
+  --border-soft: #c8c8cc;    /* Soft visible divider */
+  --ink:     #1d1d1f;        /* Primary ink */
+  --soft:    #424245;        /* Secondary */
+  --mute:    #86868b;        /* Tertiary muted */
+  --accent:  #0066cc;        /* Apple action blue (unified theme) */
+  --accent-dark: #004a99;
+  --accent-light:#e8f1fc;    /* light blue tint for paid state */
+  --green:   #0066cc;        /* legacy alias → blue */
+  --gbg:     #004a99;
+  --gtxt:    #ffffff;
+  --blue:    #0066cc;        /* Apple action blue */
+  --bbg:     #0071e3;
+  --btxt:    #ffffff;
+  --red:     #ff3b30;        /* iOS red */
+  --yellow-bg:#fffbe6;       /* very soft yellow for highlight */
+  --yellow-bd:#fde68a;
   --radius:  14px;
   --rsm:     10px;
+  /* ── Elegant layered shadows ── */
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.08);
+  --shadow-lift: 0 2px 6px rgba(0,0,0,0.08), 0 12px 32px rgba(0,0,0,0.10);
+  --shadow-soft: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-tint-blue: 0 1px 3px rgba(0, 102, 204, 0.08), 0 6px 20px rgba(88, 86, 214, 0.10);
+  /* ── Beautiful Gradients (iOS-style blue → indigo) ── */
+  --grad-primary:        linear-gradient(135deg, #0066cc 0%, #5856d6 100%);
+  --grad-primary-hover:  linear-gradient(135deg, #0071e3 0%, #6f6dde 100%);
+  --grad-primary-active: linear-gradient(135deg, #004a99 0%, #3d3bb8 100%);
+  --grad-bg:             linear-gradient(180deg, #f5f5f7 0%, #eef0fc 100%);
+  --grad-card-total:     linear-gradient(135deg, #ffffff 0%, #f5f7ff 100%);
+  --grad-paid:           linear-gradient(135deg, #e8f1fc 0%, #ede7fc 100%);
+  --grad-paid-border:    linear-gradient(135deg, #0066cc, #5856d6);
+  --grad-line:           linear-gradient(135deg, #06c755 0%, #00a85a 100%);
+  --shadow-blue:         0 6px 16px rgba(0, 102, 204, 0.25), 0 2px 4px rgba(88, 86, 214, 0.15);
+}
+html,body{
+  min-height:100vh;
 }
 *,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
-  font-family:'DM Sans',system-ui,sans-serif;font-size:16px;
-  line-height:1.45;-webkit-font-smoothing:antialiased}
+html,body{margin:0;padding:0;background:var(--grad-bg);background-attachment:fixed;color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','DM Sans',system-ui,sans-serif;
+  font-size:17px;line-height:1.47;letter-spacing:-0.003em;
+  -webkit-font-smoothing:antialiased}
 body{min-height:100dvh}
 
 .wrap{max-width:520px;margin:0 auto;padding:0 16px 120px}
 
-/* ── Header card ── */
+/* ── Header card (Apple-style: white, hairline) ── */
 .header-card{
-  background:var(--card);border:1.5px solid var(--border);
+  background:var(--card);border:1px solid var(--border-soft);
   border-radius:var(--radius);padding:14px 16px;margin:14px 0 12px;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
+  box-shadow:var(--shadow-card);
 }
-.header-card .brand{font-size:16px;font-weight:800;color:var(--ink);line-height:1.2;word-break:keep-all}
-.header-card .brand span{color:var(--accent);display:block}
+.header-card .brand{font-size:18px;font-weight:600;color:var(--ink);line-height:1.2;word-break:keep-all;letter-spacing:-0.01em}
+.header-card .brand span{color:var(--accent);display:block;font-weight:600}
 .header-card .brand-sub{
-  font-size:10px;font-weight:600;color:var(--mute);margin-top:2px;
-  letter-spacing:.02em;
+  font-size:12px;font-weight:500;color:var(--mute);margin-top:2px;
+  letter-spacing:0;
 }
 .header-card .date-box{text-align:right;flex:0 1 auto;margin-right:4px}
-.header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
-.header-card .date-box .date-sub{font-size:10px;color:var(--mute);margin-top:1px}
+.header-card .date-box .date-big{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:800;color:var(--ink);white-space:nowrap}
+.header-card .date-box .date-sub{font-size:11px;color:var(--mute);margin-top:2px;font-weight:600}
 @media (min-width:520px){
   .header-card{padding:18px 20px;margin:16px 0 12px;gap:12px}
   .header-card .brand{font-size:18px;line-height:1.15}
@@ -64,24 +94,36 @@ body{min-height:100dvh}
   .header-card .date-box .date-sub{font-size:11px}
 }
 .history-icon-btn{
-  width:38px;height:38px;border-radius:10px;flex-shrink:0;
-  background:var(--card2);border:1.5px solid var(--border);
-  color:var(--ink);font-size:16px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:all .15s;-webkit-tap-highlight-color:transparent;
+  flex-shrink:0;outline:none;
+  background:var(--grad-primary);border:none;color:#fff;
+  font-family:inherit;font-size:13px;font-weight:600;
+  padding:10px 16px;border-radius:980px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .2s, box-shadow .2s, transform .15s;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  white-space:nowrap;letter-spacing:-0.01em;
+  box-shadow:var(--shadow-blue);
 }
 @media (min-width:520px){
-  .history-icon-btn{width:44px;height:44px;border-radius:12px;font-size:20px}
+  .history-icon-btn{font-size:14px;padding:11px 18px}
   .header-card .brand-logo{width:46px!important;height:46px!important}
 }
-.history-icon-btn:active{transform:scale(.92);border-color:var(--accent)}
+.history-icon-btn:hover{background:var(--grad-primary-hover)}
+.history-icon-btn:active{background:var(--grad-primary-active);transform:scale(0.98)}
 .back-btn{
-  width:100%;padding:12px 16px;margin-bottom:12px;
-  background:var(--card2);border:1.5px solid var(--border);border-radius:var(--rsm);
-  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
-  cursor:pointer;display:flex;align-items:center;gap:8px;
+  width:auto;padding:8px 14px 8px 10px;margin-bottom:12px;outline:none;
+  background:transparent;border:none;border-radius:0;
+  color:var(--blue);font-family:inherit;font-size:15px;font-weight:400;letter-spacing:-0.01em;
+  cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  transition:opacity .15s;
 }
-.back-btn:active{background:var(--card)}
+.back-btn:hover{opacity:.7}
+.back-btn:active{opacity:.5}
+.back-btn:focus{outline:none}
 
 /* ── Cost breakdown card ── */
 .cost-card{
@@ -91,21 +133,24 @@ body{min-height:100dvh}
 }
 .cost-card.collapsed{padding:12px 16px}
 .cost-card .cost-head{
-  font-size:13px;font-weight:800;color:var(--mute);
+  font-size:14px;font-weight:900;color:var(--mute);
   letter-spacing:.08em;text-transform:uppercase;
   font-family:'IBM Plex Mono',monospace;
-  margin-bottom:10px;
+  margin-bottom:12px;
   display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;user-select:none;
 }
 .cost-card.collapsed .cost-head{margin-bottom:0}
 .cost-head .c-toggle{
-  background:var(--input);border:1.5px solid var(--border);color:var(--ink);
+  background:var(--input);border:1.5px solid var(--border);color:var(--ink);outline:none;
   border-radius:8px;padding:5px 10px;font-family:inherit;font-size:11px;font-weight:700;
-  letter-spacing:.06em;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
-  -webkit-tap-highlight-color:transparent;
+  letter-spacing:.06em;cursor:pointer;display:none;align-items:center;gap:6px;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.cost-head .c-toggle:active{transform:scale(.94)}
+.cost-head .c-toggle:active{opacity:.75}
+.cost-head .c-toggle:focus{outline:none}
 .cost-head .c-toggle .chev{transition:transform .2s;display:inline-block}
 .cost-card.collapsed .c-toggle .chev{transform:rotate(-90deg)}
 .cost-card .c-summary{
@@ -113,221 +158,271 @@ body{min-height:100dvh}
   color:var(--soft);letter-spacing:.02em;margin-top:8px;
 }
 .cost-card .c-summary b{color:var(--accent);font-weight:800}
-.cost-card.collapsed .c-summary{display:block}
+.cost-card.collapsed .c-summary{display:none}
 .cost-card.collapsed .cost-row,
-.cost-card.collapsed .cost-total-row{display:none}
+.cost-card.collapsed .cost-total-row{display:block}
 .cost-row{
   display:grid;grid-template-columns:1fr 96px 36px;align-items:center;gap:10px;
-  padding:8px 0;border-bottom:1px dashed var(--border);
+  padding:10px 0;border-bottom:1px dashed var(--border);
 }
-.cost-row:last-of-type{border-bottom:none;margin-bottom:2px}
-.cost-row .c-label{font-size:15px;font-weight:700;color:var(--ink)}
+.cost-row:last-of-type{border-bottom:none;margin-bottom:4px}
+.cost-row .c-label{font-size:18px;font-weight:800;color:var(--ink)}
 .cost-row .c-input{
-  padding:10px 12px;border-radius:var(--rsm);
+  padding:14px 16px;border-radius:var(--rsm);
   border:1.5px solid var(--border);background:var(--input);color:var(--ink);
-  font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;
-  text-align:right;outline:none;width:100%;
+  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
+  text-align:right;outline:none;width:100%;line-height:1.4;
 }
 .cost-row .c-input:focus{border-color:var(--accent)}
-.cost-row .c-unit{font-size:13px;font-weight:700;color:var(--mute);text-align:left}
+.cost-row .c-unit{font-size:14px;font-weight:700;color:var(--mute);text-align:left}
 
 .cost-total-row{
   display:grid;grid-template-columns:1fr auto 36px;align-items:baseline;gap:10px;
-  padding:10px 0 6px;
+  padding:12px 0 8px;
 }
-.cost-total-row.divider-top{border-top:1.5px solid var(--border);margin-top:4px;padding-top:12px;}
-.cost-total-row .t-label{font-size:14px;font-weight:700;color:var(--soft)}
+.cost-total-row.divider-top{border-top:1.5px solid var(--border);margin-top:6px;padding-top:14px;}
+.cost-total-row .t-label{font-size:17px;font-weight:800;color:var(--soft)}
 .cost-total-row .t-num{
-  font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;
+  font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:900;
   color:var(--ink);text-align:right;
 }
-.cost-total-row .t-unit{font-size:12px;font-weight:700;color:var(--mute);text-align:left}
-.cost-total-row.accent .t-label{color:var(--accent);font-size:15px;font-weight:800}
-.cost-total-row.accent .t-num{color:var(--accent);font-size:28px}
+.cost-total-row .t-unit{font-size:13px;font-weight:700;color:var(--mute);text-align:left}
+.cost-total-row.accent .t-label{color:var(--accent);font-size:17px;font-weight:800}
+.cost-total-row.accent .t-num{color:var(--accent);font-size:30px}
 .cost-total-row.accent .t-unit{color:var(--accent)}
 
 /* ── Summary bar ── */
 .summary-bar{
-  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
-  margin-bottom:12px;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  margin:14px 0 8px;
+}
+.summary-bar .s-item.total{
+  grid-column:1 / -1;
 }
 .summary-bar .s-item{
-  background:var(--card2);border:1.5px solid var(--border);
-  border-radius:var(--rsm);padding:12px 6px;text-align:center;
+  background:var(--card);border:1px solid var(--border-soft);outline:none;
+  border-radius:14px;padding:16px 14px;text-align:center;
+  transition:opacity .15s;cursor:pointer;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  box-shadow:var(--shadow-card);
 }
-.summary-bar .s-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;line-height:1.1;color:var(--ink)}
-.summary-bar .s-num .baht{font-size:12px;font-weight:700;opacity:.7;margin-left:2px}
-.summary-bar .s-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:700}
-.summary-bar .s-item.cash{border-color:var(--green)60}
-.summary-bar .s-item.cash .s-num{color:var(--gtxt)}
-.summary-bar .s-item.transfer{border-color:var(--blue)60}
-.summary-bar .s-item.transfer .s-num{color:var(--btxt)}
-.summary-bar .s-item.total{border-color:var(--accent)60}
-.summary-bar .s-item.total .s-num{color:var(--accent)}
+.summary-bar .s-item:active{opacity:.7}
+.summary-bar .s-item:focus{outline:none}
+.summary-bar .s-item.total{grid-column:1 / -1;grid-row:1}
+.summary-bar .s-item.cash{grid-column:1;grid-row:2}
+.summary-bar .s-item.transfer{grid-column:2;grid-row:2}
+.summary-bar .s-num{font-family:inherit;font-size:clamp(18px,4.5vw,26px);font-weight:600;line-height:1.1;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:4px;letter-spacing:-0.02em}
+.summary-bar .s-num .baht{font-size:clamp(11px,2.5vw,14px);font-weight:500;color:var(--mute);margin-left:4px}
+.summary-bar .s-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:500;text-transform:none;letter-spacing:0}
+.summary-bar .s-item.total{
+  background:var(--grad-card-total);
+  border-color:rgba(0,102,204,0.15);
+  box-shadow:0 4px 16px rgba(0, 102, 204, 0.08), 0 1px 3px rgba(88, 86, 214, 0.06);
+}
+.summary-bar .s-item.total .s-num{
+  background:var(--grad-primary);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
 
 /* ── Player table ── */
 /* ── Section title for member list ── */
 .section-head-row{
-  display:flex;align-items:baseline;justify-content:space-between;
-  margin:16px 2px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin:6px 0 0;
+  padding-bottom:4px;
+  border-bottom:3px solid var(--accent);
 }
 .section-head-title{
-  font-size:17px;font-weight:800;color:var(--ink);letter-spacing:.02em;
+  font-size:26px;font-weight:900;color:var(--ink);letter-spacing:.02em;
 }
 .section-head-count{
-  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;
-  color:var(--accent);background:#A4D65E18;border:1px solid var(--accent)60;
-  padding:3px 10px;border-radius:100px;
+  font-family:inherit;font-size:clamp(13px,3.2vw,15px);font-weight:600;
+  color:var(--ink);background:var(--grad-card-total);
+  border:1px solid rgba(0,102,204,0.15);padding:10px 14px;border-radius:12px;
+  box-shadow:0 4px 16px rgba(0, 102, 204, 0.1), 0 1px 3px rgba(88, 86, 214, 0.06);
+  display:block;width:100%;text-align:center;
+  margin:0 0 16px;letter-spacing:-0.01em;
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  /* ✅ Sticky — ลอยอยู่ด้านบนเวลา scroll */
+  position:sticky;top:8px;z-index:50;
 }
 
 .player-table{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 
 .player-row{
-  display:grid;grid-template-columns:36px 1fr auto auto auto;
-  align-items:center;gap:8px;
-  background:var(--card);border:1.5px solid var(--border);
-  border-radius:var(--rsm);padding:14px 12px;
-  transition:border-color .2s;
+  display:grid;grid-template-columns:50px 1fr auto auto auto;
+  align-items:center;gap:14px;
+  background:linear-gradient(135deg, rgba(255,255,255,.4), rgba(255,255,255,.2));
+  border:2px solid transparent;
+  border-radius:14px;padding:18px 16px;
+  transition:border-color .2s, background .2s, box-shadow .2s;
+  backdrop-filter:blur(8px);
+  min-height:70px;
 }
-.player-row.paid-both{border-color:var(--accent)30}
-.player-row.paid-cash{border-color:var(--green)50}
-.player-row.paid-transfer{border-color:var(--blue)50}
+.player-row.paid-both,
+.player-row.paid-cash,
+.player-row.paid-transfer{border-color:var(--blue);background:var(--accent-light);box-shadow:none}
 
 .player-row .num{
-  font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;
-  color:var(--mute);text-align:center;
+  font-family:inherit;font-size:22px;font-weight:600;
+  color:var(--blue);text-align:center;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+  background:var(--accent-light);border-radius:12px;letter-spacing:-0.02em;
 }
 .player-row .name{
-  font-size:19px;font-weight:800;color:var(--ink);line-height:1.3;
+  font-size:22px;font-weight:500;color:var(--ink);line-height:1.3;letter-spacing:-0.01em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
 /* Toggle buttons */
 .pay-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:4px;
-  padding:7px 10px;border-radius:8px;
-  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:800;
-  border:1.5px solid var(--border);background:var(--input);color:var(--mute);
-  cursor:pointer;transition:all .15s;white-space:nowrap;min-width:64px;
+  padding:11px 16px;border-radius:10px;
+  font-family:inherit;font-size:15px;font-weight:500;letter-spacing:-0.01em;
+  border:1px solid var(--border);outline:none;background:var(--card2);
+  color:var(--soft);cursor:pointer;transition:background .15s, color .15s;white-space:nowrap;min-width:80px;
   -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.pay-btn:active{transform:scale(.95)}
-.pay-btn.on.cash{background:var(--gbg);border-color:var(--green);color:var(--gtxt)}
-.pay-btn.on.transfer{background:var(--bbg);border-color:var(--blue);color:var(--btxt)}
+.pay-btn:active{background:var(--input)}
+.pay-btn:focus{outline:none}
+.pay-btn.on.cash,
+.pay-btn.on.transfer{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
 
 .del-btn{
-  width:32px;height:32px;border-radius:8px;border:none;
-  background:transparent;color:var(--mute);font-size:16px;
+  width:36px;height:36px;border-radius:10px;border:none;
+  background:transparent;color:var(--mute);font-size:17px;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:all .15s;flex-shrink:0;
+  transition:background .2s, color .2s;flex-shrink:0;
 }
-.del-btn:active{background:#ef444420;color:var(--red)}
+.del-btn:active{background:#ff6b6b22;color:#ff6b6b}
 
 /* ── Add player form ── */
 .add-form{
   display:flex;gap:8px;margin-bottom:12px;
 }
 .add-form input{
-  flex:1;padding:14px 16px;border-radius:var(--rsm);
-  border:1.5px solid var(--border);background:var(--input);
-  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
-  outline:none;transition:border-color .15s;
+  flex:1;padding:12px 14px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--ink);font-family:inherit;font-size:16px;font-weight:400;letter-spacing:-0.01em;
+  outline:none;transition:border-color .15s, box-shadow .15s;
 }
 .add-form input::placeholder{color:var(--mute)}
-.add-form input:focus{border-color:var(--accent)}
-.add-form .add-btn{
-  padding:14px 18px;border-radius:var(--rsm);
-  border:none;background:var(--accent);color:#111;
-  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
-  cursor:pointer;flex-shrink:0;transition:opacity .15s;
+.add-form input:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 113, 227, 0.12);
 }
-.add-form .add-btn:active{opacity:.8}
+.add-form .add-btn{
+  padding:12px 18px;border-radius:10px;
+  border:none;background:var(--grad-primary);color:#fff;
+  font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-0.01em;
+  cursor:pointer;flex-shrink:0;transition:background .15s, transform .15s;
+  box-shadow:0 4px 10px rgba(0, 102, 204, 0.2);
+}
+.add-form .add-btn:hover{background:var(--grad-primary-hover)}
+.add-form .add-btn:active{background:var(--grad-primary-active);transform:scale(0.96)}
 
-/* ── Share-to-LINE card ── */
+/* ── Share-to-LINE card (Apple style) ── */
 .share-card{
-  background:var(--card);border:1.5px solid #06c75550;
-  border-radius:var(--radius);padding:14px 16px;margin-top:14px;
+  background:var(--card);
+  border:1px solid var(--border-soft);
+  border-radius:16px;padding:18px;margin-top:18px;
+  box-shadow:var(--shadow-card);
 }
 .share-card-head{
-  font-size:12px;font-weight:800;color:#06c755;letter-spacing:.08em;
-  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;
+  font-size:13px;font-weight:500;color:var(--mute);letter-spacing:0;
+  text-transform:none;font-family:inherit;margin-bottom:12px;
 }
 .btn-share-line{
-  width:100%;padding:14px 16px;border:none;border-radius:var(--rsm);
-  background:#06c755;color:#fff;
-  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
+  width:100%;padding:16px;border:none;border-radius:12px;
+  background:var(--grad-line);color:#fff;
+  font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.01em;
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
-  -webkit-tap-highlight-color:transparent;transition:opacity .15s;margin-bottom:8px;
+  -webkit-tap-highlight-color:transparent;transition:background .15s, transform .15s;margin-bottom:10px;
   flex-wrap:wrap;
+  box-shadow:0 6px 16px rgba(6,199,85,0.25);
 }
 .btn-share-line:last-child{margin-bottom:0}
-.btn-share-line:active{opacity:.8}
-.btn-share-line.status{background:#3b82f6}
-.btn-share-line small{font-size:11px;font-weight:600;opacity:.85}
+.btn-share-line:hover{background:linear-gradient(135deg, #05a74e, #008f4d)}
+.btn-share-line:active{background:linear-gradient(135deg, #048a3f, #007340);transform:scale(0.98)}
+.btn-share-line.status{background:var(--grad-primary);box-shadow:var(--shadow-blue)}
+.btn-share-line.status:hover{background:var(--grad-primary-hover)}
+.btn-share-line small{font-size:12px;font-weight:400;opacity:.9}
 
-/* ── Action buttons ── */
-.action-row{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+/* ── Action buttons (Apple-style large CTAs) ── */
+.action-row{display:flex;flex-direction:column;gap:10px;margin-top:20px}
 .btn-complete{
-  width:100%;padding:18px;border-radius:var(--radius);border:none;
-  background:var(--accent);color:#111;
-  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:800;
-  cursor:pointer;transition:opacity .15s;
+  width:100%;padding:16px;border-radius:12px;border:none;
+  background:var(--grad-primary);color:#fff;
+  font-family:inherit;font-size:17px;font-weight:600;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s, transform .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:var(--shadow-blue);
 }
-.btn-complete:active{opacity:.8}
+.btn-complete:hover{background:var(--grad-primary-hover)}
+.btn-complete:active{background:var(--grad-primary-active);transform:scale(0.98)}
 .btn-complete:disabled{opacity:.4;cursor:not-allowed}
 .btn-save{
-  width:100%;padding:16px;border-radius:var(--radius);
-  border:1.5px solid var(--accent);background:transparent;color:var(--accent);
-  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;
-  cursor:pointer;transition:all .15s;
+  width:100%;padding:15px;border-radius:12px;
+  border:1px solid var(--border);background:var(--card);
+  color:var(--ink);
+  font-family:inherit;font-size:16px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.btn-save:active{background:#A4D65E10}
+.btn-save:hover{background:var(--card2)}
+.btn-save:active{background:var(--input)}
 .btn-save:disabled{opacity:.4;cursor:not-allowed}
 .btn-clear{
-  width:100%;padding:14px;border-radius:var(--radius);
-  border:1.5px solid var(--border);background:transparent;color:var(--soft);
-  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
-  cursor:pointer;transition:all .15s;
+  width:100%;padding:15px;border-radius:12px;
+  border:1px solid var(--border-soft);background:transparent;
+  color:var(--red);
+  font-family:inherit;font-size:16px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s;
 }
-.btn-clear:active{background:var(--card)}
+.btn-clear:hover{background:#ff3b3010}
+.btn-clear:active{background:#ff3b3020}
 
 /* ── History list ── */
 .history-list{display:flex;flex-direction:column;gap:8px}
 .history-card{
-  background:var(--card);border:1.5px solid var(--border);
+  background:var(--card);border:1px solid var(--border-soft);
   border-radius:var(--radius);padding:16px 18px;
+  box-shadow:var(--shadow-card);
 }
 .history-card .hc-head{
   display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
 }
-.history-card .hc-date{font-size:15px;font-weight:800;color:var(--ink)}
+.history-card .hc-date{font-size:17px;font-weight:600;color:var(--ink);letter-spacing:-0.01em}
 .history-card .hc-badge{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
-  padding:3px 10px;border-radius:20px;
+  font-family:inherit;font-size:12px;font-weight:500;
+  padding:4px 10px;border-radius:980px;letter-spacing:-0.01em;
 }
-.hc-badge.complete{background:#A4D65E20;color:var(--accent);border:1px solid var(--accent)40}
-.hc-badge.open{background:#FBC02D20;color:#FBC02D;border:1px solid #FBC02D40}
+.hc-badge.complete{background:var(--accent-light);color:var(--accent-dark);border:none}
+.hc-badge.open{background:#fff4d6;color:#92651b;border:none}
 .history-card .hc-stats{
-  display:flex;gap:16px;margin-bottom:12px;
+  display:flex;gap:14px;margin-bottom:12px;
 }
-.hc-stat{font-size:13px;color:var(--soft)}
-.hc-stat strong{font-weight:800;color:var(--ink)}
+.hc-stat{font-size:14px;color:var(--mute)}
+.hc-stat strong{font-weight:600;color:var(--ink)}
 .history-card .hc-names{
-  font-size:12px;color:var(--mute);line-height:1.8;
-  border-top:1px solid var(--border);padding-top:10px;
+  font-size:13px;color:var(--mute);line-height:1.7;
+  border-top:1px solid var(--border-soft);padding-top:10px;
 }
 .history-card .hc-actions{display:flex;gap:8px;margin-top:12px}
 .hc-btn{
-  flex:1;padding:10px;border-radius:var(--rsm);
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
-  cursor:pointer;transition:all .15s;border:1.5px solid var(--border);
-  background:var(--input);color:var(--soft);
+  flex:1;padding:10px;border-radius:980px;
+  font-family:inherit;font-size:13px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s;border:1px solid var(--border-soft);
+  background:transparent;color:var(--soft);
 }
-.hc-btn.edit{border-color:var(--accent)60;color:var(--accent)}
-.hc-btn.view{border-color:#3b82f680;color:#93c5fd}
-.hc-btn:active{opacity:.7}
+.hc-btn.edit{color:var(--blue);border-color:var(--blue)}
+.hc-btn.view{color:var(--accent);border-color:var(--accent)}
+.hc-btn:hover{background:var(--card2)}
+.hc-btn:active{background:var(--input)}
 
 /* ===== View-session modal ===== */
 .vm-overlay{
@@ -344,69 +439,69 @@ body{min-height:100dvh}
 }
 .vm-head{
   display:flex;align-items:center;justify-content:space-between;
-  padding:18px 20px 14px;border-bottom:1.5px solid var(--border);gap:12px;
+  padding:20px 22px 16px;border-bottom:1.5px solid var(--border);gap:12px;
   background:var(--card2);
 }
-.vm-title{font-size:18px;font-weight:800;color:var(--ink);line-height:1.2}
-.vm-sub{font-size:12px;color:var(--mute);margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:600}
+.vm-title{font-size:20px;font-weight:800;color:var(--ink);line-height:1.2}
+.vm-sub{font-size:13px;color:var(--mute);margin-top:2px;font-family:'IBM Plex Mono',monospace;font-weight:600}
 .vm-close{
-  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
   background:var(--input);border:1.5px solid var(--border);color:var(--ink);
-  font-size:16px;cursor:pointer;font-weight:700;
+  font-size:18px;cursor:pointer;font-weight:700;
 }
 .vm-close:active{background:var(--border)}
-.vm-body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
+.vm-body{padding:20px 22px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1}
 .vm-foot{
-  padding:14px 20px 20px;border-top:1.5px solid var(--border);
+  padding:16px 22px 22px;border-top:1.5px solid var(--border);
   background:var(--card);
 }
 .vm-share-btn{
-  width:100%;padding:15px;border-radius:var(--radius);border:none;
+  width:100%;padding:17px;border-radius:var(--radius);border:none;
   background:#06c755;color:#fff;font-family:'DM Sans',sans-serif;
-  font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.02em;
+  font-size:18px;font-weight:800;cursor:pointer;letter-spacing:.02em;
   display:flex;align-items:center;justify-content:center;gap:8px;
   transition:opacity .15s;-webkit-tap-highlight-color:transparent;
 }
 .vm-share-btn:active{opacity:.75}
 .vm-share-btn:disabled{opacity:.5;cursor:not-allowed}
 
-.vm-block{margin-bottom:18px}
+.vm-block{margin-bottom:20px}
 .vm-block-head{
-  font-size:11px;font-weight:800;color:var(--mute);letter-spacing:.1em;
-  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;
+  font-size:12px;font-weight:800;color:var(--mute);letter-spacing:.1em;
+  text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;
 }
-.vm-cost-grid{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:15px}
+.vm-cost-grid{display:grid;grid-template-columns:1fr auto;gap:10px 14px;font-size:17px}
 .vm-cost-grid .k{color:var(--soft)}
 .vm-cost-grid .v{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--ink);text-align:right}
-.vm-cost-grid .total{border-top:1.5px dashed var(--border);padding-top:8px;margin-top:4px}
+.vm-cost-grid .total{border-top:1.5px dashed var(--border);padding-top:10px;margin-top:6px}
 .vm-cost-grid .total.k{font-weight:800}
-.vm-cost-grid .total.v{font-size:17px;color:var(--ink)}
+.vm-cost-grid .total.v{font-size:19px;color:var(--ink)}
 .vm-cost-grid .per.k{font-weight:800;color:var(--accent)}
-.vm-cost-grid .per.v{font-size:20px;color:var(--accent);font-weight:800}
+.vm-cost-grid .per.v{font-size:22px;color:var(--accent);font-weight:800}
 
-.vm-sum-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px}
-.vm-sum-item{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center}
+.vm-sum-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:6px}
+.vm-sum-item{background:var(--card2);border:1.5px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center}
 .vm-sum-item.cash{border-color:var(--green)50}
 .vm-sum-item.transfer{border-color:var(--blue)50}
 .vm-sum-item.unpaid{border-color:#FBC02D50}
-.vm-sum-num{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:800;color:var(--ink)}
+.vm-sum-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--ink)}
 .vm-sum-item.cash .vm-sum-num{color:var(--gtxt)}
 .vm-sum-item.transfer .vm-sum-num{color:var(--btxt)}
 .vm-sum-item.unpaid .vm-sum-num{color:#fcd34d}
-.vm-sum-lbl{font-size:11px;color:var(--mute);margin-top:3px;font-weight:700}
+.vm-sum-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:700}
 
-.vm-player-list{display:flex;flex-direction:column;gap:6px}
+.vm-player-list{display:flex;flex-direction:column;gap:8px}
 .vm-player{
-  display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;
-  padding:10px 12px;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;
+  display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:12px;
+  padding:12px 14px;background:var(--card2);border:1.5px solid var(--border);border-radius:10px;
 }
 .vm-player.paid-cash{border-color:var(--green)50}
 .vm-player.paid-transfer{border-color:var(--blue)50}
 .vm-player.unpaid{border-color:#2e3038;opacity:.85}
-.vm-player .vp-num{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--mute);text-align:center;font-weight:700}
-.vm-player .vp-name{font-size:16px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vm-player .vp-num{font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--mute);text-align:center;font-weight:700}
+.vm-player .vp-name{font-size:18px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vm-player .vp-status{
-  font-size:12px;font-weight:800;padding:5px 10px;border-radius:100px;white-space:nowrap;
+  font-size:13px;font-weight:800;padding:6px 11px;border-radius:100px;white-space:nowrap;
   font-family:'IBM Plex Mono',monospace;
 }
 .vm-player .vp-status.cash{background:var(--gbg);color:var(--gtxt);border:1px solid var(--green)80}
@@ -419,92 +514,108 @@ body{min-height:100dvh}
   color:var(--mute);font-size:15px;line-height:1.8;
 }
 
-/* ── Toast ── */
+/* ── Toast (Apple-style) ── */
 .toast{
   position:fixed;bottom:28px;left:50%;
   transform:translateX(-50%) translateY(60px);
-  background:var(--accent);color:#111;
-  padding:13px 24px;border-radius:100px;
-  font-size:14px;font-weight:800;
-  opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.3),opacity .3s;
-  z-index:99;pointer-events:none;box-shadow:0 8px 24px #000a;white-space:nowrap;
+  background:rgba(29, 29, 31, 0.92);color:#fff;
+  padding:12px 22px;border-radius:980px;
+  font-size:14px;font-weight:500;letter-spacing:-0.01em;
+  opacity:0;transition:transform .3s cubic-bezier(.2,.9,.3,1.2),opacity .3s;
+  z-index:99;pointer-events:none;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);
+  white-space:nowrap;
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── Saved chip ── */
 .autosave{
-  font-size:11px;color:var(--mute);text-align:center;
-  padding:6px 0;font-family:'IBM Plex Mono',monospace;
+  font-size:12px;color:var(--mute);text-align:center;
+  padding:6px 0;font-family:inherit;font-weight:400;
 }
 
 /* ──────────────────────────────────────────────
    NEW: Sub-tabs (รายชื่อ | เก็บเงิน) + member grid
    ────────────────────────────────────────────── */
 .sub-tabs{
-  display:grid;grid-template-columns:1fr 1fr;gap:0;
-  background:var(--card2);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:4px;margin:14px 0 12px;
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;
+  background:var(--card);border:1px solid var(--border-soft);
+  border-radius:12px;padding:4px;margin:14px 0 12px;
+  box-shadow:var(--shadow-card);
 }
 .sub-tab{
-  padding:13px 8px;border:none;border-radius:10px;
-  background:transparent;color:var(--mute);
-  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:800;
-  cursor:pointer;transition:all .15s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 10px;border:none;border-radius:9px;
+  background:transparent;color:var(--soft);
+  font-family:inherit;font-size:15px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .2s, color .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
   -webkit-tap-highlight-color:transparent;
 }
-.sub-tab.active{background:var(--accent);color:#111}
+.sub-tab.active,
+#section-members .sub-tab.active,
+#section-price .sub-tab.active,
+#section-payment .sub-tab.active{
+  color:#fff;
+  background:var(--grad-primary);
+  box-shadow:var(--shadow-blue);
+  font-weight:600;
+}
+
 .sub-tab .badge{
-  font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;
-  background:#0009;color:var(--accent);padding:2px 9px;border-radius:100px;
+  font-family:inherit;font-size:12px;font-weight:600;
+  background:var(--mute);color:#fff;padding:2px 8px;border-radius:980px;
   min-width:22px;text-align:center;
 }
-.sub-tab.active .badge{background:#111;color:var(--accent)}
+.sub-tab.active .badge{background:rgba(255,255,255,.25);color:#fff}
 
-/* Selected count strip */
+/* Selected count strip (Apple-style) */
 .member-summary-strip{
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  background:var(--card2);border:1.5px solid var(--border);
-  border-radius:var(--rsm);padding:11px 14px;margin-bottom:10px;
+  background:var(--card);border:1px solid var(--border-soft);
+  border-radius:12px;padding:12px 16px;margin-bottom:10px;
+  box-shadow:var(--shadow-card);
 }
-.member-summary-strip .left{font-size:13px;color:var(--soft);font-weight:600}
+.member-summary-strip .left{font-size:14px;color:var(--soft);font-weight:500;letter-spacing:-0.01em}
 .member-summary-strip .left b{
-  font-size:18px;color:var(--accent);font-weight:800;
-  font-family:'IBM Plex Mono',monospace;margin:0 4px;
+  font-size:17px;color:var(--ink);font-weight:600;
+  font-family:inherit;margin:0 4px;letter-spacing:-0.01em;
 }
 .member-summary-strip .clear-btn{
-  padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);
-  background:transparent;color:var(--mute);font-size:12px;font-weight:700;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  padding:8px 14px;border-radius:980px;border:1px solid var(--border-soft);
+  background:transparent;color:var(--red);font-size:13px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;
 }
-.member-summary-strip .clear-btn:active{background:var(--card)}
+.member-summary-strip .clear-btn:hover{background:#ff3b3010}
+.member-summary-strip .clear-btn:active{background:#ff3b3020}
 
 /* Member toolbar (search) */
 .member-toolbar{display:flex;gap:8px;margin-bottom:10px}
 .member-toolbar input{
-  flex:1;padding:13px 16px;border-radius:var(--rsm);
+  flex:1;padding:14px 17px;border-radius:var(--rsm);
   border:1.5px solid var(--border);background:var(--input);
-  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;
   outline:none;transition:border-color .15s;
 }
 .member-toolbar input::placeholder{color:var(--mute)}
-.member-toolbar input:focus{border-color:var(--accent)}
+.member-toolbar input:focus{border-color:var(--blue)}
 
 /* Member grid (selectable chips) */
 .member-grid{
   display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));
-  gap:8px;margin-bottom:14px;min-height:60px;
+  gap:10px;margin-bottom:14px;min-height:60px;
 }
 .member-chip{
   position:relative;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  padding:14px 8px;min-height:56px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:16px 10px;min-height:60px;
   background:var(--card);border:1.5px solid var(--border);border-radius:var(--rsm);
-  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;
-  cursor:pointer;transition:all .15s;text-align:center;line-height:1.25;
+  color:var(--ink);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:700;
+  cursor:pointer;transition:transform .15s;text-align:center;line-height:1.25;
   -webkit-tap-highlight-color:transparent;user-select:none;word-break:break-word;
 }
-.member-chip:active{transform:scale(.96)}
+.member-chip:active{opacity:.8}
 .member-chip.selected{
   background:var(--accent);color:#111;border-color:var(--accent);
 }
@@ -521,12 +632,12 @@ body{min-height:100dvh}
 
 /* Go to payment button */
 .go-payment-btn{
-  width:100%;padding:16px;border-radius:var(--radius);border:none;
+  width:100%;padding:18px;border-radius:var(--radius);border:none;
   background:var(--accent);color:#111;
-  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:800;
+  font-family:'DM Sans',sans-serif;font-size:18px;font-weight:800;
   cursor:pointer;transition:opacity .15s;
   display:flex;align-items:center;justify-content:center;gap:8px;
-  -webkit-tap-highlight-color:transparent;margin-top:6px;
+  -webkit-tap-highlight-color:transparent;margin-top:8px;
 }
 .go-payment-btn:active{opacity:.8}
 .go-payment-btn:disabled{opacity:.4;cursor:not-allowed;background:var(--card2);color:var(--mute);border:1.5px solid var(--border)}
@@ -547,12 +658,18 @@ body{min-height:100dvh}
    v2 redesign: setup card / big pay buttons / hour stepper / chip delete
    ────────────────────────────────────────────── */
 
-/* ── Setup card (replaces cost-card visually) ── */
+/* ── Setup card (Apple-style: white, elegant shadow) ── */
 .setup-card{
-  background:linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%);
-  border:2px solid #A4D65E;
-  border-radius:20px;padding:24px 20px;margin:0 auto 18px;max-width:100%;
-  box-shadow:0 8px 24px rgba(164, 214, 94, 0.15), 0 4px 12px rgba(85, 139, 47, 0.08);
+  background:var(--card);
+  border:1px solid var(--border-soft);
+  border-radius:18px;padding:16px 14px;margin:0 auto 12px;max-width:100%;
+  box-shadow:var(--shadow-lift);
+}
+@media (min-width:480px){
+  .setup-card{padding:20px 16px;margin:0 auto 14px}
+}
+@media (min-width:640px){
+  .setup-card{padding:24px 20px;margin:0 auto 18px}
 }
 .setup-head{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -560,23 +677,22 @@ body{min-height:100dvh}
   margin-bottom:16px;
 }
 .setup-card.collapsed .setup-head{margin-bottom:0}
-.setup-title{font-size:20px;font-weight:900;color:#1B5E20;flex:0 0 auto;letter-spacing:-0.3px}
+.setup-title{font-size:21px;font-weight:600;color:var(--ink);flex:0 0 auto;letter-spacing:-0.02em}
 .setup-collapsed-summary{
   display:none;flex:1;text-align:right;
-  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:800;color:#558B2F;
+  font-family:inherit;font-size:14px;font-weight:500;color:var(--soft);
 }
 .setup-collapsed-summary .t{margin-left:12px}
-.setup-collapsed-summary b{color:#A4D65E;font-weight:900}
+.setup-collapsed-summary b{color:var(--ink);font-weight:600}
 .setup-card.collapsed .setup-collapsed-summary{display:flex}
 .setup-toggle{
-  background:linear-gradient(135deg, #A4D65E 0%, #9CCC65 100%);border:none;color:#1B5E20;
-  border-radius:12px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;
-  cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+  background:var(--card2);border:1px solid var(--border-soft);color:var(--soft);
+  border-radius:980px;padding:7px 14px;font-family:inherit;font-size:13px;font-weight:500;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
   -webkit-tap-highlight-color:transparent;flex:0 0 auto;
-  box-shadow:0 4px 12px rgba(164, 214, 94, 0.3);
-  transition:all .2s ease;
+  transition:background .15s;
 }
-.setup-toggle:active{transform:scale(0.97)}
+.setup-toggle:active{background:var(--input);opacity:.85}
 .setup-toggle .chev{transition:transform .2s;display:inline-block}
 .setup-card.collapsed .setup-toggle .chev{transform:rotate(-90deg)}
 .setup-card.collapsed .setup-body{display:none}
@@ -584,91 +700,110 @@ body{min-height:100dvh}
 .setup-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:14px 16px;margin-bottom:16px;
 }
-.stp-field{
-  display:flex;flex-direction:column;gap:8px;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
-  border:2px solid #C8E6A0;
-  border-radius:14px;padding:14px 16px;
-  box-shadow:0 2px 8px rgba(164, 214, 94, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.8);
-  transition:all .2s ease;
+.setup-grid-4col{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px 12px;margin-bottom:12px;
 }
-.stp-field label{font-size:13px;font-weight:800;color:#558B2F;letter-spacing:.02em;text-transform:uppercase}
-.stp-field-row{display:flex;align-items:center;gap:10px}
+@media (min-width:480px){
+  .setup-grid-4col{grid-template-columns:repeat(4,1fr);gap:12px 14px;margin-bottom:14px}
+}
+@media (min-width:640px){
+  .setup-grid-4col{grid-template-columns:repeat(4,1fr);gap:14px 16px;margin-bottom:16px}
+}
+.stp-field{
+  display:flex;flex-direction:column;gap:6px;
+  background:var(--card);
+  border:1px solid var(--border-soft);
+  border-radius:12px;padding:12px 14px;
+  box-shadow:var(--shadow-card);
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.stp-field label{font-size:12px;font-weight:500;color:var(--mute);letter-spacing:0;text-transform:none}
+.stp-field-row{display:flex;align-items:baseline;gap:8px}
 .stp-field input{
   flex:1;background:transparent;border:none;outline:none;
-  color:#1B5E20;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:900;
+  border-radius:0;
+  color:var(--ink);font-family:inherit;font-size:22px;font-weight:600;letter-spacing:-0.02em;
   padding:0;text-align:left;width:100%;min-width:0;
 }
+.stp-field input:focus{
+  background:transparent;
+}
+/* ✅ Readonly input — สีเทาอ่อน บอกว่าพิมพ์ไม่ได้ */
+.stp-field input[readonly]{
+  background:transparent;color:var(--mute);cursor:not-allowed;
+}
+.stp-field input[readonly]:focus{background:transparent}
+.stp-field input::placeholder{color:var(--mute);opacity:.6}
 .stp-field input::-webkit-outer-spin-button,
 .stp-field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.stp-field .suf{font-size:13px;font-weight:800;color:#9CCC65;flex:0 0 auto}
+.stp-field .suf{font-size:14px;font-weight:500;color:var(--mute);flex:0 0 auto}
 .stp-field:focus-within{
-  border-color:#A4D65E;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
-  box-shadow:0 4px 16px rgba(164, 214, 94, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  border-color:var(--blue);
+  background:var(--card);
+  box-shadow:0 0 0 3px rgba(0, 102, 204, 0.12);
 }
 .stp-field.need-fill{
-  border-color:#BDFF00;background:linear-gradient(135deg, #FFFEF0 0%, #FFFDE7 100%);
-  animation:nudge .8s ease-in-out infinite;
+  border-color:#fde68a;background:var(--yellow-bg);
 }
-.stp-field.need-fill label{color:#F57F17;font-weight:900}
-@keyframes nudge{
-  0%,100%{box-shadow:0 0 0 0 #FBC02D00}
-  50%{box-shadow:0 0 0 4px #FBC02D40}
-}
+.stp-field.need-fill label{color:#b45309;font-weight:600}
 
 .setup-totals{
-  display:flex;flex-direction:column;gap:10px;
-  padding:16px 12px 8px;border-top:2px solid #C8E6A0;margin-top:8px;
+  display:flex;flex-direction:column;gap:8px;
+  padding:14px 4px 4px;border-top:1px solid var(--border-soft);margin-top:14px;
 }
 .stp-row{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
-  font-size:14px;color:#558B2F;font-weight:600;
+  font-size:14px;color:var(--soft);font-weight:400;
 }
-.stp-row small{color:#9CCC65;font-size:11px;font-weight:700;margin-left:8px;font-family:'IBM Plex Mono',monospace}
-.stp-row b{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:900;color:#1B5E20}
-.stp-row.big{font-size:15px;color:#1B5E20;font-weight:800;padding-top:8px;margin-top:4px;border-top:2px dashed #C8E6A0}
-.stp-row.big b{font-size:26px;font-weight:900}
-.stp-row.big.accent{color:#A4D65E}
-.stp-row.big.accent b{font-size:32px;color:#A4D65E;font-weight:900}
+.stp-row small{color:var(--mute);font-size:12px;font-weight:400;margin-left:6px;font-family:inherit}
+.stp-row b{font-family:inherit;font-size:16px;font-weight:500;color:var(--ink);letter-spacing:-0.01em}
+.stp-row.big{font-size:14px;color:var(--ink);font-weight:500;padding-top:10px;margin-top:6px;border-top:1px solid var(--border-soft)}
+.stp-row.big b{font-size:18px;font-weight:600;letter-spacing:-0.02em}
+.stp-row.big.accent{color:var(--ink)}
+.stp-row.big.accent b{font-size:22px;color:var(--ink);font-weight:600;letter-spacing:-0.02em}
 
 /* ราคาที่จะแจ้ง (override) */
 .stp-override{
-  background:linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%);
-  border:2px solid #A4D65E;
-  border-radius:14px;padding:16px 18px;margin-top:12px;
-  box-shadow:0 4px 12px rgba(164, 214, 94, 0.15), 0 2px 6px rgba(85, 139, 47, 0.08);
+  background:var(--card2);
+  border:1px solid var(--border-soft);
+  border-radius:14px;padding:14px 16px;margin-top:14px;
 }
-.ov-label{font-size:14px;font-weight:900;color:#1B5E20;margin-bottom:10px;text-transform:uppercase;letter-spacing:.02em}
-.ov-label small{font-weight:700;color:#9CCC65;margin-left:6px;font-size:12px}
+.ov-label{font-size:13px;font-weight:500;color:var(--mute);margin-bottom:10px;text-transform:none;letter-spacing:0}
+.ov-label small{font-weight:400;color:var(--mute);margin-left:6px;font-size:12px}
 .ov-row{display:flex;align-items:center;gap:10px}
 .ov-row input{
-  flex:1;background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
-  border:2px solid #A4D65E;border-radius:10px;
-  padding:12px 16px;color:#1B5E20;
-  font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:900;
+  flex:1;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;color:var(--ink);
+  font-family:inherit;font-size:20px;font-weight:600;letter-spacing:-0.02em;
   text-align:right;outline:none;
-  transition:all .2s ease;
-  box-shadow:0 2px 8px rgba(164, 214, 94, 0.1);
+  transition:border-color .2s, box-shadow .2s;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;
+}
+/* ✅ Placeholder เล็กกว่า text เพื่อไม่ให้ล้นใน mobile */
+.ov-row input::placeholder{font-size:13px;font-weight:400;color:var(--mute)}
+@media (max-width:480px){
+  .ov-row input{font-size:18px;padding:9px 12px;}
+  .ov-row input::placeholder{font-size:12px;}
 }
 .ov-row input:focus{
-  border-color:#9CCC65;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
-  box-shadow:0 4px 16px rgba(164, 214, 94, 0.25);
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 113, 227, 0.12);
 }
 .ov-row input::-webkit-outer-spin-button,
 .ov-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.ov-unit{font-size:14px;font-weight:900;color:#A4D65E}
-.ov-hint{font-size:12px;color:#9CCC65;margin-top:8px;font-weight:600}
-.ov-hint.active{color:#558B2F;font-weight:800}
+.ov-unit{font-size:14px;font-weight:500;color:var(--mute)}
+.ov-hint{font-size:12px;color:var(--mute);margin-top:8px;font-weight:400}
+.ov-hint.active{color:var(--soft);font-weight:500}
 
 /* กองกลาง row */
 .gongklang-row{
-  margin-top:8px;padding:8px 12px;border-radius:8px;
-  background:var(--accent);color:#111;
-  font-size:13px;font-weight:700;text-align:center;
+  margin-top:10px;padding:10px 14px;border-radius:10px;
+  background:var(--accent-light);color:var(--accent-dark);
+  font-size:13px;font-weight:500;text-align:center;
+  border:1px solid rgba(48,161,78,0.2);
 }
-.gongklang-row b{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:800}
+.gongklang-row b{font-family:inherit;font-size:15px;font-weight:600;letter-spacing:-0.01em}
 
 /* Sub-tabs (3 columns) */
 .sub-tabs.three{grid-template-columns:repeat(3,1fr)}
@@ -678,53 +813,87 @@ body{min-height:100dvh}
   .sub-tabs.three .sub-tab{padding:13px 8px;font-size:14px;gap:6px}
 }
 
+/* ── Date picker card (รายชื่อ tab) ── */
+.date-picker-card{
+  background:var(--card);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+  box-shadow:var(--shadow-tint-blue);
+}
+.date-picker-label{
+  display:block;font-size:13px;font-weight:500;color:var(--mute);margin-bottom:10px;
+  letter-spacing:0;
+}
+.date-picker-card input[type="date"]{
+  width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--card);color:var(--ink);font-family:inherit;
+  font-size:16px;font-weight:500;outline:none;letter-spacing:-0.01em;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:border-color .2s, box-shadow .2s;
+}
+.date-picker-card input[type="date"]:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+
 /* ── Paste card (รายชื่อ tab) ── */
 .paste-card{
-  background:var(--card);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;
+  background:var(--card);border:1px solid var(--border-soft);
+  border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;
+  box-shadow:var(--shadow-card);
 }
-.paste-label{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:8px}
+.history-card{box-shadow:var(--shadow-card)!important}
+.paste-label{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:10px;letter-spacing:-0.01em}
 .paste-card textarea{
-  width:100%;background:var(--input);border:1.5px solid var(--border);border-radius:var(--rsm);
-  padding:12px 14px;color:var(--ink);
-  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;line-height:1.5;
-  outline:none;resize:vertical;min-height:120px;
+  width:100%;background:var(--card2);border:1px solid var(--border-soft);border-radius:10px;
+  padding:14px 16px;color:var(--ink);
+  font-family:inherit;font-size:15px;font-weight:400;line-height:1.5;letter-spacing:-0.01em;
+  outline:none;resize:vertical;min-height:130px;
+  transition:border-color .2s, box-shadow .2s;
 }
-.paste-card textarea:focus{border-color:var(--accent)}
+.paste-card textarea:focus{
+  border-color:var(--blue);background:var(--card);
+  box-shadow:0 0 0 3px rgba(0, 113, 227, 0.12);
+}
 .paste-card textarea::placeholder{color:var(--mute);font-weight:400}
 .paste-btn{
-  width:100%;margin-top:10px;padding:14px;border:none;border-radius:var(--radius);
-  background:var(--accent);color:#111;
-  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;
-  transition:opacity .15s;-webkit-tap-highlight-color:transparent;
+  width:100%;margin-top:12px;padding:14px;border:none;border-radius:12px;
+  background:var(--grad-primary);color:#fff;
+  font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;letter-spacing:-0.01em;
+  transition:background .15s, transform .15s;-webkit-tap-highlight-color:transparent;
+  box-shadow:var(--shadow-blue);
 }
-.paste-btn:active{opacity:.85}
-.paste-hint{font-size:11px;color:var(--mute);margin-top:8px;text-align:center;font-style:italic}
+.paste-btn:hover{background:var(--grad-primary-hover)}
+.paste-btn:active{background:var(--grad-primary-active);transform:scale(0.98)}
+.paste-hint{font-size:12px;color:var(--mute);margin-top:10px;text-align:center;font-style:normal}
 
 /* ── Player list mini (รายชื่อ tab) ── */
 .player-list{
   display:flex;flex-direction:column;gap:4px;
-  background:var(--card);border:1.5px solid var(--border);
-  border-radius:var(--rsm);padding:6px;margin-top:10px;min-height:80px;
+  background:var(--card);border:1px solid var(--border-soft);
+  border-radius:12px;padding:6px;margin-top:10px;min-height:80px;
+  box-shadow:var(--shadow-card);
 }
-.player-list .empty{padding:24px 12px;font-size:13px}
+.player-list .empty{padding:28px 16px;font-size:14px;color:var(--mute)}
 .player-list-item{
-  display:grid;grid-template-columns:32px 1fr 32px;align-items:center;gap:8px;
-  padding:10px 12px;background:var(--card2);border-radius:8px;
-  font-size:15px;
+  display:grid;grid-template-columns:32px 1fr 32px;align-items:center;gap:10px;
+  padding:10px 12px;background:transparent;border-radius:8px;
+  font-size:15px;letter-spacing:-0.01em;
 }
+.player-list-item:hover{background:var(--card2)}
 .player-list-item .num{
-  font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--mute);
+  font-family:inherit;font-size:13px;font-weight:500;color:var(--mute);
   text-align:center;
 }
-.player-list-item .name{font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.player-list-item .name{font-weight:500;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .player-list-item .del{
   width:28px;height:28px;border-radius:50%;border:none;padding:0;
   background:transparent;color:var(--mute);font-size:13px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   -webkit-tap-highlight-color:transparent;
 }
-.player-list-item .del:active{background:#ef444420;color:var(--red)}
+.player-list-item .del:active{background:#ff3b3015;color:var(--red)}
 
 /* iPad: player-list 2 columns */
 @media (min-width:768px){
@@ -733,26 +902,39 @@ body{min-height:100dvh}
 
 /* ── Mismatch banner (รับเงิน tab) ── */
 .mismatch-banner{
-  padding:12px 14px;border-radius:var(--rsm);margin-bottom:12px;
-  font-size:13px;font-weight:700;line-height:1.5;text-align:center;
+  padding:12px 14px;border-radius:10px;margin-bottom:12px;
+  font-size:13px;font-weight:500;line-height:1.5;text-align:center;letter-spacing:-0.01em;
 }
 .mismatch-banner.warn{
-  background:#FBC02D18;color:#FBC02D;border:1.5px solid #FBC02D80;
+  background:#fff4d6;color:#92651b;border:1px solid #fde68a;
 }
 .mismatch-banner.ok{
-  background:#22c55e18;color:#bbf7d0;border:1.5px solid #22c55e80;
+  background:var(--accent-light);color:var(--accent-dark);border:1px solid rgba(48,161,78,0.2);
 }
-.mismatch-banner b{font-weight:800;font-family:'IBM Plex Mono',monospace}
+.mismatch-banner b{font-weight:600;font-family:inherit}
 
 .big-share-btn{
-  width:100%;margin-top:14px;padding:18px;border:none;border-radius:var(--radius);
-  background:#06c755;color:#fff;
-  font-family:'DM Sans',sans-serif;font-size:17px;font-weight:800;
-  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  transition:opacity .15s;-webkit-tap-highlight-color:transparent;line-height:1.2;
+  width:100%;margin-top:16px;padding:16px;border:none;border-radius:12px;
+  background:var(--grad-line);color:#fff;
+  font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-0.01em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  transition:background .15s, transform .15s;-webkit-tap-highlight-color:transparent;line-height:1.3;
+  box-shadow:0 6px 16px rgba(6,199,85,0.25);
 }
-.big-share-btn:active{opacity:.85}
-.big-share-btn small{font-size:11px;font-weight:600;opacity:.85}
+.big-share-btn:hover{background:linear-gradient(135deg, #05a74e, #008f4d)}
+.big-share-btn:active{background:linear-gradient(135deg, #048a3f, #007340);transform:scale(0.98)}
+.big-share-btn small{font-size:12px;font-weight:400;opacity:.9}
+
+.big-copy-btn{
+  width:100%;margin-top:10px;padding:16px;border:1px solid var(--border);border-radius:12px;
+  background:var(--card);color:var(--ink);
+  font-family:inherit;font-size:16px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  transition:background .15s;-webkit-tap-highlight-color:transparent;line-height:1.3;
+}
+.big-copy-btn:hover{background:var(--card2)}
+.big-copy-btn:active{background:var(--input)}
+.big-copy-btn small{font-size:12px;font-weight:400;color:var(--mute)}
 
 /* ── Member chip × delete ── */
 .member-chip .del-x{
@@ -761,7 +943,7 @@ body{min-height:100dvh}
   background:rgba(255,255,255,.06);color:var(--mute);
   font-size:11px;font-weight:700;line-height:1;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
-  -webkit-tap-highlight-color:transparent;transition:all .15s;opacity:.6;
+  -webkit-tap-highlight-color:transparent;transition:background .15s, color .15s, opacity .15s;opacity:.6;
 }
 .member-chip .del-x:hover,.member-chip .del-x:active{
   background:#ef4444;color:#fff;opacity:1;
@@ -769,130 +951,234 @@ body{min-height:100dvh}
 .member-chip.selected .del-x{background:#1118;color:#fffa}
 .member-chip.selected .del-x:hover{background:#ef4444;color:#fff}
 
-/* ── Player card (large, button-first) ── */
+/* ── Player card (Apple-style: white, hairline, subtle) ── */
 .player-card{
-  background:var(--card);border:1.5px solid var(--border);
-  border-radius:var(--radius);padding:14px;
+  background:var(--card);border:1px solid var(--border-soft);
+  border-radius:var(--radius);padding:12px 14px;
   display:flex;flex-direction:column;gap:10px;
-  transition:border-color .2s;position:relative;
+  position:relative;
+  box-shadow:var(--shadow-card);
+  transition:border-color .2s;
 }
-.player-card.paid-cash{border-color:var(--green)}
-.player-card.paid-transfer{border-color:var(--blue)}
-.player-card.paid-both{border-color:var(--accent)}
+.player-card.paid-cash,
+.player-card.paid-transfer,
+.player-card.paid-both{
+  border:2px solid #0066cc;background:var(--grad-paid);
+  box-shadow:0 4px 14px rgba(0, 102, 204, 0.25), 0 1px 3px rgba(88, 86, 214, 0.15);
+}
 
 .pc-head{
   display:flex;align-items:center;gap:10px;
 }
 .pc-num{
-  font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:var(--mute);
-  width:24px;text-align:center;flex:0 0 auto;
+  font-family:inherit;font-size:13px;font-weight:500;color:var(--mute);
+  width:22px;text-align:center;flex:0 0 auto;
 }
 .pc-name{
-  flex:1;font-size:19px;font-weight:800;color:var(--ink);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;
+  flex:1;font-size:17px;font-weight:500;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;letter-spacing:-0.01em;
 }
 .pc-amt{
-  font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:800;color:var(--accent);
-  flex:0 0 auto;white-space:nowrap;
+  font-family:inherit;font-size:17px;font-weight:600;color:var(--ink);
+  flex:0 0 auto;white-space:nowrap;letter-spacing:-0.01em;
 }
-.pc-amt small{font-size:11px;font-weight:700;opacity:.7;margin-left:2px}
+.pc-amt small{font-size:12px;font-weight:500;color:var(--mute);margin-left:2px}
 .pc-del{
   position:absolute;top:6px;right:6px;
-  width:26px;height:26px;border-radius:50%;border:none;padding:0;
-  background:transparent;color:var(--mute);font-size:14px;cursor:pointer;
+  width:24px;height:24px;border-radius:50%;border:none;padding:0;
+  background:transparent;color:var(--mute);font-size:13px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   -webkit-tap-highlight-color:transparent;opacity:.5;
 }
-.pc-del:active{background:#ef444420;color:var(--red);opacity:1}
+.pc-del:active{background:#ff3b3015;color:var(--red);opacity:1}
 
-/* BIG pay buttons */
+/* Pay buttons (iOS toggle style — segmented look) */
 .pc-pay-row{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px;
 }
 .pay-btn-big{
-  padding:18px 12px;border-radius:var(--radius);
-  border:2px solid var(--border);background:var(--input);color:var(--soft);
-  font-family:'DM Sans',sans-serif;font-size:16px;font-weight:800;
-  cursor:pointer;transition:all .15s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  min-height:60px;-webkit-tap-highlight-color:transparent;user-select:none;
+  padding:11px 10px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card2);color:var(--soft);
+  font-family:inherit;font-size:15px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s, color .15s, border-color .15s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  min-height:44px;-webkit-tap-highlight-color:transparent;user-select:none;
 }
-.pay-btn-big:active{transform:scale(.97)}
-.pay-btn-big.cash.on{background:var(--gbg);border-color:var(--green);color:var(--gtxt)}
-.pay-btn-big.transfer.on{background:var(--bbg);border-color:var(--blue);color:var(--btxt)}
-.pay-btn-big .ic{font-size:22px;line-height:1}
+.pay-btn-big:active{background:var(--input);opacity:.85}
+.pay-btn-big.cash.on,
+.pay-btn-big.transfer.on{
+  background:var(--grad-primary);border-color:transparent;color:#fff;font-weight:600;
+  box-shadow:0 4px 12px rgba(0, 102, 204, 0.25);
+}
+.pay-btn-big .ic{font-size:16px;line-height:1}
 
 /* Edit section in setup card (when a complete session is being edited) */
 .setup-card.locked .stp-field input{color:var(--mute)}
 
-/* Court Breakdown Section (ใหม่) */
+/* Court Breakdown Section (Apple-style) */
 .court-breakdown-section{
-  margin:18px 0 14px;padding:16px;
-  background:linear-gradient(135deg, #F9FDF5 0%, #F5FDF0 100%);
-  border:2px solid #C8E6A0;
+  margin:14px 0;padding:14px;
+  background:var(--card2);
+  border:1px solid var(--border-soft);
   border-radius:14px;
-  box-shadow:0 2px 8px rgba(164, 214, 94, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.8);
 }
 .breakdown-label{
-  font-size:14px;font-weight:900;color:#558B2F;
-  letter-spacing:.08em;text-transform:uppercase;
-  margin-bottom:12px;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:600;color:var(--ink);
+  letter-spacing:-0.01em;text-transform:none;
+  margin-bottom:12px;font-family:inherit;
 }
-.court-items-wrapper{margin-bottom:12px}
+.court-items-wrapper{margin-bottom:8px}
 .breakdown-header{
-  display:grid;grid-template-columns:1fr 100px 36px;gap:10px;
-  font-size:12px;font-weight:800;color:#9CCC65;
-  text-transform:uppercase;padding:10px 0;border-bottom:2px solid #C8E6A0;
-  font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;
+  display:grid;grid-template-columns:60px 1fr 36px;gap:10px;
+  font-size:12px;font-weight:500;color:var(--mute);
+  text-transform:none;padding:8px 0;border-bottom:1px solid var(--border-soft);
+  font-family:inherit;letter-spacing:0;
 }
-.court-items{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.breakdown-header > span{text-align:center}
+@media (max-width:480px){
+  .breakdown-header{grid-template-columns:50px 1fr 36px;gap:8px;font-size:11px;}
+}
+.court-items{display:flex;flex-direction:column;gap:6px;margin:8px 0}
 .court-item{
-  display:grid;grid-template-columns:1fr 100px 36px;gap:10px;align-items:center;
-  padding:2px;
+  display:grid;grid-template-columns:60px 1fr 36px;gap:10px;align-items:center;
+  padding:2px;min-height:48px;
 }
-.court-item .court-name,
-.court-item .court-hours{
-  padding:11px 12px;border:2px solid #C8E6A0;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F9FDF5 100%);
+@media (max-width:480px){
+  .court-item{grid-template-columns:50px 1fr 36px;gap:8px;}
+}
+.court-hours-wrapper{
+  display:flex;align-items:center;gap:4px;
+  background:var(--card);
+  border:1px solid var(--border);
   border-radius:10px;
-  color:#1B5E20;font-size:15px;font-weight:800;
-  font-family:'IBM Plex Mono',monospace;outline:none;
-  transition:all .2s ease;
-  box-shadow:0 2px 6px rgba(164, 214, 94, 0.08);
+  padding:6px;
+  min-width:0;
 }
-.court-item .court-name{text-align:center}
-.court-item .court-hours{text-align:right}
-.court-item .court-name:focus,
-.court-item .court-hours:focus{
-  border-color:#A4D65E;
-  background:linear-gradient(135deg, #FFFFFF 0%, #F1F8E9 100%);
-  box-shadow:0 4px 12px rgba(164, 214, 94, 0.2);
+@media (max-width:480px){
+  .court-hours-wrapper{padding:4px;gap:2px;}
+}
+.court-item .court-name{
+  padding:9px 6px;border:1px solid var(--border);
+  background:var(--card);
+  border-radius:10px;
+  color:var(--ink);font-size:15px;font-weight:500;
+  font-family:inherit;outline:none;letter-spacing:-0.01em;
+  transition:border-color .15s, box-shadow .15s;
+  text-align:center;text-align-last:center;
+  min-width:0;cursor:pointer;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+  touch-action:manipulation;
+}
+.court-item select.court-name{
+  background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2386868b' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 6px center;
+  padding-right:18px;
+}
+.court-item .court-name:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+.court-item .court-hours-input{
+  flex:1;min-width:0;
+  padding:9px 10px;border:1px solid var(--border);
+  background:var(--card);
+  border-radius:10px;
+  color:var(--ink);font-size:15px;font-weight:500;
+  font-family:inherit;outline:none;letter-spacing:-0.01em;
+  text-align:center;
+  transition:border-color .15s, box-shadow .15s;
+  touch-action:manipulation;
+}
+@media (max-width:480px){
+  .court-item .court-hours-input{padding:8px;font-size:14px;}
+}
+.court-item .court-hours-input:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 113, 227, 0.12);
+}
+.court-item .court-hours-input{
+  flex:1;min-width:0;
+  padding:9px 10px;border:1px solid var(--border);
+  background:var(--card);
+  border-radius:10px;
+  color:var(--ink);font-size:15px;font-weight:500;letter-spacing:-0.01em;
+  font-family:inherit;outline:none;
+  text-align:center;
+  transition:border-color .15s, box-shadow .15s;
+  touch-action:manipulation;
+}
+@media (max-width:480px){
+  .court-item .court-hours-input{padding:8px;font-size:14px;}
+}
+.court-item .court-hours-input:focus{
+  border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(0, 102, 204, 0.12);
+}
+.court-item .court-hours-input::-webkit-outer-spin-button,
+.court-item .court-hours-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0;
+}
+.court-hours-display{
+  flex:1;min-width:0;
+  padding:6px 10px;
+  background:transparent;border:none;
+  border-radius:6px;
+  color:var(--ink);font-size:16px;font-weight:500;letter-spacing:-0.01em;
+  font-family:inherit;
+  text-align:center;
+  display:flex;align-items:center;justify-content:center;
+}
+.court-hours-btn{
+  width:32px;height:32px;border:none;outline:none;
+  background:var(--card2);color:var(--ink);
+  border-radius:8px;font-size:18px;font-weight:500;
+  cursor:pointer;transition:background .15s;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
+}
+.court-hours-btn:hover{background:var(--input)}
+.court-hours-btn:active{background:var(--border)}
+.court-hours-btn:focus{outline:none}
+@media (max-width:480px){
+  .court-hours-btn{width:28px;height:28px;font-size:16px;}
+  .court-hours-display{padding:4px 8px;font-size:15px;}
 }
 .btn-del-court{
-  padding:8px 0;border:none;background:transparent;
-  color:#C8E6A0;font-size:20px;cursor:pointer;
-  font-weight:800;transition:all .2s ease;-webkit-tap-highlight-color:transparent;
+  padding:8px 0;border:none;outline:none;background:transparent;
+  color:var(--mute);font-size:18px;cursor:pointer;
+  font-weight:400;transition:color .2s;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+  touch-action:manipulation;-webkit-user-select:none;
+  -webkit-appearance:none;-moz-appearance:none;appearance:none;
 }
-.btn-del-court:active{color:#E53935;transform:scale(1.2)}
+.btn-del-court:focus{outline:none}
+.btn-del-court:active{color:var(--red);opacity:.7}
 .btn-add-court{
-  width:100%;padding:12px;border:2px dashed #A4D65E;
-  background:linear-gradient(135deg, transparent, rgba(164, 214, 94, 0.05));
+  width:100%;padding:12px;border:1px dashed var(--border);
+  background:transparent;
   border-radius:10px;
-  color:#558B2F;font-size:15px;font-weight:800;
-  cursor:pointer;transition:all .2s ease;-webkit-tap-highlight-color:transparent;
-  font-family:'DM Sans',sans-serif;
+  color:var(--blue);font-size:14px;font-weight:500;letter-spacing:-0.01em;
+  cursor:pointer;transition:background .15s, border-color .15s;
+  -webkit-tap-highlight-color:transparent;
+  font-family:inherit;
 }
-.btn-add-court:active{
-  background:linear-gradient(135deg, #F1F8E9, #C8E6A0);
-  border-color:#9CCC65;
-  transform:scale(0.98);
+.btn-add-court:hover{background:var(--card2);border-color:var(--blue)}
+.btn-add-court:active{background:var(--input)}
+
+/* Mobile layout: 4-column grid becomes 2 columns on small screens */
+@media (max-width:520px){
+  .setup-grid-4col{grid-template-columns:repeat(2,1fr)}
 }
 
 /* iPad layout: payment cards in 2 columns */
 @media (min-width:768px){
-  .setup-grid{grid-template-columns:repeat(3,1fr)}
+  .setup-grid{grid-template-columns:repeat(2,1fr)}
+  .setup-grid-4col{grid-template-columns:repeat(4,1fr)}
   .player-table{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-  .pay-btn-big{font-size:17px;min-height:68px}
+  .pay-btn-big{font-size:15px;min-height:48px}
 }
 @media (min-width:1100px){
   .player-table{grid-template-columns:repeat(3,1fr)}
@@ -902,51 +1188,58 @@ body{min-height:100dvh}
    SECTION-SPECIFIC COLOR SCHEMES
    ════════════════════════════════════════════════════════════ */
 
-/* Section 1: Members List - Blue/Dark Blue Theme */
-#section-members {
-  --accent:  #3B82F6;
-  --green:   #1E40AF;
-  --gbg:     #1E3A8A;
-  --gtxt:    #93C5FD;
+/* ── Apple-style section overrides ── */
+#section-members,
+#section-payment {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+#section-members h2,
+#section-members .paste-title,
+#section-members label,
+#section-members .player-name,
+#section-payment h2,
+#section-payment .payment-title,
+#section-payment .payment-header,
+#section-payment label,
+#section-payment .s-lbl {
+  font-weight: 600;
+  color: var(--ink);
 }
 #section-members .paste-btn,
 #section-members .add-form .add-btn {
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  background: var(--blue);
+  color: #fff;font-weight: 500;
 }
 #section-members .paste-card,
 #section-members .player-list {
-  border-color: #3B82F6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-}
-
-/* Section 3: Payment Receive - Pink Theme */
-#section-payment {
-  --accent:  #EC4899;
-  --green:   #BE185D;
-  --gbg:     #831843;
-  --gtxt:    #F5A6D3;
+  border-color: var(--border-soft);
+  box-shadow: var(--shadow-card);
+  background: var(--card);
 }
 #section-payment .payment-header {
-  border-color: #EC4899;
-}
-#section-payment .pay-btn-big.cash.on {
-  background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%);
-  border-color: #EC4899;
+  border-color: var(--border-soft);
 }
 #section-payment .player-table {
-  background: linear-gradient(135deg, #FDF2F8 0%, #FCE7F3 100%);
+  background: transparent;
 }
 #section-payment .player-row {
-  border-left-color: #EC4899;
+  border-left-color: var(--accent);
 }
 #section-payment .pay-btn-big {
-  border-color: #EC4899;
-  color: #EC4899;
-  transition: all .2s ease;
+  border-color: var(--border);
+  color: var(--soft);
+}
+#section-payment .pay-btn-big.cash.on,
+#section-payment .pay-btn-big.transfer.on {
+  background: var(--grad-primary);
+  border-color: transparent;
+  color: #fff;
+  box-shadow:0 4px 12px rgba(0, 102, 204, 0.25);
 }
 #section-payment .pay-btn-big:active {
-  background: #EC4899;
-  color: #fff;
+  opacity:.85;
 }
 
 </style>
@@ -963,11 +1256,7 @@ body{min-height:100dvh}
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
     </div>
-    <div class="date-box">
-      <div class="date-big" id="date-big">—</div>
-      <div class="date-sub">วันที่เก็บเงิน</div>
-    </div>
-    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติ">📋</button>
+    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
   </div>
 
   <!-- ============ TAB: COLLECT ============ -->
@@ -1001,9 +1290,15 @@ body{min-height:100dvh}
 
     <!-- ════════════════ Section: รายชื่อ ════════════════ -->
     <div id="section-members">
+      <!-- 0. Date picker — เลือกวันที่จัดก๊วน -->
+      <div class="date-picker-card">
+        <label for="session-date-input" class="date-picker-label">📅 เลือกวันที่จัดก๊วน</label>
+        <input type="date" id="session-date-input" onchange="changeSessionDate(this.value)"/>
+      </div>
+
       <!-- 1. paste จาก LINE -->
       <div class="paste-card">
-        <div class="paste-label">📋 paste รายชื่อจาก LINE</div>
+        <div class="paste-label">📋 นำเข้ารายชื่อจาก Line</div>
         <textarea id="paste-input" rows="6" placeholder="วางข้อความจาก LINE ที่นี่...&#10;เช่น&#10;1. กิ๊ฟ&#10;2. กฤต&#10;3. โบว์&#10;..." autocomplete="off"></textarea>
         <button class="paste-btn" onclick="addPlayersFromPaste()">📥 เพิ่มผู้เล่น (ทับของเดิม)</button>
         <div class="paste-hint" id="paste-hint">ระบบจะตัด "1.", "2.", emoji header ออกอัตโนมัติ</div>
@@ -1030,66 +1325,53 @@ body{min-height:100dvh}
     <!-- ════════════════ Section: คำนวณราคา ════════════════ -->
     <div id="section-price" style="display:none">
       <div class="setup-card" id="setup-card">
-        <div class="setup-head" onclick="toggleSetup()">
+        <div class="setup-head" style="cursor:default;background:var(--accent-light);padding:14px 16px;border-radius:12px;margin-bottom:16px">
           <div class="setup-title">💰 ตั้งค่ารอบ</div>
-          <div class="setup-collapsed-summary">
-            <span class="t">รวม <b id="c-sum-total">0฿</b></span>
-            <span class="t">เฉลี่ย <b id="c-sum-per">0฿</b>/คน</span>
-          </div>
-          <button class="setup-toggle" type="button" onclick="event.stopPropagation();toggleSetup()">
-            <span class="chev">▼</span><span id="c-toggle-label">ย่อ</span>
-          </button>
         </div>
         <div class="setup-body">
-          <div class="setup-grid">
-            <div class="stp-field">
-              <label>คนที่จะมา</label>
-              <div class="stp-field-row">
-                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric"/>
-                <span class="suf">คน</span>
-              </div>
-            </div>
-            <div class="stp-field">
-              <label>ค่าคอร์ท/ชั่วโมง</label>
-              <div class="stp-field-row">
-                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
-                <span class="suf">฿</span>
-              </div>
-            </div>
-          </div>
-
           <!-- Court Breakdown Section (ใหม่) -->
           <div class="court-breakdown-section">
-            <div class="breakdown-label">🏸 คอร์ท</div>
+            <div class="breakdown-label">🏸 คอร์ท <span id="court-count-label" style="font-weight:400;color:var(--mute);font-size:13px;letter-spacing:0">(จองสนามจำนวน <b id="court-count-num" style="color:var(--blue);font-weight:600">0</b> คอร์ท)</span></div>
             <div class="court-items-wrapper">
               <div class="breakdown-header">
-                <span>ชื่อ</span>
-                <span>ชั่วโมง</span>
+                <span>คอร์ทเลขที่</span>
+                <span>จำนวนชั่วโมง</span>
                 <span></span>
               </div>
               <div id="court-list" class="court-items">
-                <div class="court-item" data-court-id="3">
-                  <input class="court-name" type="text" value="3" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-                  <input class="court-hours" type="number" value="2" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
-                  <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
-                </div>
+                <!-- ✅ Default courts จะถูก render โดย setSetupInputsFromSession() ตอน boot -->
               </div>
             </div>
             <button class="btn-add-court" onclick="addNewCourt()">+ เพิ่มคอร์ท</button>
           </div>
 
-          <div class="setup-grid">
+          <!-- 4-Column Settings Grid -->
+          <div class="setup-grid-4col">
             <div class="stp-field">
-              <label>ลูกแบด/ลูก</label>
+              <label>ค่าคอร์ท/ชั่วโมง</label>
+              <div class="stp-field-row">
+                <input type="number" id="court-rate" value="220" min="0" step="10" inputmode="numeric" onchange="updateCourtCalculation()"/>
+                <span class="suf">บาท</span>
+              </div>
+            </div>
+            <div class="stp-field">
+              <label>จำนวนผู้เล่น</label>
+              <div class="stp-field-row">
+                <input type="number" id="member-est" value="0" min="0" step="1" inputmode="numeric" readonly/>
+                <span class="suf">คน</span>
+              </div>
+            </div>
+            <div class="stp-field">
+              <label>ราคาลูกแบด / ลูก</label>
               <div class="stp-field-row">
                 <input type="number" id="shuttle-price" value="75" min="0" step="5" inputmode="numeric"/>
-                <span class="suf">฿</span>
+                <span class="suf">บาท</span>
               </div>
             </div>
             <div class="stp-field">
               <label>จำนวนลูก</label>
               <div class="stp-field-row">
-                <input type="number" id="shuttle-count" value="0" min="0" step="1" inputmode="numeric"/>
+                <input type="number" id="shuttle-count" placeholder="0" min="0" step="1" inputmode="numeric"/>
                 <span class="suf">ลูก</span>
               </div>
             </div>
@@ -1098,30 +1380,30 @@ body{min-height:100dvh}
           <div class="setup-totals">
             <div class="stp-row">
               <span>ค่าคอร์ท <small id="court-formula"></small></span>
-              <span><b id="court-cost-display">0</b> ฿</span>
+              <span><b id="court-cost-display">0</b> บาท</span>
             </div>
             <div class="stp-row">
               <span>ค่าลูก <small id="shuttle-formula"></small></span>
-              <span><b id="shuttle-cost-display">0</b> ฿</span>
+              <span><b id="shuttle-cost-display">0</b> บาท</span>
             </div>
             <div class="stp-row big total">
               <span>รวมทั้งสิ้น</span>
-              <span><b id="cost-total">0</b> ฿</span>
+              <span><b id="cost-total">0</b> บาท</span>
             </div>
             <div class="stp-row big">
               <span>เฉลี่ย/คน <small id="per-note"></small></span>
-              <span><b id="cost-per-person">0</b> ฿</span>
+              <span><b id="cost-per-person">0</b> บาท</span>
             </div>
             <!-- ปรับยอดที่จะแจ้งจริง — auto ปัดเต็ม 10 · พิมพ์ทับเองได้ -->
             <div class="stp-override">
               <div class="ov-label">📢 ราคาที่จะแจ้ง <small>(ปัดเต็ม 10 · พิมพ์ทับได้)</small></div>
               <div class="ov-row">
                 <input type="number" id="price-override" placeholder="0" min="0" step="5" inputmode="numeric"/>
-                <span class="ov-unit">฿/คน</span>
+                <span class="ov-unit">บาท/คน</span>
               </div>
               <div class="ov-hint" id="ov-hint">ระบบปัดขึ้นเต็ม 10 ให้แล้ว · พิมพ์เพื่อปรับเอง</div>
               <div class="gongklang-row" id="gongklang-row" style="display:none">
-                💰 เก็บเข้ากองกลาง: <b id="gongklang-amt">0</b> ฿
+                💰 เก็บเข้ากองกลาง: <b id="gongklang-amt">0</b> บาท
               </div>
             </div>
           </div>
@@ -1129,6 +1411,10 @@ body{min-height:100dvh}
           <button class="big-share-btn" onclick="sharePriceCurrent()">
             <span>📢 แจ้งราคาก๊วนทาง LINE</span>
             <small>ราคา + QR โอน · ระบบจะให้ยืนยันก่อนส่ง</small>
+          </button>
+          <button class="big-copy-btn" onclick="copyPriceToClipboard()">
+            <span>📋 คัดลอกข้อความสำหรับ LINE</span>
+            <small>สำรองเมื่อ LINE quota เต็ม · พร้อมใช้ทันที</small>
           </button>
         </div>
       </div>
@@ -1147,18 +1433,15 @@ body{min-height:100dvh}
         </div>
         <div class="s-item cash">
           <div class="s-num" id="sum-cash-baht">0<span class="baht">฿</span></div>
-          <div class="s-lbl">💵 เงินสด</div>
+          <div class="s-lbl">💵 เงินสด<br><small style="font-size:11px;font-weight:600;color:var(--mute);margin-top:4px;display:block">จำนวนคน <span id="sum-cash-count">0</span></small></div>
         </div>
         <div class="s-item transfer">
           <div class="s-num" id="sum-transfer-baht">0<span class="baht">฿</span></div>
-          <div class="s-lbl">📲 โอน</div>
+          <div class="s-lbl">📲 โอน<br><small style="font-size:11px;font-weight:600;color:var(--mute);margin-top:4px;display:block">จำนวนคน <span id="sum-transfer-count">0</span></small></div>
         </div>
       </div>
 
-      <div class="section-head-row">
-        <div class="section-head-title">👥 สมาชิกวันนี้</div>
-        <div class="section-head-count" id="player-count-badge">0 คน</div>
-      </div>
+      <div class="section-head-count" id="player-count-badge">ผู้เล่น <span id="total-players">0</span> คน · จ่ายแล้ว <span id="paid-count">0</span> คน · ค้าง <span id="unpaid-count">0</span> คน</div>
       <div class="player-table" id="player-table"></div>
 
       <!-- Share status to LINE -->
@@ -1169,25 +1452,27 @@ body{min-height:100dvh}
         </button>
       </div>
 
-      <!-- Actions -->
+      <!-- Actions (ไม่มีปุ่ม "บันทึก" — auto-save ทุกครั้งที่กด) -->
       <div class="action-row">
-        <button class="btn-save" id="btn-save" onclick="saveSessionNow()">
-          💾 บันทึกรายการ
-        </button>
         <button class="btn-complete" id="btn-complete" onclick="completeSession()" style="display:none">
           🎉 จบรอบ (จ่ายครบแล้ว)
         </button>
-        <button class="btn-clear" onclick="clearSession()">🗑 ล้างรายชื่อทั้งหมด</button>
       </div>
 
       <div class="autosave" id="autosave-label"></div>
     </div><!-- /section-payment -->
+
+    <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.0.3 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
   <div id="view-history" style="display:none">
     <button class="back-btn" onclick="switchTab('collect')">← กลับหน้าเก็บเงิน</button>
-    <h3 style="margin:0 0 12px;font-size:17px;color:var(--ink);font-weight:800">📋 ประวัติการเก็บเงิน</h3>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="font-size:28px">📊</div>
+      <h3 style="margin:0;font-size:17px;color:var(--ink);font-weight:800">ประวัติรับเงิน</h3>
+    </div>
     <div class="history-list" id="history-list">
       <div class="empty">กำลังโหลด...</div>
     </div>
@@ -1217,6 +1502,86 @@ body{min-height:100dvh}
 <div class="toast" id="toast"></div>
 
 <script>
+/* ═══════════════════════════════════════════════════════════════
+   DIAGNOSTIC & RECOVERY COMMANDS (ใช้ใน console)
+   • devCheckStatuses() — ดูสถานะของทุกรอบ
+   • devFixCompletedStatuses() — ซ่อมรอบที่มี completedAt แต่ status ผิด
+   ═══════════════════════════════════════════════════════════════ */
+window.devCheckStatuses = async function(){
+  console.log('🔍 ตรวจสอบสถานะของทุกรอบ...');
+  const snap = await db.collection('payment_sessions')
+    .orderBy('createdAt','desc').limit(100).get();
+  const rows = snap.docs.map(d => {
+    const data = d.data();
+    return {
+      id: d.id,
+      date: data.dateDisplay || data.date,
+      status: data.status,
+      hasCompletedAt: !!data.completedAt,
+      paidCount: data.paidCount || 0,
+      totalCount: data.totalCount || 0,
+      shouldBeComplete: !!data.completedAt && data.status !== 'complete',
+    };
+  });
+  console.table(rows);
+  const broken = rows.filter(r => r.shouldBeComplete);
+  if(broken.length > 0){
+    console.warn(`⚠️ พบ ${broken.length} รอบที่ status ผิด (มี completedAt แต่ status ≠ complete):`);
+    console.table(broken);
+    console.log('💡 รัน devFixCompletedStatuses() เพื่อซ่อมอัตโนมัติ');
+  } else {
+    console.log('✅ ทุกรอบ status ถูกต้อง');
+  }
+  return rows;
+};
+
+window.devFixCompletedStatuses = async function(){
+  if(!confirm('ซ่อมสถานะของรอบที่มี completedAt แต่ status ผิด?\n(เปลี่ยนเป็น "complete")')) return;
+  console.log('🔧 กำลังซ่อมสถานะ...');
+  const snap = await db.collection('payment_sessions')
+    .orderBy('createdAt','desc').limit(100).get();
+  let fixed = 0;
+  for(const doc of snap.docs){
+    const data = doc.data();
+    if(data.completedAt && data.status !== 'complete'){
+      console.log(`🔧 ซ่อม ${doc.id} (${data.dateDisplay || data.date})`);
+      await doc.ref.set({status: 'complete'}, {merge: true});
+      fixed++;
+    }
+  }
+  console.log(`✅ ซ่อมสำเร็จ ${fixed} รอบ`);
+  alert(`ซ่อมเรียบร้อย ${fixed} รอบ — refresh หน้า history เพื่อดูผล`);
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   FORCE RELOAD — แตะ version badge หรือเรียก devReload() ใน console
+   • Unregister service workers (ถ้ามี)
+   • Clear all browser caches
+   • Reload หน้าด้วย cache-busting URL parameter
+   ═══════════════════════════════════════════════════════════════ */
+window.devReload = async function(){
+  console.log('🔄 Force reload — clearing all caches...');
+  try{
+    // 1. Unregister service workers (ถ้ามี)
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+      if(regs.length) console.log(`✅ Unregistered ${regs.length} service worker(s)`);
+    }
+    // 2. Clear all caches
+    if('caches' in window){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      if(keys.length) console.log(`✅ Cleared ${keys.length} cache(s)`);
+    }
+  }catch(e){ console.warn('Cache clear warning:', e); }
+  // 3. Reload with cache-busting param (forces fresh HTML download)
+  const url = new URL(window.location.href);
+  url.searchParams.set('_v', Date.now());
+  console.log('✅ Reloading with cache-bust URL');
+  window.location.replace(url.toString());
+};
+
 /* ================================================================
    CONFIG
    ================================================================ */
@@ -1275,7 +1640,7 @@ function newSession(){
     status:      'open',
     // ── Court Breakdown (ใหม่) — แต่ละคอร์ทมีชั่วโมงแยก
     courtRate:     220,  // default ค่าคอร์ท/ชม.
-    courts:        [{name: '3', hours: 2}],  // court breakdown array (default: 3, then 4, 5, 6...)
+    courts:        [{name: '3', hours: 2}, {name: '4', hours: 2}, {name: '5', hours: 2}],  // court breakdown array (default: 3, 4, 5 with 2 hours each)
     courtFee:      0,    // = total court-hours × courtRate
     shuttlePrice:  75,   // default ค่าลูก/ลูก
     shuttleCount:  0,
@@ -1309,12 +1674,36 @@ function getFloatInput(id, def){
   return isNaN(v) || v < 0 ? (def||0) : v;
 }
 
+/**
+ * Prevent keyboard bounce when typing in court hours input
+ * Blocks default behavior only, lets the value change proceed naturally
+ */
+function preventKeyboardBounce(event){
+  // Allow: backspace, delete, tab, escape, enter
+  if ([8, 9, 27, 13, 46].indexOf(event.keyCode) !== -1 ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+      (event.keyCode === 65 && event.ctrlKey === true) ||
+      (event.keyCode === 67 && event.ctrlKey === true) ||
+      (event.keyCode === 86 && event.ctrlKey === true) ||
+      (event.keyCode === 88 && event.ctrlKey === true) ||
+      (event.keyCode === 90 && event.ctrlKey === true) ||
+      // Allow: home, end, left, right, up, down arrow keys
+      (event.keyCode >= 35 && event.keyCode <= 40)) {
+    return; // These keys are OK, let the input handle them
+  }
+  // For number inputs, allow: 0-9 and decimal point
+  if ((event.shiftKey === false && (event.keyCode >= 48 && event.keyCode <= 57)) ||
+      event.keyCode === 190 || event.keyCode === 110) {
+    return; // Number keys and decimal point are OK
+  }
+}
+
 function getTotalCourtHours(){
   // Sum all court hours from the breakdown
-  const items = document.querySelectorAll('.court-item .court-hours');
+  const items = document.querySelectorAll('.court-item .court-hours-display');
   let total = 0;
-  items.forEach(input => {
-    const val = parseFloat(input.value) || 0;
+  items.forEach(display => {
+    const val = parseFloat(display.textContent) || 0;
     if(val > 0) total += val;
   });
   return total;
@@ -1404,6 +1793,7 @@ function updateAutosaveLabel(mode){
   if(mode==='cloud') el.textContent = `☁️ บันทึกขึ้น cloud แล้ว ${hhmm}`;
   else if(mode==='syncing') el.textContent = `⏳ กำลังบันทึก...`;
   else if(mode==='error') el.textContent = `⚠️ บันทึก cloud ไม่สำเร็จ (local ok)`;
+  else if(mode==='skip') el.textContent = `💾 บันทึก local แล้ว ${hhmm} (รอเพิ่มรายชื่อผู้เล่น ก่อนบันทึก cloud)`;
   else el.textContent = `💾 บันทึก local แล้ว ${hhmm}`;
 }
 
@@ -1414,28 +1804,83 @@ function scheduleCloudSync(){
   _syncTimer = setTimeout(() => { cloudSync().catch(e => console.warn('sync', e)); }, 800);
 }
 
+/* ✅ Safety net — ถ้า user refresh/ปิดหน้า ขณะมี pending sync → force flush */
+window.addEventListener('beforeunload', (e) => {
+  if(_syncTimer){
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+    // Synchronous-like attempt to push pending changes before unload
+    cloudSync().catch(() => {});
+    console.log('[beforeunload] Force-flushed pending sync');
+  }
+});
+
+/* ✅ Mobile fallback — pagehide fires reliably on iOS Safari (beforeunload doesn't) */
+window.addEventListener('pagehide', (e) => {
+  if(_syncTimer){
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+    cloudSync().catch(() => {});
+    console.log('[pagehide] Force-flushed pending sync');
+  }
+});
+
+/* ✅ Visibility change — เมื่อ user switch app/tab บน mobile → flush ทันที */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden' && _syncTimer){
+    clearTimeout(_syncTimer);
+    _syncTimer = null;
+    cloudSync().catch(() => {});
+    console.log('[visibilitychange] App hidden, force-flushed pending sync');
+  }
+});
+
 /* ── Real-time listener (multi-user) — onSnapshot subscribe ── */
 let _docUnsubscribe = null;
 let _subscribedDocId = null;
+let _lastMergedData = null; // track last merged data for change detection
+let _mergeDebounceTimer = null; // debounce frequent listener fires
 
 function subscribeToSession(docId){
   if(!docId) return;
   if(_subscribedDocId === docId) return; // already listening
   unsubscribeFromSession();
   _subscribedDocId = docId;
+  _lastMergedData = null;
   _docUnsubscribe = db.collection('payment_sessions').doc(docId)
     .onSnapshot(snap => {
       if(!snap.exists) return;
-      // ✅ Skip own pending writes — มันจะ echo กลับมา แต่เรามี state local อยู่แล้ว
-      if(snap.metadata.hasPendingWrites) return;
       const d = snap.data();
+      // ✅ Skip echo ของตัวเอง
+      if(d.lastWriterId === _myWriterId) return;
+      // ✅ Skip ระหว่างเรา write ค้าง (กัน listener overwrite local action)
+      if(_writeInFlight > 0){
+        console.log('[listener] our write in flight, skip merge (will sync after)');
+        return;
+      }
+      console.log('[listener] update from another device');
       mergeRemoteIntoSession(d);
+      _lastMergedData = JSON.parse(JSON.stringify(d));
       const lbl = document.getElementById('autosave-label');
       if(lbl){
         const t = new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
         lbl.textContent = `🔄 sync จาก cloud · ${t}`;
       }
-    }, err => { console.warn('snapshot error', err); });
+    }, err => { console.error('[snapshot error]', err); });
+}
+
+/** Check if data actually changed — avoid redundant renders */
+function hasDataChanged(newData, oldData){
+  if(!oldData) return true; // first time
+  // เช็คเฉพาะ key ที่สำคัญ
+  const keysToCheck = ['players', 'courts', 'courtRate', 'shuttlePrice', 'shuttleCount', 'memberEstimate', 'priceOverride', 'status'];
+  for(const key of keysToCheck){
+    if(JSON.stringify(newData[key]) !== JSON.stringify(oldData[key])){
+      console.log(`[changed] ${key}: ${JSON.stringify(oldData[key])} → ${JSON.stringify(newData[key])}`);
+      return true;
+    }
+  }
+  return false;
 }
 
 function unsubscribeFromSession(){
@@ -1444,6 +1889,11 @@ function unsubscribeFromSession(){
     _docUnsubscribe = null;
   }
   _subscribedDocId = null;
+  if(_mergeDebounceTimer){
+    clearTimeout(_mergeDebounceTimer);
+    _mergeDebounceTimer = null;
+  }
+  _lastMergedData = null;
 }
 
 /* ── Query listener (multi-user discovery) — รอ doc "open today" ใหม่ ── */
@@ -1451,20 +1901,65 @@ let _queryUnsubscribe = null;
 
 function subscribeToTodayOpenQuery(){
   if(_queryUnsubscribe) return;
-  const iso = todayISO();
+  // ✅ ฟัง status='open' realtime — ตรวจจับ doc ใหม่ทันที (แม้เรามี session.id อยู่)
   _queryUnsubscribe = db.collection('payment_sessions')
-    .where('date','==',iso)
     .where('status','==','open')
     .onSnapshot(snap => {
-      if(snap.empty) return;
-      if(session?.id) return; // มี session แล้ว → doc listener จัดการต่อ
-      // เจอ doc ที่ confirmed แล้ว (ไม่ใช่ pending write ของเรา) → adopt
-      for(const doc of snap.docs){
-        if(doc.metadata.hasPendingWrites) continue;
-        adoptSession(doc.id, doc.data());
-        break;
+      if(snap.empty){
+        console.log('[subscribeToTodayOpenQuery] ไม่เจอ open session');
+        return;
       }
-    }, err => console.warn('query snapshot', err));
+
+      const now = Date.now();
+      const cutoff = 48 * 60 * 60 * 1000;
+
+      // หา fresh open sessions (< 48 ชม.) sorted by updatedAt desc
+      const candidates = snap.docs
+        .filter(doc => !doc.metadata.hasPendingWrites)
+        .map(doc => {
+          const data = doc.data();
+          const ts = data.updatedAt?.toDate?.()?.getTime?.() ||
+                     data.createdAt?.toDate?.()?.getTime?.() || 0;
+          return {doc, ts, data};
+        })
+        .filter(({ts}) => (now - ts) < cutoff)
+        .sort((a, b) => b.ts - a.ts);
+
+      if(!candidates.length){
+        console.log('[subscribeToTodayOpenQuery] ไม่เจอ fresh session');
+        return;
+      }
+
+      const best = candidates[0];
+
+      // ✅ Case 1: ยังไม่มี session → adopt ตัวที่ดีสุด
+      if(!session?.id){
+        console.log('[subscribeToTodayOpenQuery] ✅ Adopt (no current session):', best.doc.id);
+        adoptSession(best.doc.id, best.data);
+        return;
+      }
+
+      // ✅ Case 2: session ของเราตรงกับตัวที่ดีสุดอยู่แล้ว → ปล่อย
+      if(session.id === best.doc.id){
+        return;
+      }
+
+      // ✅ Case 3: session ของเราไม่ตรง → check ว่ายังอยู่ใน open list ไหม
+      const ourSession = candidates.find(c => c.doc.id === session.id);
+      if(!ourSession){
+        // session ของเราไม่ใช่ open แล้ว (อาจถูก complete) → switch ไป best
+        console.log('[subscribeToTodayOpenQuery] ⚠️ Our session not open anymore, switching:', session.id, '→', best.doc.id);
+        unsubscribeFromSession();
+        editingId = null;
+        session.id = null;
+        adoptSession(best.doc.id, best.data);
+      } else {
+        // session เรายัง open อยู่ และมี doc อื่นอยู่ด้วย → log แค่
+        console.log('[subscribeToTodayOpenQuery] Multiple open sessions exist, keeping current:', session.id);
+      }
+    }, err => {
+      console.error('[subscribeToTodayOpenQuery] listener error:', err);
+    });
 }
 
 function unsubscribeFromTodayOpenQuery(){
@@ -1484,9 +1979,102 @@ function adoptSession(docId, d){
   toast('🔄 พบรอบที่เปิดอยู่ · sync แล้ว');
 }
 
+let _lastLocalCourtChange = 0; // ✅ Track when courts were modified locally
+let _lastLocalWrite = 0; // legacy timestamp (เก็บไว้ compat)
+// ✅ Unique writer ID — กัน echo ของตัวเอง แต่ยังเห็น write ของคนอื่นได้
+const _myWriterId = 'w_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
+let _myLastWriteId = 0; // increment ทุกครั้งที่เขียน
+
+/* ═══════════════════════════════════════════════════════════════
+   PRODUCTION-GRADE MULTI-USER SAFETY
+   - Conservative merge: union remote + local (กัน concurrent adds หาย)
+   - Deleted ID tracking: รู้ว่า player ถูกลบ → ไม่ดึงกลับมาตอน merge
+   - Transactional cloudSync: read-modify-write atomic
+   ═══════════════════════════════════════════════════════════════ */
+const _recentlyDeletedIds = new Set();
+const DELETED_ID_TTL = 30000; // 30 วินาที — กัน race รอบใหญ่
+
+// ✅ Track ที่เพิ่งเปลี่ยน payment state (cash/transfer) → กัน merge overwrite
+const _recentlyToggledPayment = new Map(); // playerId → {cash, transfer, timestamp}
+const PAYMENT_TOGGLE_TTL = 10000; // 10 วินาที (network delay on mobile)
+function trackPaymentToggle(playerId, cash, transfer){
+  _recentlyToggledPayment.set(playerId, {cash, transfer, ts: Date.now()});
+  setTimeout(() => _recentlyToggledPayment.delete(playerId), PAYMENT_TOGGLE_TTL);
+}
+
+// ✅ Track ว่า user กำลัง interact กับ courts หรือไม่ (กัน dropdown ปิด)
+let _pendingCourtsMerge = null; // remote courts ที่รอ apply หลัง user blur
+function isUserInteractingWithCourts(){
+  const active = document.activeElement;
+  if(!active) return false;
+  // ถ้า focus อยู่ที่ court-item area (select, input, button)
+  if(active.closest && active.closest('.court-item')) return true;
+  // ถ้า focus อยู่ที่ court-rate (กรณีใช้คีย์บอร์ดเปลี่ยนค่า)
+  if(active.id === 'court-rate') return true;
+  return false;
+}
+// ลด defer หลัง user finishes interacting
+document.addEventListener('focusout', e => {
+  if(e.target?.closest && e.target.closest('.court-item')){
+    setTimeout(() => {
+      if(!isUserInteractingWithCourts() && _pendingCourtsMerge){
+        console.log('[focusout] applying deferred courts merge');
+        session.courts = Array.isArray(_pendingCourtsMerge) ? _pendingCourtsMerge : [{name: '3', hours: 2}];
+        _pendingCourtsMerge = null;
+        setSetupInputsFromSession();
+      }
+    }, 200);
+  }
+});
+
+/** Mark player ID ว่าถูกลบ (ป้องกัน merge เอากลับมา) */
+function trackDeletedPlayerId(id){
+  _recentlyDeletedIds.add(id);
+  setTimeout(() => _recentlyDeletedIds.delete(id), DELETED_ID_TTL);
+}
+
+/** Mark หลาย ID พร้อมกัน (ใช้กับ paste / clear) */
+function trackDeletedPlayerIds(ids){
+  ids.forEach(trackDeletedPlayerId);
+}
+
+/** Conservative merge — union remote + local
+ *  - Player ที่อยู่ใน local → ใช้เวอร์ชั่น local (รวม cash/transfer ที่เพิ่ง toggle)
+ *  - Player ที่อยู่ใน remote (ไม่อยู่ใน local) AND ไม่อยู่ใน deleted list → append (คนอื่นเพิ่งเพิ่ม)
+ *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
+/** Simple merge — local wins, append remote-only players
+ *  - Player ใน local → ใช้ local (รวม cash/transfer ที่เพิ่ง toggle)
+ *  - Player เฉพาะ remote (ไม่อยู่ใน local) → append (คนอื่นเพิ่ม)
+ *  - Player ใน deleted list → skip (เราตั้งใจลบ) */
+function mergePlayersConservative(remote, local){
+  const localList = Array.isArray(local) ? local : [];
+  const remoteList = Array.isArray(remote) ? remote : [];
+  const localIds = new Set(localList.map(p => p.id));
+  const result = [...localList];
+  for(const rp of remoteList){
+    if(localIds.has(rp.id)) continue;
+    if(_recentlyDeletedIds.has(rp.id)) continue;
+    result.push(rp);
+  }
+  return result;
+}
+
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
+  // ✅ Skip echo ของตัวเองเท่านั้น (เช็คจาก writerId) — ของคนอื่นจะถูก merge
+  if(d.lastWriterId === _myWriterId && d.lastWriteId === _myLastWriteId){
+    console.log('[merge] skip own echo (writerId match)');
+    return;
+  }
+  // ถ้าเป็นการเขียนจากคนอื่น → log + merge ต่อ
+  if(d.lastWriterId && d.lastWriterId !== _myWriterId){
+    console.log(`[merge] received update from another user (${d.lastWriterId.slice(0,10)})`);
+  }
+  // ✅ Snapshot players ก่อน merge → ใช้เปรียบเทียบใน smartRerenderPlayers
+  const prevPlayers = (session.players || []).map(p => ({
+    id: p.id, cash: !!p.cash, transfer: !!p.transfer
+  }));
   // player list — main reason สำหรับ multi-user
   if(Array.isArray(d.players)){
     session.players = d.players.map(p => ({
@@ -1501,40 +2089,118 @@ function mergeRemoteIntoSession(d){
       el.value = (v ?? 0);
     }
   };
-  if(d.courts        !== undefined){
-    session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
-    setSetupInputsFromSession(); // Rebuild court items
+  if(d.courts !== undefined){
+    const oldCourts = JSON.stringify(session.courts || []);
+    const newCourts = JSON.stringify(d.courts || []);
+    if(oldCourts !== newCourts){
+      // ✅ ถ้า user กำลังเปิด dropdown / focus อยู่ที่ court inputs → SKIP rebuild
+      // (ไม่ทำลาย dropdown ที่เปิดอยู่)
+      if(isUserInteractingWithCourts()){
+        console.log('[merge] user interacting with courts, defer rebuild (will rebuild on blur)');
+        _pendingCourtsMerge = d.courts;  // เก็บไว้ rebuild ตอน blur
+      } else {
+        session.courts = Array.isArray(d.courts) ? d.courts : [{name: '3', hours: 2}];
+        setSetupInputsFromSession();
+      }
+    }
   }
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
   if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
-  if(d.shuttleCount  !== undefined){ session.shuttleCount  = d.shuttleCount || 0; setIfNotFocused('shuttle-count', session.shuttleCount); }
+  if(d.shuttleCount  !== undefined){
+    session.shuttleCount  = d.shuttleCount || 0;
+    // ✅ ถ้า 0 ปล่อยว่าง (กดง่ายขึ้น)
+    const el = document.getElementById('shuttle-count');
+    if(el && document.activeElement !== el){
+      el.value = session.shuttleCount > 0 ? session.shuttleCount : '';
+    }
+  }
   if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
   if(d.priceOverride !== undefined){ session.priceOverride = d.priceOverride || 0; setIfNotFocused('price-override', session.priceOverride); }
   if(d.courtFee !== undefined) session.courtFee = d.courtFee || 0;
+  // ✅ Sync date (จาก device อื่นเปลี่ยนวันที่จัดก๊วน)
+  if(d.date && d.date !== session.date){
+    session.date = d.date;
+    session.dateDisplay = d.dateDisplay || thaiDate(d.date);
+    renderDate(); // update input field (renderDate มี guard ถ้า user กำลัง focus)
+    console.log('[merge] date synced from remote:', d.date);
+  }
   if(d.status) session.status = d.status;
   if(d.completedAt && d.completedAt.toDate){
     session.completedAt = d.completedAt.toDate().toISOString();
   }
   // persist local
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-  // re-render
-  renderTable();
+  // ✅ Surgical re-render — เปรียบเทียบ old vs new เพื่อกัน bounce
+  smartRerenderPlayers(prevPlayers);
   renderSummary();
   renderPlayerListMini();
 }
 
+/** ✅ Smart re-render: ถ้าจำนวน/ลำดับเปลี่ยน → full rebuild; ถ้าแค่ state เปลี่ยน → surgical update */
+function smartRerenderPlayers(prevPlayers){
+  const cur = session.players || [];
+  const prev = prevPlayers || [];
+  // ถ้าจำนวนหรือลำดับต่าง → full rebuild
+  if(cur.length !== prev.length){ renderTable(); return; }
+  for(let i = 0; i < cur.length; i++){
+    if(cur[i].id !== prev[i].id){ renderTable(); return; }
+  }
+  // เลข + ลำดับเหมือนเดิม → update เฉพาะ state ที่เปลี่ยน
+  for(let i = 0; i < cur.length; i++){
+    const p = cur[i], q = prev[i];
+    if(p.cash !== q.cash || p.transfer !== q.transfer){
+      updatePlayerCardUI(p.id); // surgical: แค่ toggle class ของ card นี้
+    }
+  }
+}
+
+/** ✅ Detect ถ้า session มีการปรับแต่งจาก default → ควร sync แม้ไม่มี players (กัน prep ใน device อื่นแล้วไม่เจอ) */
+function isSessionCustomized(){
+  if(!session) return false;
+  // มี players → customized
+  if(session.players?.length > 0) return true;
+  // courts ไม่เป็น default (3,4,5 @ 2 ชม.)
+  const defaultCourts = JSON.stringify([{name:'3',hours:2},{name:'4',hours:2},{name:'5',hours:2}]);
+  if(JSON.stringify(session.courts || []) !== defaultCourts) return true;
+  // rate / shuttle / etc ไม่เป็น default
+  if((session.courtRate || 220) !== 220) return true;
+  if((session.shuttlePrice || 75) !== 75) return true;
+  if((session.shuttleCount || 0) > 0) return true;
+  if((session.priceOverride || 0) > 0) return true;
+  return false;
+}
+
+/** ✅ Track in-flight writes — กัน listener overwrite local action ที่ยังไม่ confirm */
+let _writeInFlight = 0;
+
+/** ✅ SIMPLE LAST-WRITE-WINS — ใครเขียนใหม่กว่าชนะ
+ *  - ไม่ใช้ transaction (กัน race เกินไป)
+ *  - เขียน payload เต็ม → cloud
+ *  - Listener device อื่น → overwrite local ทุกอย่าง */
 async function cloudSync(){
   if(!session || !session.players) return;
-  // ไม่ sync session เปล่า (ยังไม่มีคน)
-  if(session.players.length === 0 && !editingId) return;
+  // Sync ถ้า: มี players หรือ มี editingId หรือ มีการปรับแต่ง
+  if(session.players.length === 0 && !editingId && !isSessionCustomized()) {
+    updateAutosaveLabel('skip');
+    return;
+  }
 
+  _writeInFlight++;
   updateAutosaveLabel('syncing');
+  console.log('[cloudSync] Starting', { editingId, playerCount: session.players.length, inFlight: _writeInFlight });
+
   try{
-    const cashN   = session.players.filter(p => p.cash).length;
-    const transN  = session.players.filter(p => p.transfer).length;
     const breakdown = getCostBreakdown();
-    const effective = getEffectivePrice(); // ✅ ราคาที่จะแจ้ง (ปัดเต็ม 10 หรือ override)
-    // ผลรวมตามจริงของแต่ละคน
+    const effective = getEffectivePrice();
+    const memberEst = getNumInput('member-est');
+    const headcountForGk = getBillingHeadcount();
+    const gongklang = (headcountForGk > 0 && effective > 0 && breakdown.totalCost > 0)
+      ? Math.max(0, effective * headcountForGk - breakdown.totalCost)
+      : 0;
+
+    // Derived stats from local players
+    const cashN  = session.players.filter(p => p.cash).length;
+    const transN = session.players.filter(p => p.transfer).length;
     let totalAmt = 0, cashAmt = 0, transAmt = 0;
     session.players.forEach(p => {
       const s = getPlayerShare(p);
@@ -1542,18 +2208,12 @@ async function cloudSync(){
       if(p.cash)     cashAmt  += s;
       if(p.transfer) transAmt += s;
     });
-    const memberEst = getNumInput('member-est');
-    // ✅ กองกลาง = (ราคา × headcount) − ค่าใช้จ่ายจริง (ส่วนเกินจากการปัดเต็ม 10)
-    const headcountForGk = getBillingHeadcount();
-    const gongklang = (headcountForGk > 0 && effective > 0 && breakdown.totalCost > 0)
-      ? Math.max(0, effective * headcountForGk - breakdown.totalCost)
-      : 0;
+
     const payload = {
       date:           session.date,
       dateDisplay:    session.dateDisplay,
       players:        session.players,
-      // Cost breakdown
-      courts:         session.courts, // court breakdown array
+      courts:         session.courts,
       courtRate:      breakdown.courtRate,
       courtFee:       breakdown.courtFee,
       shuttlePrice:   breakdown.shuttlePrice,
@@ -1562,8 +2222,7 @@ async function cloudSync(){
       totalCost:      breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride:  getNumInput('price-override'),
-      gongklang:      gongklang, // ✅ ส่วนเกินเข้ากองกลาง
-      // ✅ perPerson = effective price (ราคาที่ใช้จริงในการเก็บ — ปัดเต็ม 10 แล้ว)
+      gongklang,
       perPerson:      effective,
       cashCount:      cashN,
       transferCount:  transN,
@@ -1574,37 +2233,76 @@ async function cloudSync(){
       totalAmount:    totalAmt,
       createdAt:      session.createdAt ? new Date(session.createdAt) : new Date(),
       updatedAt:      new Date(),
+      lastWriterId:   _myWriterId,
+      lastWriteId:    ++_myLastWriteId,
     };
+
     if(editingId){
-      // doc เดิม — merge:true ไม่แตะ status field (คงค่าเดิม)
+      // ✅ Update existing doc — last write wins
+      console.log('[cloudSync] Updating doc:', editingId);
       await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
+      console.log('[cloudSync] ✅ Update successful');
     } else {
-      // doc ใหม่ — initialize status เป็น 'open'
+      // ✅ Create new doc
       payload.status = 'open';
+      console.log('[cloudSync] Creating new doc');
       const ref = await db.collection('payment_sessions').add(payload);
       editingId = ref.id;
       session.id = ref.id;
+      console.log('[cloudSync] ✅ Created doc:', editingId);
       try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
-      unsubscribeFromTodayOpenQuery(); // ✅ เป็นเจ้าของ doc แล้ว ไม่ต้องฟัง query
-      subscribeToSession(editingId);   // ✅ ฟัง doc ตรง ๆ แทน
+      unsubscribeFromTodayOpenQuery();
+      subscribeToSession(editingId);
     }
     updateAutosaveLabel('cloud');
   }catch(e){
     updateAutosaveLabel('error');
-    console.error('cloud sync', e);
+    console.error('[cloudSync] ❌ FAILED:', { name: e.name, message: e.message, code: e.code });
+  }finally{
+    _writeInFlight = Math.max(0, _writeInFlight - 1);
   }
 }
 
-/** ค้นหา open session ของวันนี้ — ให้อีกคนที่เตรียมไว้ ใช้ต่อได้ */
+/** ค้นหา open session ของวันนี้ — ให้อีกคนที่เตรียมไว้ ใช้ต่อได้
+ *  Fallback: ถ้าไม่เจอด้วย date == today ลองหา open session ล่าสุด (กัน timezone/date picker mismatch) */
 async function loadTodayOpenSession(){
   try{
     const iso = todayISO();
+    // ✅ ลบ date filter เลย! (timezone/device ต่างกัน → ไม่ match)
+    // ใช้ status='open' ตามลำพังพอ + filter date ด้วย JS
+    // ทำให้ device ต่างกันเห็น session เดียวกัน
+    console.log('[loadTodayOpenSession] querying open sessions (no date filter)');
     const snap = await db.collection('payment_sessions')
-      .where('date','==',iso)
       .where('status','==','open')
-      .limit(1).get();
-    if(snap.empty) return false;
-    const doc = snap.docs[0];
+      .limit(20).get();
+
+    if(snap.empty) {
+      console.log('[loadTodayOpenSession] ไม่เจอ open session ใดๆ');
+      return false;
+    }
+
+    const now = Date.now();
+    const cutoff = 48 * 60 * 60 * 1000; // 48 ชม.
+
+    // หา doc ที่ fresh (<48h) จาก open sessions
+    const sorted = snap.docs
+      .map(doc => ({
+        doc,
+        ts: doc.data().updatedAt?.toDate?.()?.getTime?.() ||
+            doc.data().createdAt?.toDate?.()?.getTime?.() || 0
+      }))
+      .filter(({ts}) => (now - ts) < cutoff)
+      .sort((a, b) => b.ts - a.ts);
+
+    if(!sorted.length) {
+      console.log('[loadTodayOpenSession] ไม่เจอ fresh open session (<48h)');
+      return false;
+    }
+
+    const fresh = sorted[0].doc;
+    console.log('[loadTodayOpenSession] ✅ พบ session:', fresh.id, 'date:', fresh.data().date);
+
+    const doc = fresh;
     const d = doc.data();
     editingId = doc.id;
     session = {
@@ -1644,10 +2342,15 @@ async function saveSessionNow(){
   const orig = btn.textContent;
   btn.textContent = '⏳ กำลังบันทึก...';
   if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+  console.log('[saveSessionNow] Manual save triggered');
   try{
     await cloudSync();
+    console.log('[saveSessionNow] ✅ Save completed successfully');
     toast('บันทึกแล้ว ☁️');
-  }catch(e){ toast('บันทึกไม่สำเร็จ: '+e.message); }
+  }catch(e){
+    console.error('[saveSessionNow] ❌ Save failed:', e);
+    toast('บันทึกไม่สำเร็จ: '+e.message);
+  }
   btn.disabled = false;
   renderSummary(); // restore text
 }
@@ -1663,14 +2366,20 @@ function addPlayer(name){
   saveDraft();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — อื่น device ต้องเห็นชื่อใหม่ทันที
+  flushSyncNow();
 }
 
 function deletePlayer(id){
+  // ✅ Track deleted ID — กัน conservative merge เอา player กลับมา (multi-user safe)
+  trackDeletedPlayerId(id);
   session.players = session.players.filter(p => p.id !== id);
   syncHeadcountInput();
   saveDraft();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — destructive action
+  flushSyncNow();
 }
 
 function togglePay(id, type){
@@ -1683,9 +2392,14 @@ function togglePay(id, type){
     p.transfer = !p.transfer;
     if(p.transfer) p.cash = false; // เลือก transfer → ยกเลิก cash
   }
+  // ✅ Track payment toggle — กัน listener merge overwrite (<5s)
+  trackPaymentToggle(id, p.cash, p.transfer);
+  // ✅ Surgical update — แค่ toggle class ของ player card นี้ ไม่ rebuild ทั้ง table
+  updatePlayerCardUI(id);
+  renderSummary(); // safe — แค่ update text ไม่ rebuild player cards
+  // ✅ บันทึกทันที — ไม่รอ debounce (กัน user refresh แล้วหาย)
   saveDraft();
-  renderTable();
-  renderSummary();
+  flushSyncNow();
 }
 
 /* ================================================================
@@ -1702,7 +2416,7 @@ function renderTable(){
               : p.cash ? 'paid-cash'
               : p.transfer ? 'paid-transfer' : '';
     const share = getPlayerShare(p);
-    return `<div class="player-card ${cls}">
+    return `<div class="player-card ${cls}" data-player-id="${p.id}">
       <button class="pc-del" onclick="deletePlayer('${p.id}')" title="ลบ">✕</button>
       <div class="pc-head">
         <div class="pc-num">${i+1}</div>
@@ -1721,6 +2435,42 @@ function renderTable(){
   }).join('');
 }
 
+/** ✅ Surgical update — แค่ toggle class แทนการ rebuild DOM ทั้งหมด */
+function updatePlayerCardUI(playerId){
+  const p = session.players.find(p => p.id === playerId);
+  if(!p) return;
+  const card = document.querySelector(`.player-card[data-player-id="${playerId}"]`);
+  if(!card) return;
+
+  // อัปเดต card class
+  card.classList.remove('paid-both', 'paid-cash', 'paid-transfer');
+  if(p.cash && p.transfer) card.classList.add('paid-both');
+  else if(p.cash) card.classList.add('paid-cash');
+  else if(p.transfer) card.classList.add('paid-transfer');
+
+  // อัปเดต cash button
+  const cashBtn = card.querySelector('.pay-btn-big.cash');
+  if(cashBtn) cashBtn.classList.toggle('on', !!p.cash);
+
+  // อัปเดต transfer button
+  const transferBtn = card.querySelector('.pay-btn-big.transfer');
+  if(transferBtn) transferBtn.classList.toggle('on', !!p.transfer);
+}
+
+/** ✅ Surgical update — อัปเดตยอดเงินของทุก player (ใช้เมื่อ court hours / cost เปลี่ยน) */
+function updateAllPlayerShares(){
+  document.querySelectorAll('.player-card[data-player-id]').forEach(card => {
+    const id = card.dataset.playerId;
+    const p = session.players.find(p => p.id === id);
+    if(!p) return;
+    const amtEl = card.querySelector('.pc-amt');
+    if(amtEl){
+      const share = getPlayerShare(p);
+      amtEl.innerHTML = `${fmtBaht(share)}<small>฿</small>`;
+    }
+  });
+}
+
 function renderSummary(){
   const total    = session.players.length;
   const cashN    = session.players.filter(p => p.cash).length;
@@ -1729,6 +2479,13 @@ function renderSummary(){
   const bd = getCostBreakdown();
   const { totalCost, courtHours, courtRate, courtFee, shuttlePrice, shuttleCount, shuttleCost } = bd;
   const pp = getPerPerson();
+
+  // ✅ Auto-populate member-est from actual player count
+  const memberEstEl = document.getElementById('member-est');
+  if(memberEstEl && total > 0){
+    memberEstEl.value = total;
+    session.memberEstimate = total;
+  }
 
   // ผลรวมจริงตามคน (รองรับเล่นไม่เท่ากัน)
   let totalB = 0, cashB = 0, transB = 0;
@@ -1753,7 +2510,13 @@ function renderSummary(){
   const perNoteEl      = document.getElementById('per-note');
   if(courtCostEl)    courtCostEl.textContent    = fmtBaht(courtFee);
   if(shuttleCostEl)  shuttleCostEl.textContent  = fmtBaht(shuttleCost);
-  if(courtFormulaEl) courtFormulaEl.textContent = (courtHours && courtRate) ? `${courtHours} court-hours @ ${courtRate}฿` : '';
+  if(courtFormulaEl) courtFormulaEl.textContent = (courtHours && courtRate) ? `รวมกันทั้งสิ้น ${courtHours} ชั่วโมง × ${courtRate} บาท` : '';
+  // ✅ Update court count label
+  const courtCountNum = document.getElementById('court-count-num');
+  if(courtCountNum){
+    const n = document.querySelectorAll('.court-item').length || (session.courts || []).length || 0;
+    courtCountNum.textContent = n;
+  }
   if(shuttleFormEl)  shuttleFormEl.textContent  = (shuttlePrice && shuttleCount) ? `(${shuttlePrice}×${shuttleCount})` : '';
   if(costTotalEl)    costTotalEl.textContent    = fmtBaht(totalCost);
   if(costPerEl)      costPerEl.textContent      = fmtBaht(pp);
@@ -1792,9 +2555,14 @@ function renderSummary(){
   const sumP = document.getElementById('c-sum-per');
   if(sumT) sumT.textContent = fmtBaht(totalCost) + '฿';
   if(sumP) sumP.textContent = fmtBaht(pp) + '฿';
-  // badge จำนวนสมาชิก
+  // badge จำนวนสมาชิก + paid/unpaid status
   const countBadge = document.getElementById('player-count-badge');
-  if(countBadge) countBadge.textContent = total + ' คน';
+  if(countBadge){
+    const unpaidN = total - paidN;
+    document.getElementById('total-players').textContent = total;
+    document.getElementById('paid-count').textContent = paidN;
+    document.getElementById('unpaid-count').textContent = unpaidN;
+  }
   const ppInput = document.getElementById('per-person');
   if(ppInput) ppInput.value = pp;
   // sync hidden court-fee เพื่อ compat
@@ -1804,6 +2572,10 @@ function renderSummary(){
   document.getElementById('sum-total-baht').innerHTML    = `${fmtBaht(totalB)}<span class="baht">฿</span>`;
   document.getElementById('sum-cash-baht').innerHTML     = `${fmtBaht(cashB)}<span class="baht">฿</span>`;
   document.getElementById('sum-transfer-baht').innerHTML = `${fmtBaht(transB)}<span class="baht">฿</span>`;
+
+  // Payment counters: update counts of cash and transfer payments
+  document.getElementById('sum-cash-count').textContent = cashN;
+  document.getElementById('sum-transfer-count').textContent = transN;
 
   // Save button: disable when no players
   const saveBtn = document.getElementById('btn-save');
@@ -1828,27 +2600,20 @@ function renderSummary(){
       mismatchBanner.classList.add('warn');
       mismatchBanner.classList.remove('ok');
       mismatchBanner.style.display = 'block';
-    } else if(memberEstNow > 0 && playerCount > 0){
-      mismatchBanner.innerHTML = `✅ ผู้เล่น <b>${playerCount} คน</b> ตรงกับยอดคำนวณราคา`;
-      mismatchBanner.classList.add('ok');
-      mismatchBanner.classList.remove('warn');
-      mismatchBanner.style.display = 'block';
     } else {
+      // ✅ ไม่มี mismatch → ซ่อน banner เลย (ไม่ต้องบอก OK เพราะ user ใส่คนเองไม่ได้แล้ว)
       mismatchBanner.style.display = 'none';
     }
   }
 
-  // Finish button: แสดงเฉพาะ status='open' + จ่ายครบ
+  // Finish button: แสดงเฉพาะ status='open' - สามารถจบรอบได้ตลอด
   //   - status='complete' → ใช้ปุ่ม "เสร็จแล้ว" ใน banner สีเหลืองแทน
   const finBtn = document.getElementById('btn-complete');
   if(finBtn){
-    const allPaid = total > 0 && paidN >= total;
     const isComplete = session?.status === 'complete';
-    finBtn.style.display = (allPaid && !isComplete) ? 'flex' : 'none';
-    finBtn.disabled = mismatch;
-    finBtn.textContent = mismatch
-      ? `⚠️ จำนวนคนไม่ตรง · แก้ก่อนจบรอบ`
-      : `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
+    finBtn.style.display = !isComplete ? 'flex' : 'none';
+    finBtn.disabled = false;
+    finBtn.textContent = `🎉 จบรอบ · ${total} คน · ${fmtBaht(totalB)}฿`;
   }
 
   // Edit-mode banner (เฉพาะรอบที่จบแล้วและกำลังแก้ไข)
@@ -1863,8 +2628,24 @@ function renderSummary(){
 }
 
 function renderDate(){
-  const el = document.getElementById('date-big');
-  if(el) el.textContent = thaiDateShort(session?.date || todayISO());
+  const iso = session?.date || todayISO();
+  // Date picker input (ใน tab รายชื่อ)
+  const inp = document.getElementById('session-date-input');
+  if(inp && document.activeElement !== inp) inp.value = iso;
+}
+
+/** ✅ User เปลี่ยนวันที่จัดก๊วน (เช่น Monday night prep for Tuesday) */
+function changeSessionDate(newIso){
+  if(!newIso) return;
+  const oldIso = session.date;
+  if(newIso === oldIso) return;
+  session.date = newIso;
+  session.dateDisplay = thaiDate(newIso);
+  renderDate();
+  saveDraft();
+  // ✅ ถ้าเปลี่ยนเป็นวันอื่น และมี doc เก่าอยู่ → save ทันที (กัน user refresh แล้วหา doc ไม่เจอ)
+  flushSyncNow();
+  toast(`📅 วันที่: ${thaiDate(newIso)}`);
 }
 
 /* ================================================================
@@ -1875,8 +2656,7 @@ async function completeSession(){
   const cashN  = session.players.filter(p => p.cash).length;
   const transN = session.players.filter(p => p.transfer).length;
   const paidN  = cashN + transN;
-  if(paidN < session.players.length){ toast('ยังไม่จ่ายครบ'); return; }
-  if(!confirm('จบรอบเก็บเงิน (ทุกคนจ่ายครบแล้ว)?')) return;
+  if(!confirm('จบรอบเก็บเงิน?')) return;
 
   const btn = document.getElementById('btn-complete');
   btn.disabled = true;
@@ -1906,9 +2686,10 @@ async function completeSession(){
       dateDisplay: session.dateDisplay,
       status:      'complete',
       players:     session.players,
-      courts:        breakdown.courts,
-      courtRate:     breakdown.courtRate,
-      hours:         breakdown.hours,
+      // ✅ FIX: breakdown ไม่มี courts/hours field — ใช้ session.courts และ breakdown.courtHours แทน
+      courts:        Array.isArray(session.courts) ? session.courts : [],
+      courtRate:     breakdown.courtRate || 0,
+      hours:         breakdown.courtHours || 0,
       courtFee:      breakdown.courtFee,
       shuttlePrice:  breakdown.shuttlePrice,
       shuttleCount:  breakdown.shuttleCount,
@@ -1983,6 +2764,8 @@ function exitEditMode(){
 function clearSession(){
   if(!session.players.length) return;
   if(!confirm('ล้างรายชื่อทั้งหมด?')) return;
+  // ✅ Track all IDs as deleted (กัน merge เอา player กลับมาในระยะ TTL)
+  trackDeletedPlayerIds(session.players.map(p => p.id));
   unsubscribeFromSession();
   editingId = null;
   session = newSession();
@@ -2031,9 +2814,9 @@ async function loadHistory(){
           ${badge}
         </div>
         ${isComplete ? `
-        <div style="background:#A4D65E18;border:1.5px solid var(--accent)60;border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-          <span style="font-size:13px;color:var(--soft);font-weight:600">💰 ยอดเก็บได้รอบนี้</span>
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollected)} ฿</span>
+        <div style="background:var(--accent-light);border:1px solid rgba(0,102,204,.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+          <span style="font-size:13px;color:var(--mute);font-weight:500">💰 ยอดเก็บได้รอบนี้</span>
+          <span style="font-family:inherit;font-size:22px;font-weight:600;color:var(--blue);letter-spacing:-0.02em">${fmtBaht(totalCollected)} ฿</span>
         </div>` : ''}
         <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
           <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
@@ -2128,9 +2911,9 @@ function renderViewModal(d){
     <div class="vm-block">
       <div class="vm-block-head">📊 สรุปการจ่าย</div>
       ${isCompleteView ? `
-      <div style="background:#A4D65E20;border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
-        <span style="font-size:14px;font-weight:700;color:var(--accent)">💰 ยอดเก็บได้รอบนี้</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:800;color:var(--accent)">${fmtBaht(totalCollectedView)} ฿</span>
+      <div style="background:var(--accent-light);border:1px solid rgba(0,102,204,.2);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:14px;font-weight:500;color:var(--mute)">💰 ยอดเก็บได้รอบนี้</span>
+        <span style="font-family:inherit;font-size:26px;font-weight:600;color:var(--blue);letter-spacing:-0.02em">${fmtBaht(totalCollectedView)} ฿</span>
       </div>` : ''}
       <div class="vm-sum-row">
         <div class="vm-sum-item cash">
@@ -2230,7 +3013,7 @@ function buildPaymentFlex(d){
   // ─── Member list (ตัด 20 คนเพื่อกัน flex เกิน limit) ───
   const memberRows = players.slice(0, 20).map((p, i) => {
     const status = p.cash     ? { t:'💵 เงินสด', c:'#16a34a' }
-                 : p.transfer ? { t:'📲 โอน',    c:'#3b82f6' }
+                 : p.transfer ? { t:'📲 โอน',    c:'#A4D65E' }
                  :              { t:'⬜ ค้าง',   c:'#d97706' };
     return {
       type:'box', layout:'horizontal', margin:'sm', spacing:'sm',
@@ -2286,9 +3069,9 @@ function buildPaymentFlex(d){
               { type:'text', text:String(cashN), size:'xl', weight:'bold', color:'#16a34a', align:'center' },
               { type:'text', text:'💵 เงินสด', size:'xxs', color:'#166534', align:'center' },
             ]},
-            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#eff6ff', paddingAll:'10px', contents:[
-              { type:'text', text:String(transN), size:'xl', weight:'bold', color:'#3b82f6', align:'center' },
-              { type:'text', text:'📲 โอน', size:'xxs', color:'#1e40af', align:'center' },
+            { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#f1f8e9', paddingAll:'10px', contents:[
+              { type:'text', text:String(transN), size:'xl', weight:'bold', color:'#A4D65E', align:'center' },
+              { type:'text', text:'📲 โอน', size:'xxs', color:'#558B2F', align:'center' },
             ]},
             { type:'box', layout:'vertical', flex:1, cornerRadius:'8px', backgroundColor:'#fffbeb', paddingAll:'10px', contents:[
               { type:'text', text:String(unpaid), size:'xl', weight:'bold', color:'#d97706', align:'center' },
@@ -2418,7 +3201,7 @@ function buildPriceFlex(s, opts){
         }] : []),
         // QR section
         { type:'separator', margin:'xl' },
-        { type:'text', text:'📲 โอนได้ที่ QR Code ด้านล่าง', size:'sm', weight:'bold', color:'#3b82f6', align:'center', margin:'lg' },
+        { type:'text', text:'📲 โอนได้ที่ QR Code ด้านล่าง', size:'sm', weight:'bold', color:'#A4D65E', align:'center', margin:'lg' },
         { type:'image', url:QR_PAYMENT_URL, size:'full', aspectRatio:'2:3', aspectMode:'fit', margin:'md' },
       ]
     },
@@ -2462,7 +3245,7 @@ function buildStatusFlex(s){
   if(paidN > 0){
     sections.push({ type:'text', text:`✅ จ่ายแล้ว (${paidN} คน)`, size:'sm', color:'#16a34a', weight:'bold', margin:'md' });
     cashList.forEach(p => sections.push(playerRow(p, {icon:'💵', label:'เงินสด', color:'#16a34a'})));
-    tranList.forEach(p => sections.push(playerRow(p, {icon:'📲', label:'โอน',    color:'#3b82f6'})));
+    tranList.forEach(p => sections.push(playerRow(p, {icon:'📲', label:'โอน',    color:'#A4D65E'})));
   }
   // Unpaid
   if(unpaid.length > 0){
@@ -2495,9 +3278,9 @@ function buildStatusFlex(s){
               { type:'text', text:String(cashList.length), size:'xl', weight:'bold', color:'#16a34a', align:'center' },
               { type:'text', text:'💵 เงินสด', size:'xxs', color:'#166534', align:'center' },
             ]},
-            { type:'box', layout:'vertical', flex:1, backgroundColor:'#eff6ff', cornerRadius:'8px', paddingAll:'10px', contents:[
-              { type:'text', text:String(tranList.length), size:'xl', weight:'bold', color:'#3b82f6', align:'center' },
-              { type:'text', text:'📲 โอน', size:'xxs', color:'#1e40af', align:'center' },
+            { type:'box', layout:'vertical', flex:1, backgroundColor:'#f1f8e9', cornerRadius:'8px', paddingAll:'10px', contents:[
+              { type:'text', text:String(tranList.length), size:'xl', weight:'bold', color:'#A4D65E', align:'center' },
+              { type:'text', text:'📲 โอน', size:'xxs', color:'#558B2F', align:'center' },
             ]},
             { type:'box', layout:'vertical', flex:1, backgroundColor:'#fffbeb', cornerRadius:'8px', paddingAll:'10px', contents:[
               { type:'text', text:String(unpaid.length), size:'xl', weight:'bold', color:'#d97706', align:'center' },
@@ -2578,7 +3361,7 @@ function refreshAutoOverride(){
     const wrapper = memberEstInp.closest('.stp-field');
     if(wrapper) wrapper.classList.toggle('need-fill', needHeadcount);
   }
-  inp.placeholder = needHeadcount ? '⚠️ ใส่ "คนที่จะมา" ก่อน' : '0';
+  inp.placeholder = needHeadcount ? '⚠️ ใส่จำนวนคนก่อน' : '0';
 
   if(autoRounded > 0){
     inp.value = String(autoRounded);
@@ -2626,6 +3409,43 @@ async function sharePriceCurrent(){
   const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${headcount} คน · เฉลี่ย ${fmtBaht(effective)} บาท/คน`;
   const btn = document.querySelector('.big-share-btn') || document.querySelector('.btn-share-line.price');
   await shareLineFlex(buildPriceFlex(session, { effectivePp: effective, headcount, gongklang }), altText, btn);
+}
+
+async function copyPriceToClipboard(){
+  const headcount = getBillingHeadcount();
+  if(headcount <= 0){
+    toast('กรอก "คนที่จะมา" ในแท็บคำนวณราคา หรือเพิ่มผู้เล่น');
+    return;
+  }
+  const bd = getCostBreakdown();
+  if(bd.totalCost <= 0){
+    toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
+    return;
+  }
+  const effective = getEffectivePrice();
+  const gongklang = getGongklangAmount();
+
+  let msg = `📢 ตั้งค่ารอบแบด\n\n`;
+  msg += `💰 ค่าใช้จ่ายทั้งหมด:\n`;
+  msg += `• คอร์ท: ${bd.courtHours} ชั่วโมง × ${bd.courtRate}฿ = ${bd.courtFee}฿\n`;
+  if(bd.shuttleCount > 0){
+    msg += `• ลูกแบด: ${bd.shuttleCount} ลูก × ${bd.shuttlePrice}฿ = ${bd.shuttleCost}฿\n`;
+  }
+  msg += `รวม: ${bd.totalCost}฿\n\n`;
+  msg += `👥 จำนวน: ${headcount} คน\n`;
+  msg += `💵 เฉลี่ย/คน: ${effective}฿\n`;
+  msg += `📊 เก็บได้ทั้งหมด: ${effective * headcount}฿`;
+  if(gongklang > 0){
+    msg += `\n💚 กองกลาง: ${gongklang}฿`;
+  }
+
+  try{
+    await navigator.clipboard.writeText(msg);
+    toast('✅ คัดลอกไปยังคลิปบอร์ด · พร้อมส่งทาง LINE');
+  }catch(e){
+    toast('❌ คัดลอกไม่สำเร็จ');
+    console.warn(e);
+  }
 }
 
 async function shareStatusCurrent(){
@@ -2842,6 +3662,8 @@ function addPlayersFromPaste(){
     toast('ไม่พบรายชื่อในข้อความ · ลองตรวจฟอร์แมต');
     return;
   }
+  // ✅ Track old IDs as deleted — paste = intentional replace ไม่ให้ merge เอาคืนมา
+  trackDeletedPlayerIds(session.players.map(p => p.id));
   // Replace player list ทั้งหมด (ไม่ append)
   session.players = names.map((name, i) => ({
     id: 'p' + Date.now() + '_' + i,
@@ -2855,6 +3677,8 @@ function addPlayersFromPaste(){
   renderPlayerListMini();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — กัน user refresh แล้วหาย
+  flushSyncNow();
   toast(`เพิ่ม ${names.length} ผู้เล่นแล้ว`);
 }
 
@@ -2912,18 +3736,23 @@ function addNewMember(){
   renderPlayerListMini();
   renderTable();
   renderSummary();
+  // ✅ บันทึกทันที — กัน user refresh แล้วหาย
+  flushSyncNow();
   toast(`เพิ่ม "${name}" แล้ว`);
 }
 
 function clearMemberSelection(){
   if(!session?.players?.length) return;
   if(!confirm('เคลียร์รายชื่อผู้เล่นทั้งหมด?')) return;
+  // ✅ Track all IDs as deleted — กัน conservative merge เอากลับมา
+  trackDeletedPlayerIds(session.players.map(p => p.id));
   session.players = [];
   syncHeadcountInput();
   saveDraft();
   renderPlayerListMini();
   renderTable();
   renderSummary();
+  flushSyncNow(); // บันทึกทันที (เป็น destructive action)
 }
 
 /* ================================================================
@@ -2947,29 +3776,95 @@ document.getElementById('new-member-name').addEventListener('keydown', e => {
 });
 
 // Court breakdown operations
+/** สร้าง <option> สำหรับ dropdown เลขคอร์ท (1-30) — เลือก default ที่ระบุ
+ *  excludedSet: เลขคอร์ทที่ใช้แล้ว (จะถูกตัดออก ยกเว้นถ้าตรงกับ selected เอง) */
+function courtNumberOptions(selected, excludedSet){
+  const sel = String(selected);
+  const ex = excludedSet || new Set();
+  let html = '';
+  for(let i = 1; i <= 30; i++){
+    const v = String(i);
+    // ✅ ตัดเลขที่ถูกใช้แล้วออก — ยกเว้นเลขของตัวเอง (selected)
+    if(ex.has(v) && v !== sel) continue;
+    html += `<option value="${v}"${v === sel ? ' selected' : ''}>${v}</option>`;
+  }
+  return html;
+}
+
 function addNewCourt(){
   const list = document.getElementById('court-list');
-  const name = String(3 + list.children.length); // 4, 5, 6, ... (เพิ่มจากคอร์ท 3 ที่เริ่มต้น)
+  // หาเลขคอร์ทถัดไปที่ยังไม่ถูกใช้ (default = ตัวแรกที่ว่าง)
+  const used = new Set(Array.from(list.querySelectorAll('.court-name')).map(s => s.value));
+  let next = '1';
+  for(let i = 1; i <= 30; i++){
+    if(!used.has(String(i))){ next = String(i); break; }
+  }
   const item = document.createElement('div');
   item.className = 'court-item';
-  item.dataset.courtId = name;
+  item.dataset.courtId = next;
   item.innerHTML = `
-    <input class="court-name" type="text" value="${name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-    <input class="court-hours" type="number" value="1" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+    <select class="court-name" onchange="updateCourtCalculation()">${courtNumberOptions(next, used)}</select>
+    <div class="court-hours-wrapper">
+      <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+      <span class="court-hours-display">2.0</span>
+      <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+    </div>
     <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
   `;
   list.appendChild(item);
   updateCourtCalculation();
+  // ✅ บันทึกทันที — ไม่รอ 800ms debounce (กัน user refresh แล้วหาย)
+  flushSyncNow();
 }
 
 function removeCourt(btn){
   const item = btn.closest('.court-item');
-  if(!confirm('ลบคอร์ท ' + item.dataset.courtId + '?')) return;
+  const currentNum = item.querySelector('.court-name')?.value || item.dataset.courtId;
+  if(!confirm('ลบคอร์ทเลขที่ ' + currentNum + '?')) return;
   item.remove();
   updateCourtCalculation();
+  // ✅ บันทึกทันที — ไม่รอ 800ms debounce (กัน user refresh แล้วหาย)
+  flushSyncNow();
+}
+
+/** ✅ บันทึก cloud ทันที (skip 800ms debounce) — ใช้กับ destructive actions */
+function flushSyncNow(){
+  if(_syncTimer){ clearTimeout(_syncTimer); _syncTimer = null; }
+  cloudSync().catch(e => console.error('[flushSyncNow] failed:', e));
+}
+
+function adjustCourtHours(btn, delta){
+  const wrapper = btn.closest('.court-hours-wrapper');
+  const display = wrapper?.querySelector('.court-hours-display');
+  if(!display) return;
+  let current = parseFloat(display.textContent) || 0;
+  const newValue = Math.max(0.5, Math.min(8, current + delta)); // 0.5 to 8 hours limit
+  display.textContent = newValue.toFixed(1);
+  // ✅ Mark that user just changed courts locally — prevent listener from overwriting
+  _lastLocalCourtChange = Date.now();
+  updateCourtCalculation();
+  // ✅ บันทึกทันที — กัน user refresh แล้วหาย
+  flushSyncNow();
+}
+
+/** ✅ Refresh dropdowns ทุก row — ตัดเลขที่ row อื่นเลือกอยู่ออก (กันซ้ำ) */
+function refreshAllCourtDropdowns(){
+  const selects = document.querySelectorAll('.court-item .court-name');
+  const allValues = Array.from(selects).map(s => s.value);
+  selects.forEach((select, idx) => {
+    const currentValue = select.value;
+    // excluded = ค่าของ select อื่น ๆ (ไม่รวมตัวเอง)
+    const excluded = new Set(allValues.filter((_, i) => i !== idx));
+    // rebuild options แล้ว preserve selection ของตัวเอง
+    select.innerHTML = courtNumberOptions(currentValue, excluded);
+    select.value = currentValue;
+  });
 }
 
 function updateCourtCalculation(){
+  // ✅ Mark that courts were modified locally — prevent listener bounce-back
+  _lastLocalCourtChange = Date.now();
+
   const courtHours = getTotalCourtHours();
   const rate = getNumInput('court-rate');
   const courtFee = courtHours * rate;
@@ -2978,17 +3873,26 @@ function updateCourtCalculation(){
   const courtItems = document.querySelectorAll('.court-item');
   session.courts = Array.from(courtItems).map(item => ({
     name: item.querySelector('.court-name')?.value || '?',
-    hours: parseFloat(item.querySelector('.court-hours')?.value) || 0
+    hours: parseFloat(item.querySelector('.court-hours-display')?.textContent) || 0
   }));
+
+  // ✅ Refresh dropdowns ทุก row — ตัดเลขซ้ำออก
+  refreshAllCourtDropdowns();
 
   // Update formula display
   const formula = document.getElementById('court-formula');
-  if(formula) formula.textContent = `${courtHours} court-hours @ ${rate}฿`;
+  if(formula) formula.textContent = `รวมกันทั้งสิ้น ${courtHours} ชั่วโมง × ${rate} บาท`;
+
+  // ✅ Update court count label "(จองสนามจำนวน xx คอร์ท)"
+  const countNum = document.getElementById('court-count-num');
+  if(countNum) countNum.textContent = courtItems.length;
 
   const display = document.getElementById('court-cost-display');
   if(display) display.textContent = fmtBaht(courtFee);
 
-  onCostInputChange();
+  onCostInputChange(); // ← saveDraft → scheduleCloudSync (800ms)
+  // caller ที่ต้องการ immediate sync จะเรียก flushSyncNow() ต่อจากนี้
+  // flushSyncNow() clear timer เองก่อน sync → ไม่มี double-sync
 }
 
 // Any setup input change → recompute summary + save
@@ -3000,14 +3904,12 @@ function onCostInputChange(e){
   session.shuttleCount  = b.shuttleCount;
   session.memberEstimate = getNumInput('member-est');
   session.priceOverride  = getNumInput('price-override');
-  // ✅ เปลี่ยนค่า "ตั้งค่ารอบ" ใด ๆ → บังคับปัดราคาที่จะแจ้งเป็นเต็ม 10 ใหม่
-  //    ยกเว้นตอน user พิมพ์ใน price-override เอง (จะถูก overwrite ตอน cost เปลี่ยนรอบหน้า)
   if(e?.target?.id !== 'price-override'){
     refreshAutoOverride();
   }
-  saveDraft();
   renderSummary();
-  renderTable();
+  updateAllPlayerShares();
+  saveDraft();
 }
 ['member-est','court-rate','shuttle-price','shuttle-count','price-override'].forEach(id => {
   const el = document.getElementById(id);
@@ -3020,7 +3922,9 @@ function setSetupInputsFromSession(){
   set('member-est',     session.memberEstimate || 0);
   set('court-rate',     session.courtRate || 0);
   set('shuttle-price',  session.shuttlePrice || 0);
-  set('shuttle-count',  session.shuttleCount || 0);
+  // ✅ shuttle-count: ถ้าเป็น 0 ให้ปล่อยว่าง (กด input ง่ายขึ้น)
+  const shuttleEl = document.getElementById('shuttle-count');
+  if(shuttleEl) shuttleEl.value = session.shuttleCount > 0 ? session.shuttleCount : '';
   set('court-fee',      session.courtFee || 0);
   set('price-override', session.priceOverride || 0);
 
@@ -3028,14 +3932,23 @@ function setSetupInputsFromSession(){
   const courtList = document.getElementById('court-list');
   if(courtList){
     courtList.innerHTML = '';
-    const courts = session.courts || [{name: '3', hours: 2}];
-    (Array.isArray(courts) ? courts : [{name: '3', hours: 2}]).forEach(c => {
+    // ✅ Default: 3 คอร์ทเลขที่ 3, 4, 5
+    const defaultCourts = [{name: '3', hours: 2}, {name: '4', hours: 2}, {name: '5', hours: 2}];
+    const courts = Array.isArray(session.courts) && session.courts.length > 0
+      ? session.courts
+      : defaultCourts;
+    courts.forEach(c => {
+      const courtNum = String(c.name || '1').replace(/[^\d]/g, '') || '1'; // เอาเฉพาะตัวเลข
       const item = document.createElement('div');
       item.className = 'court-item';
-      item.dataset.courtId = c.name;
+      item.dataset.courtId = courtNum;
       item.innerHTML = `
-        <input class="court-name" type="text" value="${c.name}" placeholder="คอร์ท" maxlength="10" onchange="updateCourtCalculation()"/>
-        <input class="court-hours" type="number" value="${c.hours || 2}" min="0.5" step="0.5" inputmode="decimal" onchange="updateCourtCalculation()"/>
+        <select class="court-name" onchange="updateCourtCalculation()">${courtNumberOptions(courtNum)}</select>
+        <div class="court-hours-wrapper">
+          <button class="court-hours-btn" onclick="adjustCourtHours(this, -0.5)">−</button>
+          <span class="court-hours-display">${(c.hours || 2).toFixed(1)}</span>
+          <button class="court-hours-btn" onclick="adjustCourtHours(this, 0.5)">+</button>
+        </div>
         <button class="btn-del-court" onclick="removeCourt(this)">✕</button>
       `;
       courtList.appendChild(item);
@@ -3047,6 +3960,26 @@ function setSetupInputsFromSession(){
 /* ================================================================
    BOOT
    ================================================================ */
+/** ✅ Verify ว่า session.id ยังอยู่ใน cloud และ status='open' (กัน subscribe doc เก่าที่ completed แล้ว) */
+async function verifyOpenSession(docId){
+  try{
+    const doc = await db.collection('payment_sessions').doc(docId).get();
+    if(!doc.exists) {
+      console.log('[verifyOpenSession] doc ไม่มี:', docId);
+      return false;
+    }
+    const status = doc.data().status;
+    if(status !== 'open'){
+      console.log('[verifyOpenSession] doc ไม่ open:', docId, 'status:', status);
+      return false;
+    }
+    return true;
+  }catch(e){
+    console.error('[verifyOpenSession] error:', e);
+    return false;
+  }
+}
+
 (async function boot(){
   // 1) พยายามโหลด open session ของวันนี้จาก cloud ก่อน (คนเตรียมอาจเป็นคนละคน)
   const loadedFromCloud = await loadTodayOpenSession();
@@ -3054,13 +3987,28 @@ function setSetupInputsFromSession(){
   if(!loadedFromCloud){
     // 2) ไม่เจอบน cloud → ใช้ draft local ถ้ามี
     if(loadDraft()){
-      // ✅ ถ้า draft ไม่ใช่ของวันนี้ → reset (ไม่ติด doc เก่า)
-      //    ถ้าเป็นวันนี้ และมี session.id → subscribe real-time
-      if(session.date !== todayISO()){
+      const today = todayISO();
+      if(session.date < today){
+        // วันที่ผ่านมาแล้ว → reset
+        console.log(`[boot] draft date (${session.date}) < today (${today}) → reset`);
         session = newSession();
         editingId = null;
-      } else if(session.id){
-        subscribeToSession(session.id);
+      } else {
+        if(session.date > today){
+          console.log(`[boot] keeping prepped session for future date: ${session.date}`);
+        }
+        // ✅ Verify session.id จาก draft ยังถูกต้องไหม (อาจ stale)
+        if(session.id){
+          const valid = await verifyOpenSession(session.id);
+          if(!valid){
+            console.log('[boot] ⚠️ draft session.id stale → drop เพื่อรอ adopt ใหม่');
+            session.id = null;
+            editingId = null;
+          } else {
+            console.log('[boot] ✅ draft session.id verified, subscribing:', session.id);
+            subscribeToSession(session.id);
+          }
+        }
       }
     } else {
       session = newSession();
@@ -3082,10 +4030,9 @@ function setSetupInputsFromSession(){
   // เลือก section เริ่มต้น: tab รายชื่อ เสมอ
   switchSection('members');
 
-  // ✅ ถ้ายังไม่มี session.id → ฟัง query "open today" เผื่อคนอื่นสร้าง doc ใหม่
-  if(!session?.id){
-    subscribeToTodayOpenQuery();
-  }
+  // ✅ ฟัง open session เสมอ — กัน device ที่ยังไม่มี session พลาด session จาก device อื่น
+  // subscribeToTodayOpenQuery มี guard "if(session?.id) return" ใน callback → ปลอดภัย
+  subscribeToTodayOpenQuery();
 })();
 </script>
 </body>
