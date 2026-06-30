@@ -72,11 +72,41 @@ body{min-height:100dvh}
 .header-card{
   background:var(--card);border:1px solid var(--border-soft);
   border-radius:var(--radius);padding:14px 16px;margin:14px 0 12px;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  display:flex;flex-direction:column;gap:12px;
   box-shadow:var(--shadow-card);
 }
-.header-card .brand{font-size:18px;font-weight:600;color:var(--ink);line-height:1.2;word-break:keep-all;letter-spacing:-0.01em}
-.header-card .brand span{color:var(--accent);display:block;font-weight:600}
+.header-top-row{
+  display:flex;align-items:center;gap:10px;min-width:0;
+}
+.header-btn-row{
+  display:flex;gap:8px;
+}
+.header-btn-row .history-icon-btn{flex:1}
+
+/* ── Admin Mode toggle (🔒/🔓) ── */
+.admin-toggle-btn{
+  width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border);
+  background:var(--input);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .2s;
+  -webkit-tap-highlight-color:transparent;outline:none;
+}
+.admin-toggle-btn:active{transform:scale(0.92)}
+.admin-toggle-btn.unlocked{
+  background:linear-gradient(135deg,#34c759,#30b14f);border-color:transparent;
+  box-shadow:0 4px 12px rgba(52,199,89,0.3);
+}
+
+/* ── Admin-only elements: ซ่อนถ้าไม่ใช่ admin mode ── */
+.admin-only{display:none !important}
+body.admin-mode .admin-only{display:flex !important}
+body.admin-mode .hc-btn.admin-only,
+body.admin-mode .admin-only-inline{display:inline-flex !important}
+
+/* ── view-only hint: ซ่อนเมื่อ admin ── */
+body.admin-mode #pool-view-only-hint{display:none}
+.header-card .brand{font-size:16px;font-weight:600;color:var(--ink);line-height:1.2;letter-spacing:-0.01em;white-space:nowrap}
+.header-card .brand span{color:var(--accent);font-weight:600;margin-left:6px}
 .header-card .brand-sub{
   font-size:12px;font-weight:500;color:var(--mute);margin-top:2px;
   letter-spacing:0;
@@ -1382,14 +1412,15 @@ body{min-height:100dvh}
 
   <!-- Header -->
   <div class="header-card">
-    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+    <div class="header-top-row">
       <img src="logo-small.png" alt="" class="brand-logo" style="width:38px;height:38px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
-      <div style="min-width:0">
+      <div style="min-width:0;flex:1">
         <div class="brand">ก๊วนอยากตี<span>ต้องได้ตี</span></div>
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
+      <button class="admin-toggle-btn" id="admin-toggle-btn" onclick="toggleAdminMode()" title="Admin Mode">🔒</button>
     </div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
+    <div class="header-btn-row">
       <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
       <button class="history-icon-btn" onclick="switchTab('pool')" title="เงินกองกลาง">💰 เงินกองกลาง</button>
     </div>
@@ -1599,7 +1630,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.1.1 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.0 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1647,11 +1678,15 @@ body{min-height:100dvh}
       </div>
     </div>
 
-    <!-- Action buttons -->
-    <div class="pool-actions">
+    <!-- Action buttons (เฉพาะ admin mode) -->
+    <div class="pool-actions admin-only">
       <button class="pool-btn-add-income" onclick="openAddIncomeModal()">💵 เพิ่มรายรับ</button>
       <button class="pool-btn-add-expense" onclick="openAddExpenseModal()">💸 เพิ่มรายจ่าย</button>
       <button class="pool-btn-settings" onclick="openPoolSettingsModal()">⚙️</button>
+    </div>
+    <!-- ข้อความบอกสถานะ view-only -->
+    <div id="pool-view-only-hint" style="text-align:center;padding:10px;color:var(--mute);font-size:12px;margin-bottom:8px">
+      🔒 โหมดดูอย่างเดียว · กด 🔒 ที่หัวเพื่อเข้า admin
     </div>
 
     <!-- Filter tabs -->
@@ -3107,11 +3142,6 @@ async function loadHistory(){
           <div class="hc-date">${escHtml(d.dateDisplay||d.date||'')}</div>
           ${badge}
         </div>
-        ${isComplete ? `
-        <div style="background:var(--accent-light);border:1px solid rgba(0,102,204,.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-          <span style="font-size:13px;color:var(--mute);font-weight:500">💰 ยอดเก็บได้รอบนี้</span>
-          <span style="font-family:inherit;font-size:22px;font-weight:600;color:var(--blue);letter-spacing:-0.02em">${fmtBaht(totalCollected)} ฿</span>
-        </div>` : ''}
         <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
           <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
           <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(cashAmt)}฿</strong> (${d.cashCount||0})</span>
@@ -3127,8 +3157,8 @@ async function loadHistory(){
         <div class="hc-names">${names||'—'}</div>
         <div class="hc-actions">
           <button class="hc-btn view" onclick="viewSession('${doc.id}')">👁 เรียกดู</button>
-          <button class="hc-btn edit" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
-          <button class="hc-btn" onclick="deleteSession('${doc.id}',this)">🗑 ลบ</button>
+          <button class="hc-btn edit admin-only" onclick="editSession('${doc.id}')">✏️ แก้ไข</button>
+          <button class="hc-btn admin-only" onclick="deleteSession('${doc.id}',this)">🗑 ลบ</button>
         </div>
       </div>`;
     }).join('');
@@ -3813,6 +3843,52 @@ function requireAdminPin(action){
   return true;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   ADMIN MODE TOGGLE — ซ่อน/แสดงปุ่มแก้ไข ลบ เพิ่ม ตาม mode
+   ════════════════════════════════════════════════════════════════ */
+let _adminMode = false;
+
+/** อ่าน state จาก sessionStorage (ตอน boot) */
+function initAdminMode(){
+  try{
+    _adminMode = sessionStorage.getItem('payment_admin_ok') === '1';
+  }catch(e){ _adminMode = false; }
+  applyAdminMode();
+}
+
+/** Apply visual changes — toggle CSS class + re-render */
+function applyAdminMode(){
+  document.body.classList.toggle('admin-mode', _adminMode);
+  const btn = document.getElementById('admin-toggle-btn');
+  if(btn){
+    btn.textContent = _adminMode ? '🔓' : '🔒';
+    btn.title = _adminMode ? 'Admin Mode: เปิด (กดเพื่อล็อก)' : 'Admin Mode: ปิด (กดเพื่อปลดล็อก)';
+    btn.classList.toggle('unlocked', _adminMode);
+  }
+  // Re-render visible views ที่มี admin-only elements
+  const vh = document.getElementById('view-history');
+  if(vh && vh.style.display !== 'none') loadHistory();
+  const vp = document.getElementById('view-pool');
+  if(vp && vp.style.display !== 'none') renderPool();
+}
+
+/** Toggle admin mode (ขอ PIN ตอนปลดล็อก, ล็อกได้เลย) */
+function toggleAdminMode(){
+  if(_adminMode){
+    // Lock — ออกจาก admin
+    _adminMode = false;
+    try{ sessionStorage.removeItem('payment_admin_ok'); }catch(e){}
+    applyAdminMode();
+    toast('🔒 ล็อก admin mode');
+  } else {
+    // Unlock — ขอ PIN
+    if(!requireAdminPin('เข้า admin mode')) return;
+    _adminMode = true;
+    applyAdminMode();
+    toast('🔓 ปลดล็อก admin mode · แสดงปุ่มแก้ไข/ลบ/เพิ่ม');
+  }
+}
+
 async function editSession(docId){
   if(!requireAdminPin('แก้ไข')) return;
   try{
@@ -4405,8 +4481,11 @@ function renderPool(){
     const dateDisplay = tx.date ? thaiDate(tx.date) : '—';
     const desc = escHtml(tx.description || (isIncome ? 'รายรับ' : 'รายจ่าย'));
     const bal = balanceMap[tx.id];
+    // ✅ คลิกได้เฉพาะ admin mode
+    const clickAttr = _adminMode ? `onclick="openEditTx('${tx.id}')"` : '';
+    const cursorStyle = _adminMode ? '' : 'style="cursor:default"';
     return `
-      <div class="pool-tx-item" onclick="openEditTx('${tx.id}')">
+      <div class="pool-tx-item" ${clickAttr} ${cursorStyle}>
         <div class="pool-tx-icon ${tx.type}">${icon}</div>
         <div class="pool-tx-body">
           <div class="pool-tx-desc">${desc}</div>
@@ -4741,6 +4820,9 @@ async function verifyOpenSession(docId){
   renderPlayerListMini();
   // เลือก section เริ่มต้น: tab รายชื่อ เสมอ
   switchSection('members');
+
+  // ✅ Initialize admin mode (restore from sessionStorage)
+  initAdminMode();
 
   // ✅ ฟัง open session เสมอ — กัน device ที่ยังไม่มี session พลาด session จาก device อื่น
   // subscribeToTodayOpenQuery มี guard "if(session?.id) return" ใน callback → ปลอดภัย
