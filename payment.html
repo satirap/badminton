@@ -456,6 +456,36 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 
 /* ── History list ── */
 .history-list{display:flex;flex-direction:column;gap:8px}
+
+/* Player tags ใน history (แทน icon เดิม) */
+.player-tag{
+  display:inline-block;padding:4px 10px;border-radius:14px;
+  font-size:13px;font-weight:500;margin:2px 1px;
+  line-height:1.4;letter-spacing:-0.01em;
+  white-space:nowrap;
+}
+.player-tag.tag-cash{background:#0066cc;color:#fff}
+.player-tag.tag-transfer{background:#34c759;color:#fff}
+.player-tag.tag-unpaid{
+  background:#f5f5f7;color:#6e6e73;border:1px solid #d2d2d7;
+}
+
+/* Legend (caption บอกสี) */
+.history-legend{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  margin-bottom:12px;padding:10px 12px;
+  background:var(--card);border:1px solid var(--border);border-radius:11px;
+  font-size:12px;color:var(--mute);
+}
+.history-legend .legend-item{
+  display:inline-flex;align-items:center;gap:5px;
+}
+.history-legend .legend-dot{
+  display:inline-block;width:12px;height:12px;border-radius:50%;
+}
+.history-legend .legend-dot.cash{background:#0066cc}
+.history-legend .legend-dot.transfer{background:#34c759}
+.history-legend .legend-dot.unpaid{background:#f5f5f7;border:1px solid #d2d2d7}
 .history-refresh-btn{
   width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);
   background:var(--card);font-size:16px;cursor:pointer;
@@ -1680,7 +1710,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.3 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.4 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1692,6 +1722,11 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <button class="history-refresh-btn" onclick="loadHistory()" title="รีเฟรช">🔄</button>
     </div>
     <div style="font-size:11px;color:var(--mute);margin-bottom:10px">เรียงตามวันที่จัดก๊วน (ใหม่สุด → เก่าสุด)</div>
+    <div class="history-legend">
+      <span class="legend-item"><span class="legend-dot cash"></span>เงินสด</span>
+      <span class="legend-item"><span class="legend-dot transfer"></span>เงินโอน</span>
+      <span class="legend-item"><span class="legend-dot unpaid"></span>ยังไม่จ่าย</span>
+    </div>
     <div class="history-list" id="history-list">
       <div class="empty">กำลังโหลด...</div>
     </div>
@@ -3172,9 +3207,9 @@ async function loadHistory(){
     el.innerHTML = snap.docs.map(doc => {
       const d = doc.data();
       const names = (d.players||[]).map(p => {
-        const icon = p.cash ? '💵' : p.transfer ? '📲' : '⬜';
-        return `${icon} ${escHtml(p.name)}`;
-      }).join('  ');
+        const cls = p.cash ? 'tag-cash' : p.transfer ? 'tag-transfer' : 'tag-unpaid';
+        return `<span class="player-tag ${cls}">${escHtml(p.name)}</span>`;
+      }).join(' ');
       const isComplete = d.status === 'complete';
       const badge = isComplete
         ? '<span class="hc-badge complete">จ่ายครบ</span>'
