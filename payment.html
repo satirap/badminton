@@ -1242,6 +1242,139 @@ body{min-height:100dvh}
   opacity:.85;
 }
 
+/* ═══════════════════════════════════════════════════════
+   POOL (เงินกองกลาง) STYLES
+   ═══════════════════════════════════════════════════════ */
+.pool-balance-card{
+  background:var(--grad-primary);color:#fff;border-radius:18px;padding:24px 22px;
+  margin-bottom:14px;text-align:center;
+  box-shadow:0 6px 20px rgba(0, 102, 204, 0.25), 0 2px 6px rgba(88, 86, 214, 0.15);
+}
+.pool-balance-label{
+  font-size:13px;font-weight:500;opacity:.9;letter-spacing:.02em;margin-bottom:4px;
+}
+.pool-balance-amount{
+  font-size:clamp(34px, 9vw, 44px);font-weight:700;letter-spacing:-0.02em;line-height:1.1;
+}
+.pool-balance-detail{
+  font-size:12px;font-weight:400;opacity:.85;margin-top:6px;
+}
+
+.pool-stats-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;
+}
+.pool-stat{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;
+  text-align:center;box-shadow:var(--shadow-card);
+}
+.pool-stat-label{
+  font-size:11px;color:var(--mute);font-weight:500;margin-bottom:4px;
+}
+.pool-stat-value{
+  font-size:15px;font-weight:600;color:var(--ink);
+}
+.pool-stat-income{color:#34c759}
+.pool-stat-expense{color:#ff3b30}
+
+.pool-actions{
+  display:flex;gap:8px;margin-bottom:14px;
+}
+.pool-btn-add-income, .pool-btn-add-expense, .pool-btn-settings{
+  padding:13px 12px;border-radius:12px;border:1px solid var(--border);
+  background:var(--card);color:var(--ink);font-family:inherit;font-size:14px;font-weight:600;
+  cursor:pointer;box-shadow:var(--shadow-card);transition:transform .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.pool-btn-add-income, .pool-btn-add-expense{flex:1}
+.pool-btn-settings{flex:0 0 auto;min-width:50px;font-size:18px;padding:13px 14px}
+.pool-btn-add-income{
+  background:linear-gradient(135deg, #34c759, #30b14f);color:#fff;border-color:transparent;
+  box-shadow:0 4px 12px rgba(52,199,89,0.25);
+}
+.pool-btn-add-expense{
+  background:linear-gradient(135deg, #ff3b30, #e0352b);color:#fff;border-color:transparent;
+  box-shadow:0 4px 12px rgba(255,59,48,0.25);
+}
+.pool-btn-add-income:active, .pool-btn-add-expense:active, .pool-btn-settings:active{opacity:.85}
+
+.pool-filter-tabs{
+  display:flex;gap:6px;margin-bottom:12px;padding:4px;background:var(--input);border-radius:11px;
+}
+.pool-filter{
+  flex:1;padding:8px 10px;border:none;background:transparent;color:var(--mute);
+  font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;border-radius:8px;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;
+}
+.pool-filter.active{
+  background:var(--card);color:var(--ink);font-weight:600;
+  box-shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+
+.pool-tx-list{
+  display:flex;flex-direction:column;gap:8px;
+}
+.pool-tx-item{
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+  display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-card);
+  cursor:pointer;transition:opacity .15s;-webkit-tap-highlight-color:transparent;
+}
+.pool-tx-item:active{opacity:.7}
+.pool-tx-icon{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.pool-tx-icon.income{background:#34c75920;color:#34c759}
+.pool-tx-icon.expense{background:#ff3b3020;color:#ff3b30}
+.pool-tx-body{flex:1;min-width:0}
+.pool-tx-desc{
+  font-size:14px;font-weight:500;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;
+}
+.pool-tx-date{
+  font-size:11px;color:var(--mute);margin-top:2px;
+}
+.pool-tx-amount{
+  font-size:15px;font-weight:600;flex-shrink:0;text-align:right;
+}
+.pool-tx-amount.income{color:#34c759}
+.pool-tx-amount.expense{color:#ff3b30}
+.pool-tx-balance{
+  font-size:11px;color:var(--mute);margin-top:2px;font-weight:500;
+}
+
+/* Modal inputs */
+.pool-input-label{
+  display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;
+}
+.pool-input{
+  width:100%;padding:12px 14px;border-radius:11px;border:1.5px solid var(--border);
+  background:var(--card);color:var(--ink);font-family:inherit;font-size:15px;
+  outline:none;transition:border-color .15s;box-sizing:border-box;
+}
+.pool-input:focus{border-color:var(--accent)}
+
+.pool-btn-submit{
+  width:100%;margin-top:18px;padding:13px;border-radius:12px;border:none;
+  background:var(--grad-primary);color:#fff;font-family:inherit;font-size:15px;font-weight:600;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  box-shadow:0 4px 12px rgba(0, 102, 204, 0.25);
+}
+.pool-btn-submit:active{opacity:.85}
+
+.pool-btn-delete{
+  padding:13px 18px;border-radius:12px;border:1.5px solid #ff3b30;
+  background:transparent;color:#ff3b30;font-family:inherit;font-size:14px;font-weight:600;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.pool-btn-delete:active{background:#ff3b3010}
+
+.pool-btn-import{
+  width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);
+  background:var(--input);color:var(--ink);font-family:inherit;font-size:13px;font-weight:500;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.pool-btn-import:active{opacity:.7}
+
 </style>
 </head>
 <body>
@@ -1256,7 +1389,10 @@ body{min-height:100dvh}
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
     </div>
-    <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
+      <button class="history-icon-btn" onclick="switchTab('pool')" title="เงินกองกลาง">💰 เงินกองกลาง</button>
+    </div>
   </div>
 
   <!-- ============ TAB: COLLECT ============ -->
@@ -1463,7 +1599,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.0.3 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.1.1 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1475,6 +1611,157 @@ body{min-height:100dvh}
     </div>
     <div class="history-list" id="history-list">
       <div class="empty">กำลังโหลด...</div>
+    </div>
+  </div>
+
+  <!-- ============ TAB: POOL (เงินกองกลาง) ============ -->
+  <div id="view-pool" style="display:none">
+    <button class="back-btn" onclick="switchTab('collect')">← กลับหน้าเก็บเงิน</button>
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="font-size:28px">💰</div>
+      <h3 style="margin:0;font-size:17px;color:var(--ink);font-weight:800">เงินกองกลาง</h3>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="pool-balance-card">
+      <div class="pool-balance-label">ยอดคงเหลือ</div>
+      <div class="pool-balance-amount" id="pool-balance">฿0</div>
+      <div class="pool-balance-detail" id="pool-balance-detail">รวมรายรับ ฿0 · รวมรายจ่าย ฿0</div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="pool-stats-row">
+      <div class="pool-stat">
+        <div class="pool-stat-label">ยกมา</div>
+        <div class="pool-stat-value" id="pool-initial">฿0</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">รายรับ</div>
+        <div class="pool-stat-value pool-stat-income" id="pool-income">฿0</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">รายจ่าย</div>
+        <div class="pool-stat-value pool-stat-expense" id="pool-expense">฿0</div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="pool-actions">
+      <button class="pool-btn-add-income" onclick="openAddIncomeModal()">💵 เพิ่มรายรับ</button>
+      <button class="pool-btn-add-expense" onclick="openAddExpenseModal()">💸 เพิ่มรายจ่าย</button>
+      <button class="pool-btn-settings" onclick="openPoolSettingsModal()">⚙️</button>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="pool-filter-tabs">
+      <button class="pool-filter active" data-filter="all" onclick="setPoolFilter('all')">ทั้งหมด</button>
+      <button class="pool-filter" data-filter="income" onclick="setPoolFilter('income')">💵 รายรับ</button>
+      <button class="pool-filter" data-filter="expense" onclick="setPoolFilter('expense')">💸 รายจ่าย</button>
+    </div>
+
+    <!-- Transactions list -->
+    <div class="pool-tx-list" id="pool-tx-list">
+      <div class="empty">กำลังโหลด...</div>
+    </div>
+  </div>
+
+  <!-- ===== Add Income Modal ===== -->
+  <div class="vm-overlay" id="add-income-modal" style="display:none" onclick="if(event.target===this)closeAddIncomeModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title">💵 เพิ่มรายรับ</div>
+          <div class="vm-sub">บริจาค / ขายของ / อื่น ๆ</div>
+        </div>
+        <button class="vm-close" onclick="closeAddIncomeModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่</label>
+        <input type="date" id="income-date" class="pool-input"/>
+        <label class="pool-input-label" style="margin-top:14px">รายละเอียด</label>
+        <input type="text" id="income-desc" class="pool-input" placeholder="เช่น เงินบริจาคจากพี่สมศักดิ์"/>
+        <label class="pool-input-label" style="margin-top:14px">จำนวนเงิน (บาท)</label>
+        <input type="number" id="income-amount" class="pool-input" placeholder="0" inputmode="numeric"/>
+        <button class="pool-btn-submit" onclick="submitIncome()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Add Expense Modal ===== -->
+  <div class="vm-overlay" id="add-expense-modal" style="display:none" onclick="if(event.target===this)closeAddExpenseModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title">💸 เพิ่มรายจ่าย</div>
+          <div class="vm-sub">บันทึกค่าใช้จ่ายเข้าระบบ</div>
+        </div>
+        <button class="vm-close" onclick="closeAddExpenseModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่</label>
+        <input type="date" id="expense-date" class="pool-input"/>
+        <label class="pool-input-label" style="margin-top:14px">รายละเอียด</label>
+        <input type="text" id="expense-desc" class="pool-input" placeholder="เช่น ซื้อลูกแบด 3 หลอด"/>
+        <label class="pool-input-label" style="margin-top:14px">จำนวนเงิน (บาท)</label>
+        <input type="number" id="expense-amount" class="pool-input" placeholder="0" inputmode="numeric"/>
+        <button class="pool-btn-submit" onclick="submitExpense()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Pool Settings Modal ===== -->
+  <div class="vm-overlay" id="pool-settings-modal" style="display:none" onclick="if(event.target===this)closePoolSettingsModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title">⚙️ ตั้งค่ากองกลาง</div>
+          <div class="vm-sub">เงินยกมา · รอบเริ่มเก็บ</div>
+        </div>
+        <button class="vm-close" onclick="closePoolSettingsModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">เงินยกมา (บาท)</label>
+        <input type="number" id="pool-initial-input" class="pool-input" placeholder="0" inputmode="numeric"/>
+        <div style="font-size:11px;color:var(--mute);margin-top:4px">ใส่เลขเงินกองกลางที่มีอยู่ตอนเริ่มใช้ระบบ</div>
+
+        <label class="pool-input-label" style="margin-top:14px">เริ่มเก็บเงินตั้งแต่วันที่</label>
+        <input type="date" id="pool-startfrom-input" class="pool-input"/>
+        <div style="font-size:11px;color:var(--mute);margin-top:4px">รอบที่จบหลังจากวันนี้ จะถูกบวกเข้ากองกลางอัตโนมัติ</div>
+
+        <button class="pool-btn-submit" onclick="submitPoolSettings()">บันทึก</button>
+
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+          <button class="pool-btn-import" onclick="importFromHistory()">📥 นำเข้ารายรับจากประวัติ</button>
+          <div style="font-size:11px;color:var(--mute);margin-top:6px;line-height:1.4">นำรอบที่จบไปแล้ว ตั้งแต่ "เริ่มเก็บ" มาบวกเข้ากองกลาง (ไม่ซ้ำ)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Edit Transaction Modal ===== -->
+  <div class="vm-overlay" id="edit-tx-modal" style="display:none" onclick="if(event.target===this)closeEditTxModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title">✏️ แก้ไขรายการ</div>
+          <div class="vm-sub" id="edit-tx-type-label">—</div>
+        </div>
+        <button class="vm-close" onclick="closeEditTxModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่</label>
+        <input type="date" id="edit-tx-date" class="pool-input"/>
+        <label class="pool-input-label" style="margin-top:14px">รายละเอียด</label>
+        <input type="text" id="edit-tx-desc" class="pool-input"/>
+        <label class="pool-input-label" style="margin-top:14px">จำนวนเงิน (บาท)</label>
+        <input type="number" id="edit-tx-amount" class="pool-input" inputmode="numeric"/>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="pool-btn-delete" onclick="submitDeleteTx()">🗑 ลบ</button>
+          <button class="pool-btn-submit" style="flex:1" onclick="submitEditTx()">บันทึก</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2717,6 +3004,13 @@ async function completeSession(){
       const ref = await db.collection('payment_sessions').add(payload);
       editingId = ref.id;
     }
+    // ✅ Auto-add income เข้ากองกลาง (กัน double-count ด้วย sessionId)
+    try{
+      await addPoolIncomeFromSession(payload, editingId);
+    }catch(e){
+      console.error('[completeSession] addPoolIncome failed:', e);
+      // ไม่ throw — ไม่ให้ทับ flow จบรอบ
+    }
     clearDraft();
     toast('🎉 จบรอบเรียบร้อย');
     setTimeout(() => {
@@ -3569,10 +3863,16 @@ async function editSession(docId){
 
 async function deleteSession(docId, btn){
   if(!requireAdminPin('ลบ')) return;
-  if(!confirm('ลบประวัตินี้?')) return;
+  if(!confirm('ลบประวัตินี้?\n(เงินกองกลางจากรอบนี้จะถูกลบด้วย)')) return;
   btn.disabled = true;
   try{
     await db.collection('payment_sessions').doc(docId).delete();
+    // ✅ Cascade: ลบ income จาก pool ที่มาจาก session นี้
+    try{
+      await removePoolIncomeBySessionId(docId);
+    }catch(e){
+      console.error('[deleteSession] removePoolIncome failed:', e);
+    }
     toast('ลบแล้ว');
     loadHistory();
   }catch(e){ toast('ลบไม่ได้: '+e.message); btn.disabled=false; }
@@ -3584,7 +3884,10 @@ async function deleteSession(docId, btn){
 function switchTab(tab){
   document.getElementById('view-collect').style.display  = tab==='collect' ? 'block' : 'none';
   document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
+  const vPool = document.getElementById('view-pool');
+  if(vPool) vPool.style.display = tab==='pool' ? 'block' : 'none';
   if(tab==='history') loadHistory();
+  if(tab==='pool') openPoolTab();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -3956,6 +4259,415 @@ function setSetupInputsFromSession(){
   }
   updateCourtCalculation();
 }
+
+/* ════════════════════════════════════════════════════════════════
+   POOL (เงินกองกลาง) — Community Fund tracking
+   ════════════════════════════════════════════════════════════════
+   Firestore: pool_state/singleton
+   {
+     initialBalance: number,
+     startingFromDate: 'YYYY-MM-DD' | null,
+     transactions: [{id, type:'income'|'expense', date, amount, description, sessionId?, createdAt}]
+     lastWriterId, updatedAt
+   }
+*/
+
+const POOL_DOC_PATH = 'pool_state/singleton';
+let poolData = {
+  initialBalance: 0,
+  startingFromDate: null,
+  transactions: []
+};
+let _poolUnsubscribe = null;
+let _poolFilter = 'all';
+let _editingTxId = null; // id ของ transaction ที่กำลังแก้
+
+/** โหลดข้อมูล pool จาก cloud ครั้งแรก */
+async function loadPool(){
+  try{
+    const doc = await db.doc(POOL_DOC_PATH).get();
+    if(doc.exists){
+      const d = doc.data();
+      poolData = {
+        initialBalance: d.initialBalance || 0,
+        startingFromDate: d.startingFromDate || null,
+        transactions: Array.isArray(d.transactions) ? d.transactions : []
+      };
+      console.log('[loadPool] loaded:', poolData.transactions.length, 'transactions');
+    } else {
+      console.log('[loadPool] no pool doc yet — using defaults');
+    }
+  }catch(e){
+    console.error('[loadPool] error:', e);
+  }
+}
+
+/** Realtime subscribe — sync ทุก device */
+function subscribeToPool(){
+  if(_poolUnsubscribe) return;
+  _poolUnsubscribe = db.doc(POOL_DOC_PATH).onSnapshot(snap => {
+    if(!snap.exists) return;
+    const d = snap.data();
+    if(d.lastWriterId === _myWriterId) return; // skip own echo
+    poolData = {
+      initialBalance: d.initialBalance || 0,
+      startingFromDate: d.startingFromDate || null,
+      transactions: Array.isArray(d.transactions) ? d.transactions : []
+    };
+    console.log('[pool] sync from cloud');
+    if(document.getElementById('view-pool')?.style.display !== 'none'){
+      renderPool();
+    }
+  }, err => console.error('[pool snapshot]', err));
+}
+
+/** เขียน pool data → cloud (last-write-wins) */
+async function savePool(){
+  try{
+    await db.doc(POOL_DOC_PATH).set({
+      initialBalance: poolData.initialBalance,
+      startingFromDate: poolData.startingFromDate,
+      transactions: poolData.transactions,
+      lastWriterId: _myWriterId,
+      updatedAt: new Date()
+    }, {merge: true});
+    console.log('[savePool] ✅');
+  }catch(e){
+    console.error('[savePool] ❌', e);
+    toast('บันทึก cloud ไม่สำเร็จ: ' + e.message);
+  }
+}
+
+/** คำนวณยอดคงเหลือ */
+function calcPoolStats(){
+  let income = 0, expense = 0;
+  poolData.transactions.forEach(tx => {
+    if(tx.type === 'income') income += Number(tx.amount) || 0;
+    else if(tx.type === 'expense') expense += Number(tx.amount) || 0;
+  });
+  const balance = (Number(poolData.initialBalance) || 0) + income - expense;
+  return { balance, income, expense };
+}
+
+/** เปิดหน้า pool */
+async function openPoolTab(){
+  await loadPool();
+  subscribeToPool();
+  renderPool();
+}
+
+/** Render หน้า pool */
+function renderPool(){
+  const stats = calcPoolStats();
+  document.getElementById('pool-balance').textContent = fmtBaht(stats.balance);
+  document.getElementById('pool-balance-detail').textContent =
+    `รวมรายรับ ${fmtBaht(stats.income)} · รวมรายจ่าย ${fmtBaht(stats.expense)}`;
+  document.getElementById('pool-initial').textContent = fmtBaht(poolData.initialBalance || 0);
+  document.getElementById('pool-income').textContent = fmtBaht(stats.income);
+  document.getElementById('pool-expense').textContent = fmtBaht(stats.expense);
+
+  // Render transactions (sort by date desc → createdAt desc)
+  const txs = poolData.transactions
+    .filter(tx => _poolFilter === 'all' || tx.type === _poolFilter)
+    .slice()
+    .sort((a, b) => {
+      const dateCmp = (b.date || '').localeCompare(a.date || '');
+      if(dateCmp !== 0) return dateCmp;
+      const aCreated = a.createdAt?.seconds || 0;
+      const bCreated = b.createdAt?.seconds || 0;
+      return bCreated - aCreated;
+    });
+
+  const list = document.getElementById('pool-tx-list');
+  if(!list) return;
+  if(txs.length === 0){
+    list.innerHTML = '<div class="empty" style="padding:30px;text-align:center;color:var(--mute);font-size:14px">ยังไม่มีรายการ</div>';
+    return;
+  }
+
+  // คำนวณ running balance (จากเก่าสุด)
+  const allSorted = poolData.transactions.slice().sort((a, b) => {
+    const dateCmp = (a.date || '').localeCompare(b.date || '');
+    if(dateCmp !== 0) return dateCmp;
+    return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
+  });
+  const balanceMap = {};
+  let running = Number(poolData.initialBalance) || 0;
+  allSorted.forEach(tx => {
+    running += (tx.type === 'income' ? 1 : -1) * (Number(tx.amount) || 0);
+    balanceMap[tx.id] = running;
+  });
+
+  list.innerHTML = txs.map(tx => {
+    const isIncome = tx.type === 'income';
+    const sign = isIncome ? '+' : '−';
+    const icon = isIncome ? '💵' : '💸';
+    const dateDisplay = tx.date ? thaiDate(tx.date) : '—';
+    const desc = escHtml(tx.description || (isIncome ? 'รายรับ' : 'รายจ่าย'));
+    const bal = balanceMap[tx.id];
+    return `
+      <div class="pool-tx-item" onclick="openEditTx('${tx.id}')">
+        <div class="pool-tx-icon ${tx.type}">${icon}</div>
+        <div class="pool-tx-body">
+          <div class="pool-tx-desc">${desc}</div>
+          <div class="pool-tx-date">${dateDisplay}</div>
+        </div>
+        <div>
+          <div class="pool-tx-amount ${tx.type}">${sign}${fmtBaht(tx.amount || 0)}</div>
+          <div class="pool-tx-balance">คงเหลือ ${fmtBaht(bal)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function setPoolFilter(filter){
+  _poolFilter = filter;
+  document.querySelectorAll('.pool-filter').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderPool();
+}
+
+/* ─── Add Income Modal (manual) ─── */
+function openAddIncomeModal(){
+  if(!requireAdminPin('เพิ่มรายรับ')) return;
+  document.getElementById('income-date').value = todayISO();
+  document.getElementById('income-desc').value = '';
+  document.getElementById('income-amount').value = '';
+  document.getElementById('add-income-modal').style.display = 'flex';
+}
+function closeAddIncomeModal(){
+  document.getElementById('add-income-modal').style.display = 'none';
+}
+async function submitIncome(){
+  const date = document.getElementById('income-date').value;
+  const desc = document.getElementById('income-desc').value.trim();
+  const amount = parseFloat(document.getElementById('income-amount').value);
+  if(!date) return toast('ใส่วันที่');
+  if(!desc) return toast('ใส่รายละเอียด');
+  if(!amount || amount <= 0) return toast('ใส่จำนวนเงินที่ถูกต้อง');
+  const tx = {
+    id: 'mn' + Date.now() + Math.random().toString(36).slice(2,5),
+    type: 'income',
+    date,
+    amount,
+    description: desc,
+    // ไม่มี sessionId → manual income (ลบไม่ cascade)
+    createdAt: { seconds: Math.floor(Date.now()/1000) }
+  };
+  poolData.transactions.push(tx);
+  await savePool();
+  renderPool();
+  closeAddIncomeModal();
+  toast('💵 บันทึกรายรับ ' + fmtBaht(amount));
+}
+
+/* ─── Add Expense Modal ─── */
+function openAddExpenseModal(){
+  if(!requireAdminPin('เพิ่มรายจ่าย')) return;
+  document.getElementById('expense-date').value = todayISO();
+  document.getElementById('expense-desc').value = '';
+  document.getElementById('expense-amount').value = '';
+  document.getElementById('add-expense-modal').style.display = 'flex';
+}
+function closeAddExpenseModal(){
+  document.getElementById('add-expense-modal').style.display = 'none';
+}
+async function submitExpense(){
+  const date = document.getElementById('expense-date').value;
+  const desc = document.getElementById('expense-desc').value.trim();
+  const amount = parseFloat(document.getElementById('expense-amount').value);
+  if(!date) return toast('ใส่วันที่');
+  if(!desc) return toast('ใส่รายละเอียด');
+  if(!amount || amount <= 0) return toast('ใส่จำนวนเงินที่ถูกต้อง');
+  const tx = {
+    id: 'ex' + Date.now() + Math.random().toString(36).slice(2,5),
+    type: 'expense',
+    date,
+    amount,
+    description: desc,
+    createdAt: { seconds: Math.floor(Date.now()/1000) }
+  };
+  poolData.transactions.push(tx);
+  await savePool();
+  renderPool();
+  closeAddExpenseModal();
+  toast('💸 บันทึกรายจ่าย ' + fmtBaht(amount));
+}
+
+/* ─── Pool Settings Modal ─── */
+function openPoolSettingsModal(){
+  if(!requireAdminPin('แก้ไขตั้งค่า')) return;
+  document.getElementById('pool-initial-input').value = poolData.initialBalance || 0;
+  document.getElementById('pool-startfrom-input').value = poolData.startingFromDate || '';
+  document.getElementById('pool-settings-modal').style.display = 'flex';
+}
+function closePoolSettingsModal(){
+  document.getElementById('pool-settings-modal').style.display = 'none';
+}
+async function submitPoolSettings(){
+  const initial = parseFloat(document.getElementById('pool-initial-input').value) || 0;
+  const startfrom = document.getElementById('pool-startfrom-input').value || null;
+  poolData.initialBalance = initial;
+  poolData.startingFromDate = startfrom;
+  await savePool();
+  renderPool();
+  closePoolSettingsModal();
+  toast('💰 บันทึกตั้งค่า');
+}
+
+/* ─── Edit/Delete Transaction Modal ─── */
+function openEditTx(txId){
+  if(!requireAdminPin('แก้ไขรายการ')) return;
+  const tx = poolData.transactions.find(t => t.id === txId);
+  if(!tx) return;
+  _editingTxId = txId;
+  document.getElementById('edit-tx-type-label').textContent =
+    tx.type === 'income' ? '💵 รายรับ' : '💸 รายจ่าย';
+  document.getElementById('edit-tx-date').value = tx.date || '';
+  document.getElementById('edit-tx-desc').value = tx.description || '';
+  document.getElementById('edit-tx-amount').value = tx.amount || 0;
+  document.getElementById('edit-tx-modal').style.display = 'flex';
+}
+function closeEditTxModal(){
+  document.getElementById('edit-tx-modal').style.display = 'none';
+  _editingTxId = null;
+}
+async function submitEditTx(){
+  if(!_editingTxId) return;
+  const tx = poolData.transactions.find(t => t.id === _editingTxId);
+  if(!tx) return;
+  const date = document.getElementById('edit-tx-date').value;
+  const desc = document.getElementById('edit-tx-desc').value.trim();
+  const amount = parseFloat(document.getElementById('edit-tx-amount').value);
+  if(!date) return toast('ใส่วันที่');
+  if(!desc) return toast('ใส่รายละเอียด');
+  if(!amount || amount <= 0) return toast('ใส่จำนวนเงินที่ถูกต้อง');
+  tx.date = date;
+  tx.description = desc;
+  tx.amount = amount;
+  await savePool();
+  renderPool();
+  closeEditTxModal();
+  toast('✓ บันทึกการแก้ไข');
+}
+async function submitDeleteTx(){
+  if(!_editingTxId) return;
+  if(!confirm('ลบรายการนี้?')) return;
+  poolData.transactions = poolData.transactions.filter(t => t.id !== _editingTxId);
+  await savePool();
+  renderPool();
+  closeEditTxModal();
+  toast('🗑 ลบแล้ว');
+}
+
+/** ✅ Hook: auto-add income จากรอบที่จบ
+ *  เรียกหลัง completeSession success
+ *  - กัน double-count ด้วย sessionId
+ *  - ข้ามถ้า session.date < poolData.startingFromDate
+ *  - ข้ามถ้า gongklang === 0 */
+async function addPoolIncomeFromSession(sessionData, sessionId){
+  if(!sessionData || !sessionId) return;
+  const gongklang = Number(sessionData.gongklang) || 0;
+  if(gongklang <= 0) return;
+  // ต้องโหลดข้อมูล pool ปัจจุบันก่อนเพื่อกัน race
+  await loadPool();
+  // เช็ค starting date
+  if(poolData.startingFromDate && sessionData.date && sessionData.date < poolData.startingFromDate){
+    console.log('[addPoolIncome] session date before starting, skip');
+    return;
+  }
+  // เช็ค double-count
+  const exists = poolData.transactions.find(tx => tx.sessionId === sessionId);
+  if(exists){
+    console.log('[addPoolIncome] already added for this session');
+    return;
+  }
+  const tx = {
+    id: 'in' + Date.now() + Math.random().toString(36).slice(2,5),
+    type: 'income',
+    date: sessionData.date,
+    amount: gongklang,
+    description: `เก็บจากรอบ ${sessionData.dateDisplay || sessionData.date}`,
+    sessionId: sessionId,
+    createdAt: { seconds: Math.floor(Date.now()/1000) }
+  };
+  poolData.transactions.push(tx);
+  await savePool();
+  console.log('[addPoolIncome] ✅ added', gongklang, 'จาก session', sessionId);
+}
+
+/** ✅ ลบ income จาก pool ที่มาจาก session นี้ (เรียกตอน deleteSession)
+ *  - ลบทุก transaction ที่มี sessionId ตรงกัน
+ *  - หา session ที่ไม่ใช่ manual income (มี sessionId)
+ *  - กัน race ด้วย loadPool ก่อน */
+async function removePoolIncomeBySessionId(sessionId){
+  if(!sessionId) return;
+  await loadPool();
+  const before = poolData.transactions.length;
+  const removed = poolData.transactions.filter(tx => tx.sessionId === sessionId);
+  if(removed.length === 0){
+    console.log('[removePoolIncome] no transactions for session', sessionId);
+    return;
+  }
+  poolData.transactions = poolData.transactions.filter(tx => tx.sessionId !== sessionId);
+  await savePool();
+  const totalRemoved = removed.reduce((s,tx) => s + (Number(tx.amount) || 0), 0);
+  console.log(`[removePoolIncome] ✅ ลบ ${removed.length} รายการ รวม ${totalRemoved} บาท`);
+}
+
+/** นำเข้ารายรับจากประวัติ — backfill รอบที่จบไปแล้ว */
+async function importFromHistory(){
+  if(!requireAdminPin('นำเข้าจากประวัติ')) return;
+  if(!poolData.startingFromDate){
+    return toast('กรุณาตั้ง "เริ่มเก็บเงินตั้งแต่วันที่" ก่อน');
+  }
+  if(!confirm(`นำเข้ารายรับจากรอบที่จบแล้ว ตั้งแต่ ${thaiDate(poolData.startingFromDate)}?\n(จะไม่ซ้ำกับรายการที่มีอยู่)`)){
+    return;
+  }
+  try{
+    const snap = await db.collection('payment_sessions')
+      .where('status','==','complete')
+      .get();
+    let added = 0, skipped = 0;
+    const existingSessionIds = new Set(
+      poolData.transactions.filter(t => t.sessionId).map(t => t.sessionId)
+    );
+    snap.docs.forEach(doc => {
+      const d = doc.data();
+      const gk = Number(d.gongklang) || 0;
+      if(gk <= 0){ skipped++; return; }
+      if(!d.date || d.date < poolData.startingFromDate){ skipped++; return; }
+      if(existingSessionIds.has(doc.id)){ skipped++; return; }
+      poolData.transactions.push({
+        id: 'in' + Date.now() + Math.random().toString(36).slice(2,5),
+        type: 'income',
+        date: d.date,
+        amount: gk,
+        description: `เก็บจากรอบ ${d.dateDisplay || d.date}`,
+        sessionId: doc.id,
+        createdAt: { seconds: Math.floor(Date.now()/1000) }
+      });
+      added++;
+    });
+    if(added > 0){
+      await savePool();
+      renderPool();
+      closePoolSettingsModal();
+      toast(`✅ นำเข้า ${added} รายการ (ข้าม ${skipped})`);
+    } else {
+      toast(`ไม่มีรายการใหม่ที่จะนำเข้า (ข้าม ${skipped})`);
+    }
+  }catch(e){
+    console.error('[importFromHistory]', e);
+    toast('นำเข้าไม่สำเร็จ: ' + e.message);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   END POOL
+   ════════════════════════════════════════════════════════════════ */
 
 /* ================================================================
    BOOT
