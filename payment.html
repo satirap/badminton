@@ -1279,14 +1279,23 @@ body{min-height:100dvh}
 .pool-actions{
   display:flex;gap:8px;margin-bottom:14px;
 }
-.pool-btn-add-expense, .pool-btn-settings{
-  flex:1;padding:13px 12px;border-radius:12px;border:1px solid var(--border);
+.pool-btn-add-income, .pool-btn-add-expense, .pool-btn-settings{
+  padding:13px 12px;border-radius:12px;border:1px solid var(--border);
   background:var(--card);color:var(--ink);font-family:inherit;font-size:14px;font-weight:600;
   cursor:pointer;box-shadow:var(--shadow-card);transition:transform .1s;
   -webkit-tap-highlight-color:transparent;
 }
-.pool-btn-add-expense{background:var(--grad-primary);color:#fff;border-color:transparent}
-.pool-btn-add-expense:active, .pool-btn-settings:active{opacity:.85}
+.pool-btn-add-income, .pool-btn-add-expense{flex:1}
+.pool-btn-settings{flex:0 0 auto;min-width:50px;font-size:18px;padding:13px 14px}
+.pool-btn-add-income{
+  background:linear-gradient(135deg, #34c759, #30b14f);color:#fff;border-color:transparent;
+  box-shadow:0 4px 12px rgba(52,199,89,0.25);
+}
+.pool-btn-add-expense{
+  background:linear-gradient(135deg, #ff3b30, #e0352b);color:#fff;border-color:transparent;
+  box-shadow:0 4px 12px rgba(255,59,48,0.25);
+}
+.pool-btn-add-income:active, .pool-btn-add-expense:active, .pool-btn-settings:active{opacity:.85}
 
 .pool-filter-tabs{
   display:flex;gap:6px;margin-bottom:12px;padding:4px;background:var(--input);border-radius:11px;
@@ -1590,7 +1599,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.1.0 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.1.1 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1640,8 +1649,9 @@ body{min-height:100dvh}
 
     <!-- Action buttons -->
     <div class="pool-actions">
-      <button class="pool-btn-add-expense" onclick="openAddExpenseModal()">➕ เพิ่มรายจ่าย</button>
-      <button class="pool-btn-settings" onclick="openPoolSettingsModal()">⚙️ ตั้งค่า</button>
+      <button class="pool-btn-add-income" onclick="openAddIncomeModal()">💵 เพิ่มรายรับ</button>
+      <button class="pool-btn-add-expense" onclick="openAddExpenseModal()">💸 เพิ่มรายจ่าย</button>
+      <button class="pool-btn-settings" onclick="openPoolSettingsModal()">⚙️</button>
     </div>
 
     <!-- Filter tabs -->
@@ -1657,12 +1667,34 @@ body{min-height:100dvh}
     </div>
   </div>
 
+  <!-- ===== Add Income Modal ===== -->
+  <div class="vm-overlay" id="add-income-modal" style="display:none" onclick="if(event.target===this)closeAddIncomeModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title">💵 เพิ่มรายรับ</div>
+          <div class="vm-sub">บริจาค / ขายของ / อื่น ๆ</div>
+        </div>
+        <button class="vm-close" onclick="closeAddIncomeModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่</label>
+        <input type="date" id="income-date" class="pool-input"/>
+        <label class="pool-input-label" style="margin-top:14px">รายละเอียด</label>
+        <input type="text" id="income-desc" class="pool-input" placeholder="เช่น เงินบริจาคจากพี่สมศักดิ์"/>
+        <label class="pool-input-label" style="margin-top:14px">จำนวนเงิน (บาท)</label>
+        <input type="number" id="income-amount" class="pool-input" placeholder="0" inputmode="numeric"/>
+        <button class="pool-btn-submit" onclick="submitIncome()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Add Expense Modal ===== -->
   <div class="vm-overlay" id="add-expense-modal" style="display:none" onclick="if(event.target===this)closeAddExpenseModal()">
     <div class="vm-panel" style="max-width:420px">
       <div class="vm-head">
         <div>
-          <div class="vm-title">➕ เพิ่มรายจ่าย</div>
+          <div class="vm-title">💸 เพิ่มรายจ่าย</div>
           <div class="vm-sub">บันทึกค่าใช้จ่ายเข้าระบบ</div>
         </div>
         <button class="vm-close" onclick="closeAddExpenseModal()" aria-label="ปิด">✕</button>
@@ -3831,10 +3863,16 @@ async function editSession(docId){
 
 async function deleteSession(docId, btn){
   if(!requireAdminPin('ลบ')) return;
-  if(!confirm('ลบประวัตินี้?')) return;
+  if(!confirm('ลบประวัตินี้?\n(เงินกองกลางจากรอบนี้จะถูกลบด้วย)')) return;
   btn.disabled = true;
   try{
     await db.collection('payment_sessions').doc(docId).delete();
+    // ✅ Cascade: ลบ income จาก pool ที่มาจาก session นี้
+    try{
+      await removePoolIncomeBySessionId(docId);
+    }catch(e){
+      console.error('[deleteSession] removePoolIncome failed:', e);
+    }
     toast('ลบแล้ว');
     loadHistory();
   }catch(e){ toast('ลบไม่ได้: '+e.message); btn.disabled=false; }
@@ -4391,6 +4429,40 @@ function setPoolFilter(filter){
   renderPool();
 }
 
+/* ─── Add Income Modal (manual) ─── */
+function openAddIncomeModal(){
+  if(!requireAdminPin('เพิ่มรายรับ')) return;
+  document.getElementById('income-date').value = todayISO();
+  document.getElementById('income-desc').value = '';
+  document.getElementById('income-amount').value = '';
+  document.getElementById('add-income-modal').style.display = 'flex';
+}
+function closeAddIncomeModal(){
+  document.getElementById('add-income-modal').style.display = 'none';
+}
+async function submitIncome(){
+  const date = document.getElementById('income-date').value;
+  const desc = document.getElementById('income-desc').value.trim();
+  const amount = parseFloat(document.getElementById('income-amount').value);
+  if(!date) return toast('ใส่วันที่');
+  if(!desc) return toast('ใส่รายละเอียด');
+  if(!amount || amount <= 0) return toast('ใส่จำนวนเงินที่ถูกต้อง');
+  const tx = {
+    id: 'mn' + Date.now() + Math.random().toString(36).slice(2,5),
+    type: 'income',
+    date,
+    amount,
+    description: desc,
+    // ไม่มี sessionId → manual income (ลบไม่ cascade)
+    createdAt: { seconds: Math.floor(Date.now()/1000) }
+  };
+  poolData.transactions.push(tx);
+  await savePool();
+  renderPool();
+  closeAddIncomeModal();
+  toast('💵 บันทึกรายรับ ' + fmtBaht(amount));
+}
+
 /* ─── Add Expense Modal ─── */
 function openAddExpenseModal(){
   if(!requireAdminPin('เพิ่มรายจ่าย')) return;
@@ -4524,6 +4596,25 @@ async function addPoolIncomeFromSession(sessionData, sessionId){
   poolData.transactions.push(tx);
   await savePool();
   console.log('[addPoolIncome] ✅ added', gongklang, 'จาก session', sessionId);
+}
+
+/** ✅ ลบ income จาก pool ที่มาจาก session นี้ (เรียกตอน deleteSession)
+ *  - ลบทุก transaction ที่มี sessionId ตรงกัน
+ *  - หา session ที่ไม่ใช่ manual income (มี sessionId)
+ *  - กัน race ด้วย loadPool ก่อน */
+async function removePoolIncomeBySessionId(sessionId){
+  if(!sessionId) return;
+  await loadPool();
+  const before = poolData.transactions.length;
+  const removed = poolData.transactions.filter(tx => tx.sessionId === sessionId);
+  if(removed.length === 0){
+    console.log('[removePoolIncome] no transactions for session', sessionId);
+    return;
+  }
+  poolData.transactions = poolData.transactions.filter(tx => tx.sessionId !== sessionId);
+  await savePool();
+  const totalRemoved = removed.reduce((s,tx) => s + (Number(tx.amount) || 0), 0);
+  console.log(`[removePoolIncome] ✅ ลบ ${removed.length} รายการ รวม ${totalRemoved} บาท`);
 }
 
 /** นำเข้ารายรับจากประวัติ — backfill รอบที่จบไปแล้ว */
