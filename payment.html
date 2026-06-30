@@ -105,6 +105,44 @@ body.admin-mode .admin-only-inline{display:inline-flex !important}
 
 /* ── view-only hint: ซ่อนเมื่อ admin ── */
 body.admin-mode #pool-view-only-hint{display:none}
+
+/* ── Lock collect view (รายชื่อ / คำนวณราคา / รับเงิน) เมื่อ NOT admin ── */
+body:not(.admin-mode) #section-members,
+body:not(.admin-mode) #section-price,
+body:not(.admin-mode) #section-payment{
+  pointer-events:none;
+  user-select:text; /* ยังเลือก text ได้เพื่อ copy */
+}
+/* Visual feedback — dim interactive elements */
+body:not(.admin-mode) #section-members input,
+body:not(.admin-mode) #section-members button,
+body:not(.admin-mode) #section-members select,
+body:not(.admin-mode) #section-members textarea,
+body:not(.admin-mode) #section-price input,
+body:not(.admin-mode) #section-price button,
+body:not(.admin-mode) #section-price select,
+body:not(.admin-mode) #section-price textarea,
+body:not(.admin-mode) #section-payment input,
+body:not(.admin-mode) #section-payment button,
+body:not(.admin-mode) #section-payment select,
+body:not(.admin-mode) #section-payment textarea{
+  opacity:0.65;
+  cursor:default !important;
+}
+/* Hint banner for collect view */
+#collect-lock-hint{
+  display:none;
+  text-align:center;
+  padding:11px 14px;
+  margin:0 0 12px;
+  background:#fff8e1;
+  border:1px solid #ffd54f;
+  border-radius:11px;
+  color:#7c5e10;
+  font-size:13px;
+  font-weight:500;
+}
+body:not(.admin-mode) #collect-lock-hint{display:block}
 .header-card .brand{font-size:16px;font-weight:600;color:var(--ink);line-height:1.2;letter-spacing:-0.01em;white-space:nowrap}
 .header-card .brand span{color:var(--accent);font-weight:600;margin-left:6px}
 .header-card .brand-sub{
@@ -1442,6 +1480,11 @@ body.admin-mode #pool-view-only-hint{display:none}
     <input type="hidden" id="court-fee" value="0"/>
     <input type="hidden" id="per-person" value="0"/>
 
+    <!-- ── Lock hint สำหรับ non-admin ── -->
+    <div id="collect-lock-hint">
+      🔒 โหมดดูอย่างเดียว · กดไอคอน 🔒 ที่หัวเพื่อปลดล็อก
+    </div>
+
     <!-- ── Sub-tabs (3): รายชื่อ | คำนวณราคา | รับเงิน ── -->
     <div class="sub-tabs three">
       <button class="sub-tab active" id="sub-tab-members" onclick="switchSection('members')">
@@ -1630,7 +1673,7 @@ body.admin-mode #pool-view-only-hint{display:none}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.0 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.2 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
