@@ -590,9 +590,9 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 .vm-sum-item.transfer{border-color:var(--blue)50}
 .vm-sum-item.unpaid{border-color:#FBC02D50}
 .vm-sum-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:800;color:var(--ink)}
-.vm-sum-item.cash .vm-sum-num{color:var(--gtxt)}
-.vm-sum-item.transfer .vm-sum-num{color:var(--btxt)}
-.vm-sum-item.unpaid .vm-sum-num{color:#fcd34d}
+.vm-sum-item.cash .vm-sum-num{color:#0066cc}      /* blue = เงินสด */
+.vm-sum-item.transfer .vm-sum-num{color:#1f9d3a}  /* green = เงินโอน */
+.vm-sum-item.unpaid .vm-sum-num{color:#f59e0b}    /* darker amber */
 .vm-sum-lbl{font-size:12px;color:var(--mute);margin-top:4px;font-weight:700}
 
 .vm-player-list{display:flex;flex-direction:column;gap:8px}
@@ -1710,7 +1710,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.4 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.5 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -3232,8 +3232,8 @@ async function loadHistory(){
         </div>
         <div class="hc-stats" style="flex-wrap:wrap;gap:8px 14px">
           <span class="hc-stat">รวม <strong>${d.totalCount||0} คน · ${fmtBaht(totalCollected)}฿</strong></span>
-          <span class="hc-stat" style="color:#bbf7d0">💵 <strong>${fmtBaht(cashAmt)}฿</strong> (${d.cashCount||0})</span>
-          <span class="hc-stat" style="color:#bfdbfe">📲 <strong>${fmtBaht(transAmt)}฿</strong> (${d.transferCount||0})</span>
+          <span class="hc-stat" style="color:#0066cc;font-weight:600">💵 <strong>${fmtBaht(cashAmt)}฿</strong> (${d.cashCount||0})</span>
+          <span class="hc-stat" style="color:#1f9d3a;font-weight:600">📲 <strong>${fmtBaht(transAmt)}฿</strong> (${d.transferCount||0})</span>
         </div>
         ${(d.courtFee||d.shuttlePrice||d.shuttleCount) ? `
         <div style="font-size:11px;color:var(--mute);margin-top:-4px;margin-bottom:8px;line-height:1.6">
