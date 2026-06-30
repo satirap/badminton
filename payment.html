@@ -72,9 +72,16 @@ body{min-height:100dvh}
 .header-card{
   background:var(--card);border:1px solid var(--border-soft);
   border-radius:var(--radius);padding:14px 16px;margin:14px 0 12px;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  display:flex;flex-direction:column;gap:12px;
   box-shadow:var(--shadow-card);
 }
+.header-top-row{
+  display:flex;align-items:center;gap:10px;min-width:0;
+}
+.header-btn-row{
+  display:flex;gap:8px;
+}
+.header-btn-row .history-icon-btn{flex:1}
 .header-card .brand{font-size:18px;font-weight:600;color:var(--ink);line-height:1.2;word-break:keep-all;letter-spacing:-0.01em}
 .header-card .brand span{color:var(--accent);display:block;font-weight:600}
 .header-card .brand-sub{
@@ -1382,14 +1389,14 @@ body{min-height:100dvh}
 
   <!-- Header -->
   <div class="header-card">
-    <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+    <div class="header-top-row">
       <img src="logo-small.png" alt="" class="brand-logo" style="width:38px;height:38px;border-radius:8px;object-fit:contain;flex-shrink:0"/>
-      <div style="min-width:0">
+      <div style="min-width:0;flex:1">
         <div class="brand">ก๊วนอยากตี<span>ต้องได้ตี</span></div>
         <div class="brand-sub">App ช่วยหารค่าคอร์ท</div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
+    <div class="header-btn-row">
       <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
       <button class="history-icon-btn" onclick="switchTab('pool')" title="เงินกองกลาง">💰 เงินกองกลาง</button>
     </div>
@@ -1599,7 +1606,7 @@ body{min-height:100dvh}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.1.1 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.1.2 stable · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
