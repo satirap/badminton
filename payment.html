@@ -107,8 +107,11 @@ body.admin-mode .hc-btn.admin-only,
 body.admin-mode .admin-only-inline{display:inline-flex !important}
 
 /* ── view-only hint: ซ่อนเมื่อ admin ── */
-body.admin-mode #pool-view-only-hint,
-body.admin-mode #stock-view-only-hint{display:none}
+body.admin-mode #pool-view-only-hint{display:none}
+
+/* ── สต็อกลูก: เฉพาะ admin — ล็อกอยู่ = ปุ่มกดไม่ได้ + ซ่อนเนื้อหา ── */
+body:not(.admin-mode) #stock-tab-btn{opacity:.4;pointer-events:none;filter:grayscale(1)}
+body:not(.admin-mode) #view-stock{display:none !important}
 
 /* ── Lock collect view (รายชื่อ / คำนวณราคา / รับเงิน) เมื่อ NOT admin ── */
 body:not(.admin-mode) #section-members,
@@ -1528,7 +1531,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     <div class="header-btn-row">
       <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติ</button>
       <button class="history-icon-btn" onclick="switchTab('pool')" title="เงินกองกลาง">💰 กองกลาง</button>
-      <button class="history-icon-btn" onclick="switchTab('stock')" title="สต็อกลูกแบด">🏸 สต็อกลูก</button>
+      <button class="history-icon-btn" id="stock-tab-btn" onclick="switchTab('stock')" title="สต็อกลูกแบด (เฉพาะ admin)">🏸 สต็อกลูก</button>
     </div>
   </div>
 
@@ -1965,9 +1968,6 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <button class="pool-btn-add-income" onclick="openStockPurchaseModal()">🛒 ซื้อลูกเข้า</button>
       <button class="pool-btn-add-expense" style="background:linear-gradient(135deg,#5856d6,#4b49c0);box-shadow:0 4px 12px rgba(88,86,214,0.25)" onclick="openStockCountModal()">🔍 นับลูกจริง</button>
       <button class="pool-btn-settings" onclick="openStockSettingsModal()">⚙️</button>
-    </div>
-    <div id="stock-view-only-hint" style="text-align:center;padding:10px;color:var(--mute);font-size:12px;margin-bottom:8px">
-      🔒 โหมดดูอย่างเดียว · กด 🔒 ที่หัวเพื่อเข้า admin
     </div>
 
     <!-- Filter tabs -->
@@ -4160,7 +4160,10 @@ function applyAdminMode(){
   const vp = document.getElementById('view-pool');
   if(vp && vp.style.display !== 'none') renderPool();
   const vs = document.getElementById('view-stock');
-  if(vs && vs.style.display !== 'none') renderStock();
+  if(vs && vs.style.display !== 'none'){
+    if(_adminMode) renderStock();
+    else switchTab('collect');   // ล็อกระหว่างอยู่หน้าสต็อก → เด้งกลับ
+  }
 }
 
 /** Toggle admin mode (ขอ PIN ตอนปลดล็อก, ล็อกได้เลย) */
@@ -4249,6 +4252,7 @@ async function deleteSession(docId, btn){
    TAB NAVIGATION
    ================================================================ */
 function switchTab(tab){
+  if(tab==='stock' && !_adminMode){ toast('🔒 สต็อกลูกดูได้เฉพาะ admin'); return; }
   document.getElementById('view-collect').style.display  = tab==='collect' ? 'block' : 'none';
   document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
   const vPool = document.getElementById('view-pool');
@@ -5206,6 +5210,7 @@ function stockExpectedAt(date, when, excludeId){
 }
 
 async function openStockTab(){
+  if(!_adminMode) return;
   await loadStock();
   await loadStockUsage();
   subscribeToStock();
