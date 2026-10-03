@@ -8,6 +8,9 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <title>เก็บเงิน — ก๊วนอยากตี ต้องได้ตี</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<link rel="icon" type="image/png" href="logo-small.png"/>
+<meta name="apple-mobile-web-app-title" content="ก๊วนอยากตี"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -104,7 +107,8 @@ body.admin-mode .hc-btn.admin-only,
 body.admin-mode .admin-only-inline{display:inline-flex !important}
 
 /* ── view-only hint: ซ่อนเมื่อ admin ── */
-body.admin-mode #pool-view-only-hint{display:none}
+body.admin-mode #pool-view-only-hint,
+body.admin-mode #stock-view-only-hint{display:none}
 
 /* ── Lock collect view (รายชื่อ / คำนวณราคา / รับเงิน) เมื่อ NOT admin ── */
 body:not(.admin-mode) #section-members,
@@ -1480,6 +1484,32 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 }
 .pool-btn-import:active{opacity:.7}
 
+/* ═══════════════════════════════════════════════════════
+   STOCK (สต็อกลูกแบด) STYLES — ใช้ pool-* เป็นฐาน
+   ═══════════════════════════════════════════════════════ */
+.stock-sub{font-size:13px;font-weight:500;opacity:.9;margin-top:2px}
+.stock-warn{
+  background:#ff950018;border:1px solid #ff950060;color:#b25f00;border-radius:12px;
+  padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:14px;text-align:center;line-height:1.4;
+}
+.stock-setup-card{
+  background:var(--card);border:1.5px dashed var(--border);border-radius:14px;padding:18px;
+  text-align:center;color:var(--mute);font-size:13px;line-height:1.6;margin-bottom:14px;
+}
+.pool-tx-icon.purchase{background:#34c75920;color:#34c759}
+.pool-tx-icon.usage{background:#0066cc18;color:#0066cc}
+.pool-tx-icon.count{background:#5856d620;color:#5856d6}
+.pool-tx-amount.purchase{color:#34c759}
+.pool-tx-amount.usage{color:var(--ink)}
+.pool-tx-amount.count{color:#5856d6}
+.stock-diff{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;margin-top:3px}
+.stock-diff.ok{background:#34c75920;color:#248a3d}
+.stock-diff.lost{background:#ff3b3018;color:#d70015}
+.stock-diff.extra{background:#ff950018;color:#b25f00}
+.stock-qty-row{display:flex;gap:10px}
+.stock-qty-row > div{flex:1;min-width:0}
+.stock-hint{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.4}
+
 </style>
 </head>
 <body>
@@ -1496,8 +1526,9 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <button class="admin-toggle-btn" id="admin-toggle-btn" onclick="toggleAdminMode()" title="Admin Mode">🔒</button>
     </div>
     <div class="header-btn-row">
-      <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติการเก็บเงิน</button>
-      <button class="history-icon-btn" onclick="switchTab('pool')" title="เงินกองกลาง">💰 เงินกองกลาง</button>
+      <button class="history-icon-btn" onclick="switchTab('history')" title="ประวัติการเก็บเงิน">📋 ประวัติ</button>
+      <button class="history-icon-btn" onclick="switchTab('pool')" title="เงินกองกลาง">💰 กองกลาง</button>
+      <button class="history-icon-btn" onclick="switchTab('stock')" title="สต็อกลูกแบด">🏸 สต็อกลูก</button>
     </div>
   </div>
 
@@ -1883,6 +1914,176 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
           <button class="pool-btn-delete" onclick="submitDeleteTx()">🗑 ลบ</button>
           <button class="pool-btn-submit" style="flex:1" onclick="submitEditTx()">บันทึก</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB: STOCK (สต็อกลูกแบด) ============ -->
+  <div id="view-stock" style="display:none">
+    <button class="back-btn" onclick="switchTab('collect')">← กลับหน้าเก็บเงิน</button>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="font-size:28px">🏸</div>
+      <h3 style="margin:0;font-size:17px;color:var(--ink);font-weight:800;flex:1">สต็อกลูกแบด</h3>
+      <button class="history-refresh-btn" onclick="openStockTab()" title="รีเฟรช">🔄</button>
+    </div>
+
+    <!-- ยังไม่ได้ตั้งต้น -->
+    <div class="stock-setup-card" id="stock-setup-card" style="display:none">
+      ยังไม่ได้ตั้งยอดตั้งต้น<br>
+      Admin กด ⚙️ แล้วใส่จำนวนลูกที่มีอยู่จริงตอนนี้ เพื่อเริ่มนับสต็อก
+    </div>
+
+    <!-- Balance Card -->
+    <div class="pool-balance-card">
+      <div class="pool-balance-label">คงเหลือ (ตามระบบ)</div>
+      <div class="pool-balance-amount" id="stock-balance">0 ลูก</div>
+      <div class="stock-sub" id="stock-balance-tubes">≈ 0 หลอด</div>
+      <div class="pool-balance-detail" id="stock-balance-detail">—</div>
+    </div>
+
+    <div class="stock-warn" id="stock-warn" style="display:none"></div>
+
+    <!-- Quick stats -->
+    <div class="pool-stats-row">
+      <div class="pool-stat">
+        <div class="pool-stat-label">ซื้อเข้า</div>
+        <div class="pool-stat-value pool-stat-income" id="stock-in">0</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">ใช้ไป</div>
+        <div class="pool-stat-value" id="stock-used">0</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">หาย / ขาด</div>
+        <div class="pool-stat-value pool-stat-expense" id="stock-lost">0</div>
+      </div>
+    </div>
+
+    <!-- Action buttons (เฉพาะ admin mode) -->
+    <div class="pool-actions admin-only">
+      <button class="pool-btn-add-income" onclick="openStockPurchaseModal()">🛒 ซื้อลูกเข้า</button>
+      <button class="pool-btn-add-expense" style="background:linear-gradient(135deg,#5856d6,#4b49c0);box-shadow:0 4px 12px rgba(88,86,214,0.25)" onclick="openStockCountModal()">🔍 นับลูกจริง</button>
+      <button class="pool-btn-settings" onclick="openStockSettingsModal()">⚙️</button>
+    </div>
+    <div id="stock-view-only-hint" style="text-align:center;padding:10px;color:var(--mute);font-size:12px;margin-bottom:8px">
+      🔒 โหมดดูอย่างเดียว · กด 🔒 ที่หัวเพื่อเข้า admin
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="pool-filter-tabs">
+      <button class="pool-filter stock-filter active" data-filter="all" onclick="setStockFilter('all')">ทั้งหมด</button>
+      <button class="pool-filter stock-filter" data-filter="purchase" onclick="setStockFilter('purchase')">🛒 ซื้อ</button>
+      <button class="pool-filter stock-filter" data-filter="usage" onclick="setStockFilter('usage')">🏸 ใช้</button>
+      <button class="pool-filter stock-filter" data-filter="count" onclick="setStockFilter('count')">🔍 นับ</button>
+    </div>
+
+    <div class="pool-tx-list" id="stock-list">
+      <div class="empty">กำลังโหลด...</div>
+    </div>
+    <div class="stock-hint" style="text-align:center;margin-top:10px">ยอดใช้ดึงจากรอบที่ "จบแล้ว" อัตโนมัติ · รอบที่ยังไม่ปิดยอดจะยังไม่ถูกตัด</div>
+  </div>
+
+  <!-- ===== Stock Purchase Modal (เพิ่ม/แก้) ===== -->
+  <div class="vm-overlay" id="stock-purchase-modal" style="display:none" onclick="if(event.target===this)closeStockPurchaseModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title" id="stock-purchase-title">🛒 ซื้อลูกเข้า</div>
+          <div class="vm-sub">1 หลอด = 12 ลูก</div>
+        </div>
+        <button class="vm-close" onclick="closeStockPurchaseModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่</label>
+        <input type="date" id="sp-date" class="pool-input"/>
+        <div class="stock-qty-row" style="margin-top:14px">
+          <div>
+            <label class="pool-input-label">จำนวน (หลอด)</label>
+            <input type="number" id="sp-tubes" class="pool-input" placeholder="0" inputmode="numeric" min="0"/>
+          </div>
+          <div>
+            <label class="pool-input-label">+ ลูกเศษ</label>
+            <input type="number" id="sp-balls" class="pool-input" placeholder="0" inputmode="numeric" min="0"/>
+          </div>
+        </div>
+        <label class="pool-input-label" style="margin-top:14px">ราคาต่อหลอด (บาท) <span style="font-weight:400;color:var(--mute)">ไม่บังคับ</span></label>
+        <input type="number" id="sp-price" class="pool-input" placeholder="เช่น 900" inputmode="numeric" min="0"/>
+        <label class="pool-input-label" style="margin-top:14px">หมายเหตุ <span style="font-weight:400;color:var(--mute)">ไม่บังคับ</span></label>
+        <input type="text" id="sp-note" class="pool-input" placeholder="เช่น ยี่ห้อ / ร้านที่ซื้อ"/>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="pool-btn-delete" id="sp-delete-btn" style="display:none" onclick="deleteStockEntry()">🗑 ลบ</button>
+          <button class="pool-btn-submit" style="flex:1;margin-top:0" onclick="submitStockPurchase()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Stock Count Modal (นับจริง เพิ่ม/แก้) ===== -->
+  <div class="vm-overlay" id="stock-count-modal" style="display:none" onclick="if(event.target===this)closeStockCountModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title" id="stock-count-title">🔍 นับลูกจริง</div>
+          <div class="vm-sub" id="sc-expected">ระบบคาดว่าควรมี — ลูก</div>
+        </div>
+        <button class="vm-close" onclick="closeStockCountModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่นับ</label>
+        <input type="date" id="sc-date" class="pool-input" onchange="updateStockCountExpected()"/>
+        <label class="pool-input-label" style="margin-top:14px">นับตอนไหน</label>
+        <select id="sc-when" class="pool-input" onchange="updateStockCountExpected()">
+          <option value="after">หลังเลิกเล่น / วันที่ไม่มีเล่น</option>
+          <option value="before">ก่อนเริ่มเล่นวันนั้น</option>
+        </select>
+        <div class="stock-qty-row" style="margin-top:14px">
+          <div>
+            <label class="pool-input-label">หลอดเต็ม</label>
+            <input type="number" id="sc-tubes" class="pool-input" placeholder="0" inputmode="numeric" min="0"/>
+          </div>
+          <div>
+            <label class="pool-input-label">+ ลูกเศษ</label>
+            <input type="number" id="sc-balls" class="pool-input" placeholder="0" inputmode="numeric" min="0"/>
+          </div>
+        </div>
+        <div class="stock-hint">นับเฉพาะลูกที่ยังใช้ได้ ลูกเสียที่ทิ้งแล้วไม่ต้องนับ</div>
+        <label class="pool-input-label" style="margin-top:14px">หมายเหตุ <span style="font-weight:400;color:var(--mute)">ไม่บังคับ</span></label>
+        <input type="text" id="sc-note" class="pool-input" placeholder="เช่น นับโดยใคร"/>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="pool-btn-delete" id="sc-delete-btn" style="display:none" onclick="deleteStockEntry()">🗑 ลบ</button>
+          <button class="pool-btn-submit" style="flex:1;margin-top:0" onclick="submitStockCount()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Stock Settings Modal ===== -->
+  <div class="vm-overlay" id="stock-settings-modal" style="display:none" onclick="if(event.target===this)closeStockSettingsModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title">⚙️ ตั้งยอดตั้งต้น</div>
+          <div class="vm-sub">นับลูกที่มีอยู่จริง ณ วันเริ่มใช้ระบบ</div>
+        </div>
+        <button class="vm-close" onclick="closeStockSettingsModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">เริ่มนับตั้งแต่วันที่</label>
+        <input type="date" id="ss-date" class="pool-input"/>
+        <div class="stock-hint">รอบที่จบตั้งแต่วันนี้ (รวมวันนี้) จะถูกตัดลูกออกจากสต็อกอัตโนมัติ</div>
+        <div class="stock-qty-row" style="margin-top:14px">
+          <div>
+            <label class="pool-input-label">หลอดเต็ม</label>
+            <input type="number" id="ss-tubes" class="pool-input" placeholder="0" inputmode="numeric" min="0"/>
+          </div>
+          <div>
+            <label class="pool-input-label">+ ลูกเศษ</label>
+            <input type="number" id="ss-balls" class="pool-input" placeholder="0" inputmode="numeric" min="0"/>
+          </div>
+        </div>
+        <div class="stock-hint">นับก่อนเริ่มเล่นของวันที่เลือก</div>
+        <button class="pool-btn-submit" onclick="submitStockSettings()">บันทึก</button>
       </div>
     </div>
   </div>
@@ -3958,6 +4159,8 @@ function applyAdminMode(){
   if(vh && vh.style.display !== 'none') loadHistory();
   const vp = document.getElementById('view-pool');
   if(vp && vp.style.display !== 'none') renderPool();
+  const vs = document.getElementById('view-stock');
+  if(vs && vs.style.display !== 'none') renderStock();
 }
 
 /** Toggle admin mode (ขอ PIN ตอนปลดล็อก, ล็อกได้เลย) */
@@ -4050,8 +4253,11 @@ function switchTab(tab){
   document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
   const vPool = document.getElementById('view-pool');
   if(vPool) vPool.style.display = tab==='pool' ? 'block' : 'none';
+  const vStock = document.getElementById('view-stock');
+  if(vStock) vStock.style.display = tab==='stock' ? 'block' : 'none';
   if(tab==='history') loadHistory();
   if(tab==='pool') openPoolTab();
+  if(tab==='stock') openStockTab();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -4834,6 +5040,415 @@ async function importFromHistory(){
 
 /* ════════════════════════════════════════════════════════════════
    END POOL
+   ════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   STOCK — สต็อกลูกแบด
+   Firestore: shuttle_stock/singleton
+   {
+     startDate: 'YYYY-MM-DD' | null,   // วันเริ่มนับ (ยอดตั้งต้นนับก่อนเล่นวันนี้)
+     initialCount: number,              // ลูกตั้งต้น
+     entries: [{id, type:'purchase'|'count', date, qty, when?:'before'|'after',
+                pricePerTube?, note?, createdAt}]
+     lastWriterId, updatedAt
+   }
+   ยอดใช้ = shuttleCount ของ payment_sessions ที่ status='complete' และ date >= startDate
+   นับจริง → ส่วนต่าง (นับได้ − ระบบคาด) = หาย/เกิน แล้ว reset ยอดคาดเป็นยอดที่นับได้
+   ════════════════════════════════════════════════════════════════ */
+
+const STOCK_DOC_PATH = 'shuttle_stock/singleton';
+const TUBE_SIZE = 12;
+let stockData = { startDate: null, initialCount: 0, entries: [] };
+let stockUsage = [];        // [{sessionId, date, dateDisplay, qty}] ตั้งแต่ startDate
+let stockRecentAvg = 0;     // ลูกเฉลี่ยต่อรอบ (10 รอบล่าสุด) ไว้คาดว่าพอใช้กี่รอบ
+let _stockUnsubscribe = null;
+let _stockFilter = 'all';
+let _editingStockId = null;
+
+function fmtBalls(n){
+  const v = Math.round(Number(n) || 0);
+  return v.toLocaleString('th-TH') + ' ลูก';
+}
+function fmtTubes(n){
+  const v = Math.round(Number(n) || 0);
+  const sign = v < 0 ? '−' : '';
+  const a = Math.abs(v), t = Math.floor(a / TUBE_SIZE), r = a % TUBE_SIZE;
+  if(t === 0) return `${sign}${r} ลูก`;
+  return r ? `${sign}${t} หลอด ${r} ลูก` : `${sign}${t} หลอด`;
+}
+function readQty(tubesId, ballsId){
+  const t = parseInt(document.getElementById(tubesId).value, 10) || 0;
+  const b = parseInt(document.getElementById(ballsId).value, 10) || 0;
+  if(t < 0 || b < 0) return -1;
+  return t * TUBE_SIZE + b;
+}
+function fillQty(tubesId, ballsId, qty){
+  const q = Math.max(0, Math.round(Number(qty) || 0));
+  document.getElementById(tubesId).value = Math.floor(q / TUBE_SIZE) || '';
+  document.getElementById(ballsId).value = (q % TUBE_SIZE) || '';
+}
+
+async function loadStock(){
+  try{
+    const doc = await db.doc(STOCK_DOC_PATH).get();
+    if(doc.exists){
+      const d = doc.data();
+      stockData = {
+        startDate: d.startDate || null,
+        initialCount: Number(d.initialCount) || 0,
+        entries: Array.isArray(d.entries) ? d.entries : []
+      };
+    }
+  }catch(e){
+    console.error('[loadStock] error:', e);
+  }
+}
+
+/** ดึงยอดใช้ลูกจากรอบที่จบแล้ว */
+async function loadStockUsage(){
+  try{
+    const snap = await db.collection('payment_sessions').where('status','==','complete').get();
+    const all = snap.docs.map(doc => {
+      const d = doc.data();
+      return { sessionId: doc.id, date: d.date || '', dateDisplay: d.dateDisplay || d.date || '',
+               qty: Number(d.shuttleCount) || 0 };
+    }).filter(u => u.date);
+    const recent = all.filter(u => u.qty > 0).sort((a,b) => b.date.localeCompare(a.date)).slice(0, 10);
+    stockRecentAvg = recent.length ? recent.reduce((s,u) => s + u.qty, 0) / recent.length : 0;
+    stockUsage = stockData.startDate
+      ? all.filter(u => u.date >= stockData.startDate && u.qty > 0)
+      : [];
+  }catch(e){
+    console.error('[loadStockUsage] error:', e);
+    toast('โหลดยอดใช้ลูกไม่สำเร็จ: ' + e.message);
+  }
+}
+
+function subscribeToStock(){
+  if(_stockUnsubscribe) return;
+  _stockUnsubscribe = db.doc(STOCK_DOC_PATH).onSnapshot(snap => {
+    if(!snap.exists) return;
+    const d = snap.data();
+    if(d.lastWriterId === _myWriterId) return;
+    const startChanged = (d.startDate || null) !== stockData.startDate;
+    stockData = {
+      startDate: d.startDate || null,
+      initialCount: Number(d.initialCount) || 0,
+      entries: Array.isArray(d.entries) ? d.entries : []
+    };
+    if(document.getElementById('view-stock')?.style.display !== 'none'){
+      if(startChanged) loadStockUsage().then(renderStock);
+      else renderStock();
+    }
+  }, err => console.error('[stock snapshot]', err));
+}
+
+async function saveStock(){
+  try{
+    await db.doc(STOCK_DOC_PATH).set({
+      startDate: stockData.startDate,
+      initialCount: stockData.initialCount,
+      entries: stockData.entries,
+      lastWriterId: _myWriterId,
+      updatedAt: new Date()
+    }, {merge: true});
+    return true;
+  }catch(e){
+    console.error('[saveStock] ❌', e);
+    toast('บันทึก cloud ไม่สำเร็จ: ' + e.message);
+    return false;
+  }
+}
+
+/** สร้าง timeline เรียงตามเวลา + คำนวณยอดคาด/ส่วนต่าง
+ *  ลำดับในวันเดียวกัน: ซื้อ → นับก่อนเล่น → ใช้ → นับหลังเล่น */
+function buildStockTimeline(){
+  const ORDER = { purchase: 0, countbefore: 1, usage: 2, countafter: 3 };
+  const events = [];
+  stockData.entries.forEach(e => {
+    if(stockData.startDate && e.date < stockData.startDate) return;
+    const k = e.type === 'count' ? 'count' + (e.when === 'before' ? 'before' : 'after') : e.type;
+    events.push({ ...e, _k: ORDER[k] ?? 0 });
+  });
+  stockUsage.forEach(u => events.push({ id: 'use_' + u.sessionId, type: 'usage', date: u.date,
+    qty: u.qty, note: u.dateDisplay, _k: ORDER.usage }));
+  events.sort((a,b) => (a.date || '').localeCompare(b.date || '') || a._k - b._k
+    || (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+
+  let running = stockData.initialCount;
+  let bought = 0, used = 0, lost = 0, extra = 0;
+  events.forEach(ev => {
+    if(ev.type === 'purchase'){ running += ev.qty; bought += ev.qty; }
+    else if(ev.type === 'usage'){ running -= ev.qty; used += ev.qty; }
+    else if(ev.type === 'count'){
+      ev.expected = running;
+      ev.diff = ev.qty - running;
+      if(ev.diff < 0) lost += -ev.diff; else extra += ev.diff;
+      running = ev.qty;
+    }
+    ev.balance = running;
+  });
+  return { events, balance: running, bought, used, lost, extra };
+}
+
+/** ยอดที่ระบบคาด ณ วัน/ช่วงเวลาที่เลือก (ไม่รวม count ที่กำลังแก้) */
+function stockExpectedAt(date, when, excludeId){
+  const saved = stockData.entries;
+  stockData = { ...stockData, entries: saved.filter(e => e.id !== excludeId) };
+  const { events } = buildStockTimeline();
+  stockData = { ...stockData, entries: saved };
+  const cutoff = when === 'before' ? 1 : 3;
+  let bal = stockData.initialCount;
+  events.forEach(ev => {
+    if(ev.date < date || (ev.date === date && ev._k < cutoff)) bal = ev.balance;
+  });
+  return bal;
+}
+
+async function openStockTab(){
+  await loadStock();
+  await loadStockUsage();
+  subscribeToStock();
+  renderStock();
+}
+
+function renderStock(){
+  const hasStart = !!stockData.startDate;
+  document.getElementById('stock-setup-card').style.display = hasStart ? 'none' : 'block';
+  const t = buildStockTimeline();
+
+  document.getElementById('stock-balance').textContent = fmtBalls(t.balance);
+  document.getElementById('stock-balance-tubes').textContent = '≈ ' + fmtTubes(t.balance);
+  document.getElementById('stock-balance-detail').textContent = hasStart
+    ? `เริ่มนับ ${thaiDateShort(stockData.startDate)} · ตั้งต้น ${fmtBalls(stockData.initialCount)}`
+    : 'ยังไม่ได้ตั้งยอดตั้งต้น';
+  document.getElementById('stock-in').textContent = fmtBalls(t.bought);
+  document.getElementById('stock-used').textContent = fmtBalls(t.used);
+  document.getElementById('stock-lost').textContent = fmtBalls(t.lost);
+
+  // เตือนสต็อกใกล้หมด
+  const warn = document.getElementById('stock-warn');
+  if(hasStart && stockRecentAvg > 0){
+    const rounds = t.balance / stockRecentAvg;
+    if(rounds < 3){
+      warn.style.display = 'block';
+      warn.textContent = t.balance <= 0
+        ? '⚠️ ลูกหมดแล้วตามระบบ — ซื้อเพิ่มหรือนับลูกจริงเพื่ออัปเดต'
+        : `⚠️ เหลือพอใช้อีกประมาณ ${Math.floor(rounds)} รอบ (เฉลี่ยรอบละ ${Math.round(stockRecentAvg)} ลูก)`;
+    } else {
+      warn.style.display = 'none';
+    }
+    if(rounds >= 3){
+      document.getElementById('stock-balance-detail').textContent +=
+        ` · พอใช้ ~${Math.floor(rounds)} รอบ`;
+    }
+  } else {
+    warn.style.display = 'none';
+  }
+
+  const list = document.getElementById('stock-list');
+  const items = t.events.filter(e => _stockFilter === 'all' || e.type === _stockFilter).reverse();
+  if(!hasStart){
+    list.innerHTML = '';
+    return;
+  }
+  if(items.length === 0){
+    list.innerHTML = '<div class="empty" style="padding:30px;text-align:center;color:var(--mute);font-size:14px">ยังไม่มีรายการ</div>';
+    return;
+  }
+  list.innerHTML = items.map(ev => {
+    const editable = _adminMode && ev.type !== 'usage';
+    const clickAttr = editable ? `onclick="openStockEntry('${ev.id}')"` : 'style="cursor:default"';
+    const dateStr = thaiDateShort(ev.date);
+    let icon, title, amount, sub = `คงเหลือ ${fmtBalls(ev.balance)}`, badge = '';
+    if(ev.type === 'purchase'){
+      icon = '🛒';
+      title = 'ซื้อ ' + fmtTubes(ev.qty) + (ev.pricePerTube ? ` · ${fmtBaht(ev.pricePerTube)} บาท/หลอด` : '');
+      amount = '+' + ev.qty;
+    } else if(ev.type === 'usage'){
+      icon = '🏸';
+      title = `ใช้ไป ${ev.qty} ลูก`;
+      amount = '−' + ev.qty;
+    } else {
+      icon = '🔍';
+      title = `นับจริง${ev.when === 'before' ? ' (ก่อนเล่น)' : ''} ได้ ${fmtTubes(ev.qty)}`;
+      amount = String(ev.qty);
+      sub = `ระบบคาด ${fmtBalls(ev.expected)}`;
+      if(ev.diff === 0) badge = '<span class="stock-diff ok">✓ ตรง</span>';
+      else if(ev.diff < 0) badge = `<span class="stock-diff lost">หาย ${-ev.diff} ลูก</span>`;
+      else badge = `<span class="stock-diff extra">เกิน ${ev.diff} ลูก</span>`;
+    }
+    const note = ev.type !== 'usage' && ev.note ? ` · ${escHtml(ev.note)}` : '';
+    return `
+      <div class="pool-tx-item" ${clickAttr}>
+        <div class="pool-tx-icon ${ev.type}">${icon}</div>
+        <div class="pool-tx-body">
+          <div class="pool-tx-desc">${title}</div>
+          <div class="pool-tx-date">${dateStr}${note}</div>
+          ${badge}
+        </div>
+        <div>
+          <div class="pool-tx-amount ${ev.type}">${amount}</div>
+          <div class="pool-tx-balance">${sub}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function setStockFilter(filter){
+  _stockFilter = filter;
+  document.querySelectorAll('.stock-filter').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderStock();
+}
+
+function requireStockStart(){
+  if(stockData.startDate) return true;
+  toast('ตั้งยอดตั้งต้นก่อน (กด ⚙️)');
+  openStockSettingsModal();
+  return false;
+}
+
+/* ─── Purchase Modal ─── */
+function openStockPurchaseModal(entry){
+  if(!requireAdminPin('บันทึกซื้อลูก')) return;
+  if(!requireStockStart()) return;
+  _editingStockId = entry ? entry.id : null;
+  document.getElementById('stock-purchase-title').textContent = entry ? '✏️ แก้ไขการซื้อ' : '🛒 ซื้อลูกเข้า';
+  document.getElementById('sp-date').value = entry ? entry.date : todayISO();
+  fillQty('sp-tubes', 'sp-balls', entry ? entry.qty : 0);
+  document.getElementById('sp-price').value = entry?.pricePerTube || '';
+  document.getElementById('sp-note').value = entry?.note || '';
+  document.getElementById('sp-delete-btn').style.display = entry ? 'block' : 'none';
+  document.getElementById('stock-purchase-modal').style.display = 'flex';
+}
+function closeStockPurchaseModal(){
+  document.getElementById('stock-purchase-modal').style.display = 'none';
+  _editingStockId = null;
+}
+async function submitStockPurchase(){
+  const date = document.getElementById('sp-date').value;
+  const qty = readQty('sp-tubes', 'sp-balls');
+  const price = parseFloat(document.getElementById('sp-price').value) || 0;
+  const note = document.getElementById('sp-note').value.trim();
+  if(!date) return toast('ใส่วันที่');
+  if(date < stockData.startDate) return toast('วันที่ต้องไม่ก่อนวันเริ่มนับ');
+  if(qty <= 0) return toast('ใส่จำนวนลูกที่ซื้อ');
+  if(price < 0) return toast('ราคาไม่ถูกต้อง');
+  const fields = { date, qty, pricePerTube: price || null, note };
+  if(_editingStockId){
+    const e = stockData.entries.find(x => x.id === _editingStockId);
+    if(e) Object.assign(e, fields);
+  } else {
+    stockData.entries.push({ id: 'sp' + Date.now() + Math.random().toString(36).slice(2,5),
+      type: 'purchase', ...fields, createdAt: { seconds: Math.floor(Date.now()/1000) } });
+  }
+  if(!await saveStock()) return;
+  renderStock();
+  closeStockPurchaseModal();
+  toast('🛒 บันทึกซื้อ ' + fmtTubes(qty));
+}
+
+/* ─── Count Modal ─── */
+function openStockCountModal(entry){
+  if(!requireAdminPin('บันทึกนับลูก')) return;
+  if(!requireStockStart()) return;
+  _editingStockId = entry ? entry.id : null;
+  document.getElementById('stock-count-title').textContent = entry ? '✏️ แก้ไขการนับ' : '🔍 นับลูกจริง';
+  document.getElementById('sc-date').value = entry ? entry.date : todayISO();
+  document.getElementById('sc-when').value = entry?.when === 'before' ? 'before' : 'after';
+  fillQty('sc-tubes', 'sc-balls', entry ? entry.qty : 0);
+  document.getElementById('sc-note').value = entry?.note || '';
+  document.getElementById('sc-delete-btn').style.display = entry ? 'block' : 'none';
+  updateStockCountExpected();
+  document.getElementById('stock-count-modal').style.display = 'flex';
+}
+function updateStockCountExpected(){
+  const date = document.getElementById('sc-date').value;
+  const when = document.getElementById('sc-when').value;
+  const el = document.getElementById('sc-expected');
+  if(!date){ el.textContent = 'เลือกวันที่นับ'; return; }
+  const exp = stockExpectedAt(date, when, _editingStockId);
+  el.textContent = `ระบบคาดว่าควรมี ${fmtBalls(exp)} (${fmtTubes(exp)})`;
+}
+function closeStockCountModal(){
+  document.getElementById('stock-count-modal').style.display = 'none';
+  _editingStockId = null;
+}
+async function submitStockCount(){
+  const date = document.getElementById('sc-date').value;
+  const when = document.getElementById('sc-when').value;
+  const tubesRaw = document.getElementById('sc-tubes').value;
+  const ballsRaw = document.getElementById('sc-balls').value;
+  const qty = readQty('sc-tubes', 'sc-balls');
+  const note = document.getElementById('sc-note').value.trim();
+  if(!date) return toast('ใส่วันที่');
+  if(date < stockData.startDate) return toast('วันที่ต้องไม่ก่อนวันเริ่มนับ');
+  if(tubesRaw === '' && ballsRaw === '') return toast('ใส่จำนวนที่นับได้ (ถ้าหมด ใส่ 0)');
+  if(qty < 0) return toast('จำนวนไม่ถูกต้อง');
+  const expected = stockExpectedAt(date, when, _editingStockId);
+  const fields = { date, when, qty, note };
+  if(_editingStockId){
+    const e = stockData.entries.find(x => x.id === _editingStockId);
+    if(e) Object.assign(e, fields);
+  } else {
+    stockData.entries.push({ id: 'sc' + Date.now() + Math.random().toString(36).slice(2,5),
+      type: 'count', ...fields, createdAt: { seconds: Math.floor(Date.now()/1000) } });
+  }
+  if(!await saveStock()) return;
+  renderStock();
+  closeStockCountModal();
+  const diff = qty - expected;
+  toast(diff === 0 ? '✓ นับตรงกับระบบ' : diff < 0 ? `⚠️ ลูกหาย ${-diff} ลูก` : `นับได้เกิน ${diff} ลูก`, 3500);
+}
+
+/* ─── Edit / Delete ─── */
+function openStockEntry(id){
+  const e = stockData.entries.find(x => x.id === id);
+  if(!e) return;
+  if(e.type === 'purchase') openStockPurchaseModal(e);
+  else openStockCountModal(e);
+}
+async function deleteStockEntry(){
+  if(!_editingStockId) return;
+  if(!confirm('ลบรายการนี้?')) return;
+  stockData.entries = stockData.entries.filter(e => e.id !== _editingStockId);
+  if(!await saveStock()) return;
+  renderStock();
+  closeStockPurchaseModal();
+  closeStockCountModal();
+  toast('🗑 ลบแล้ว');
+}
+
+/* ─── Settings Modal ─── */
+function openStockSettingsModal(){
+  if(!requireAdminPin('ตั้งค่าสต็อก')) return;
+  document.getElementById('ss-date').value = stockData.startDate || todayISO();
+  fillQty('ss-tubes', 'ss-balls', stockData.initialCount);
+  document.getElementById('stock-settings-modal').style.display = 'flex';
+}
+function closeStockSettingsModal(){
+  document.getElementById('stock-settings-modal').style.display = 'none';
+}
+async function submitStockSettings(){
+  const date = document.getElementById('ss-date').value;
+  const qty = readQty('ss-tubes', 'ss-balls');
+  if(!date) return toast('ใส่วันที่เริ่มนับ');
+  if(qty < 0) return toast('จำนวนไม่ถูกต้อง');
+  const dropped = stockData.entries.filter(e => e.date < date).length;
+  if(dropped && !confirm(`มี ${dropped} รายการก่อนวันที่ใหม่ ซึ่งจะไม่ถูกนำมาคิด ต้องการเปลี่ยนวันเริ่มนับ?`)) return;
+  stockData.startDate = date;
+  stockData.initialCount = qty;
+  if(!await saveStock()) return;
+  await loadStockUsage();
+  renderStock();
+  closeStockSettingsModal();
+  toast('🏸 ตั้งยอดตั้งต้น ' + fmtTubes(qty));
+}
+
+/* ════════════════════════════════════════════════════════════════
+   END STOCK
    ════════════════════════════════════════════════════════════════ */
 
 /* ================================================================
