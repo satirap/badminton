@@ -109,8 +109,12 @@ body.admin-mode .admin-only-inline{display:inline-flex !important}
 /* ── view-only hint: ซ่อนเมื่อ admin ── */
 body.admin-mode #pool-view-only-hint{display:none}
 
-/* ── สต็อกลูก: เฉพาะ admin — ล็อกอยู่ = ปุ่มกดไม่ได้ + ซ่อนเนื้อหา ── */
-body:not(.admin-mode) #stock-tab-btn{opacity:.4;pointer-events:none;filter:grayscale(1)}
+/* ── ล็อกอยู่ (ไม่ใช่ admin): ปุ่มเมนูทุกปุ่มกดไม่ได้ + ซ่อนหน้า ประวัติ/กองกลาง/สต็อก ──
+   เหลือกดได้แค่ 🔒 (ปลดล็อก) กับ version badge (รีเฟรช) */
+body:not(.admin-mode) .header-btn-row .history-icon-btn,
+body:not(.admin-mode) .sub-tab{opacity:.4;pointer-events:none;filter:grayscale(1)}
+body:not(.admin-mode) #view-history,
+body:not(.admin-mode) #view-pool,
 body:not(.admin-mode) #view-stock{display:none !important}
 
 /* ── Lock collect view (รายชื่อ / คำนวณราคา / รับเงิน) เมื่อ NOT admin ── */
@@ -4156,14 +4160,17 @@ function applyAdminMode(){
   }
   // Re-render visible views ที่มี admin-only elements
   const vh = document.getElementById('view-history');
-  if(vh && vh.style.display !== 'none') loadHistory();
   const vp = document.getElementById('view-pool');
-  if(vp && vp.style.display !== 'none') renderPool();
   const vs = document.getElementById('view-stock');
-  if(vs && vs.style.display !== 'none'){
-    if(_adminMode) renderStock();
-    else switchTab('collect');   // ล็อกระหว่างอยู่หน้าสต็อก → เด้งกลับ
+  const onOther = [vh, vp, vs].some(v => v && v.style.display !== 'none');
+  if(!_adminMode){
+    if(onOther) switchTab('collect');   // ล็อกระหว่างอยู่หน้าอื่น → เด้งกลับหน้าเก็บเงิน
+    if(currentSection !== 'members') switchSection('members');
+    return;
   }
+  if(vh && vh.style.display !== 'none') loadHistory();
+  if(vp && vp.style.display !== 'none') renderPool();
+  if(vs && vs.style.display !== 'none') renderStock();
 }
 
 /** Toggle admin mode (ขอ PIN ตอนปลดล็อก, ล็อกได้เลย) */
@@ -4252,7 +4259,7 @@ async function deleteSession(docId, btn){
    TAB NAVIGATION
    ================================================================ */
 function switchTab(tab){
-  if(tab==='stock' && !_adminMode){ toast('🔒 สต็อกลูกดูได้เฉพาะ admin'); return; }
+  if(tab!=='collect' && !_adminMode){ toast('🔒 ต้องปลดล็อก admin ก่อน'); return; }
   document.getElementById('view-collect').style.display  = tab==='collect' ? 'block' : 'none';
   document.getElementById('view-history').style.display  = tab==='history' ? 'block' : 'none';
   const vPool = document.getElementById('view-pool');
