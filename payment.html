@@ -2134,10 +2134,6 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <div class="ci-hint" id="ci-hint">👆 หรือ <b>กดค้างที่รูป</b> แล้วเลือก <b>"บันทึกไปยังรูปภาพ"</b></div>
       <div id="ci-loading" style="text-align:center;padding:40px;color:var(--mute);font-size:14px">กำลังสร้างรูป...</div>
       <img id="ci-img" class="ci-preview" alt="รูปแจ้งค่าใช้จ่าย" style="display:none"/>
-      <button class="big-copy-btn" id="ci-download-btn" style="display:none" onclick="downloadCostImage()">
-        <span>⬇️ ดาวน์โหลดรูป</span>
-        <small>สำหรับคอมพิวเตอร์</small>
-      </button>
     </div>
   </div>
 </div>
@@ -5767,7 +5763,6 @@ async function openCostImage(){
       const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(_costImageBlob);
     });
     img.style.display = 'block';
-    document.getElementById('ci-download-btn').style.display = isIOSDevice() ? 'none' : 'flex';
     document.getElementById('ci-loading').style.display = 'none';
   }catch(e){
     console.error('[costImage]', e);
