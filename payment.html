@@ -2714,8 +2714,10 @@ function mergePlayersConservative(remote, local){
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
-  // ✅ Skip echo ของตัวเองเท่านั้น (เช็คจาก writerId) — ของคนอื่นจะถูก merge
-  if(d.lastWriterId === _myWriterId && d.lastWriteId === _myLastWriteId){
+  // ✅ Skip echo ของตัวเอง (เช็คจาก writerId) — ของคนอื่นจะถูก merge
+  //    รวม echo เก่าที่มาถึงช้า (lastWriteId < ล่าสุด) ด้วย ไม่งั้นค่าเก่าจะทับช่องที่ไม่ได้ focus
+  //    เช่น แก้จำนวนลูกเร็ว ๆ แล้ว "ราคาที่จะแจ้ง" เด้งกลับเป็นค่าเดิม
+  if(d.lastWriterId === _myWriterId && (d.lastWriteId || 0) <= _myLastWriteId){
     console.log('[merge] skip own echo (writerId match)');
     return;
   }
