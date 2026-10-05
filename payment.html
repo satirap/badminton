@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="ก๊วนอยากตี"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=IBM+Plex+Mono:wght@400;600;700&family=Kanit:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -1048,6 +1048,18 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
   cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   transition:background .15s;-webkit-tap-highlight-color:transparent;line-height:1.3;
 }
+.big-image-btn{
+  width:100%;margin-top:10px;padding:16px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#ff5fa2,#ff9f43);color:#fff;
+  font-family:inherit;font-size:16px;font-weight:600;letter-spacing:-0.01em;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  transition:transform .15s;-webkit-tap-highlight-color:transparent;line-height:1.3;
+  box-shadow:0 6px 16px rgba(255,95,162,0.3);
+}
+.big-image-btn:active{transform:scale(0.98);opacity:.9}
+.big-image-btn small{font-size:12px;font-weight:400;opacity:.92}
+.ci-preview{display:block;width:100%;border-radius:12px;border:1px solid var(--border-soft);background:#fff}
+.ci-actions{display:flex;flex-direction:column;gap:10px;margin-top:14px}
 .big-copy-btn:hover{background:var(--card2)}
 .big-copy-btn:active{background:var(--input)}
 .big-copy-btn small{font-size:12px;font-weight:400;color:var(--mute)}
@@ -1697,6 +1709,10 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
             <span>📢 แจ้งราคาก๊วนทาง LINE</span>
             <small>ราคา + QR โอน · ระบบจะให้ยืนยันก่อนส่ง</small>
           </button>
+          <button class="big-image-btn" onclick="openCostImage()">
+            <span>🖼️ บันทึกรูปแจ้งค่าใช้จ่าย</span>
+            <small>รูปสรุปยอด + QR โอนเงิน · ส่งเข้ากลุ่ม LINE ได้เลย</small>
+          </button>
           <button class="big-copy-btn" onclick="copyPriceToClipboard()">
             <span>📋 คัดลอกข้อความสำหรับ LINE</span>
             <small>สำรองเมื่อ LINE quota เต็ม · พร้อมใช้ทันที</small>
@@ -2095,6 +2111,33 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 </div>
 
 <!-- ===== View-session modal ===== -->
+<!-- ===== Cost image preview modal (รูปแจ้งค่าใช้จ่าย) ===== -->
+<div class="vm-overlay" id="cost-image-modal" style="display:none" onclick="if(event.target===this)closeCostImage()">
+  <div class="vm-panel" style="max-width:460px">
+    <div class="vm-head">
+      <div>
+        <div class="vm-title">🖼️ รูปแจ้งค่าใช้จ่าย</div>
+        <div class="vm-sub">ตรวจตัวเลขก่อนส่งเข้ากลุ่ม</div>
+      </div>
+      <button class="vm-close" onclick="closeCostImage()" aria-label="ปิด">✕</button>
+    </div>
+    <div style="padding:16px">
+      <div id="ci-loading" style="text-align:center;padding:40px;color:var(--mute);font-size:14px">กำลังสร้างรูป...</div>
+      <img id="ci-img" class="ci-preview" alt="รูปแจ้งค่าใช้จ่าย" style="display:none"/>
+      <div class="ci-actions">
+        <button class="big-share-btn" id="ci-share-btn" style="margin-top:0" onclick="shareCostImage()">
+          <span>📤 แชร์ / บันทึกรูป</span>
+          <small>เลือก LINE หรือ "บันทึกรูปภาพ" ได้เลย</small>
+        </button>
+        <button class="big-copy-btn" style="margin-top:0" onclick="downloadCostImage()">
+          <span>⬇️ ดาวน์โหลดรูป</span>
+          <small>ถ้าปุ่มด้านบนใช้ไม่ได้ · หรือกดค้างที่รูปเพื่อบันทึก</small>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="vm-overlay" id="view-modal" style="display:none" onclick="if(event.target===this)closeViewModal()">
   <div class="vm-panel">
     <div class="vm-head">
@@ -5462,6 +5505,281 @@ async function submitStockSettings(){
 /* ════════════════════════════════════════════════════════════════
    END STOCK
    ════════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════════
+   COST IMAGE — รูปแจ้งค่าใช้จ่าย (โลโก้ + รายละเอียด + ค่าใช้จ่ายคนละ + QR)
+   วาดด้วย canvas แล้วให้ admin แชร์/บันทึกไปส่งในกลุ่ม LINE
+   ════════════════════════════════════════════════════════════════ */
+let _costImageBlob = null;
+let _costImageUrl = null;
+
+function loadImg(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('โหลดรูปไม่ได้: ' + src));
+    img.src = src;
+  });
+}
+
+function ciRoundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function ciStar(ctx, cx, cy, r, color){
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for(let i = 0; i < 8; i++){
+    const rad = i % 2 === 0 ? r : r * 0.35;
+    const a = Math.PI / 4 * i - Math.PI / 2;
+    ctx.lineTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/** ตัดบรรทัดตามความกว้าง (ภาษาไทยไม่มีช่องว่าง → ตัดตามตัวอักษร) */
+function ciWrap(ctx, text, maxW){
+  const lines = [];
+  let line = '';
+  for(const ch of Array.from(text)){
+    if(ctx.measureText(line + ch).width > maxW && line){
+      lines.push(line); line = ch;
+    } else line += ch;
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+
+/** สรุปตัวเลขจากหน้าคำนวณราคา */
+function getCostImageData(){
+  const b = getCostBreakdown();
+  const hours = [...document.querySelectorAll('.court-item .court-hours-display')]
+    .map(el => parseFloat(el.textContent) || 0).filter(h => h > 0);
+  return {
+    dateLabel: thaiDate(session?.date || todayISO()),
+    playHours: hours.length ? Math.max(...hours) : 0,
+    courtCount: hours.length,
+    courtHours: b.courtHours,
+    courtRate: b.courtRate,
+    courtFee: b.courtFee,
+    shuttleCount: b.shuttleCount,
+    shuttlePrice: b.shuttlePrice,
+    shuttleCost: b.shuttleCost,
+    totalCost: b.totalCost,
+    players: getBillingHeadcount(),
+    perPerson: getEffectivePrice(),
+  };
+}
+
+const fmtHr = h => (Math.round(h * 10) / 10).toString();
+
+async function renderCostImage(d){
+  const FONT = "Kanit, 'Sukhumvit Set', Thonburi, 'Noto Sans Thai', sans-serif";
+  try{
+    await Promise.all(['400', '600', '800'].map(w => document.fonts.load(`${w} 40px Kanit`, 'ก')));
+  }catch(e){ /* ใช้ฟอนต์ระบบแทน */ }
+  const [logo, qr] = await Promise.all([loadImg('logo%20master.png'), loadImg('qr-payment.png')]);
+
+  const W = 1080, P = 56;
+  const NAVY = '#14213d', PINK = '#ff4f9a', TEAL = '#14b8b0', MUTE = '#6b7280';
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = 4200;   // วาดก่อนแล้ว crop ตามความสูงจริง
+  const ctx = canvas.getContext('2d');
+  ctx.textBaseline = 'alphabetic';
+
+  // ── พื้นหลัง: ไล่สีชมพูอ่อน → ฟ้าอ่อน + confetti ──
+  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, '#fff0f7'); bg.addColorStop(0.5, '#fff8e8'); bg.addColorStop(1, '#e6fbfa');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, canvas.height);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const confetti = ['#ff4f9a', '#14b8b0', '#ffc531', '#7b6cff', '#ff9f43'];
+  for(let i = 0; i < 90; i++){
+    ctx.globalAlpha = 0.35;
+    const c = confetti[i % confetti.length], x = rnd() * W, y = rnd() * canvas.height;
+    if(i % 3 === 0) ciStar(ctx, x, y, 10 + rnd() * 12, c);
+    else { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, 4 + rnd() * 7, 0, Math.PI * 2); ctx.fill(); }
+  }
+  ctx.globalAlpha = 1;
+
+  const card = (y, h, fill = '#ffffff') => {
+    ctx.save();
+    ctx.shadowColor = 'rgba(20,33,61,0.12)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+    ctx.fillStyle = fill; ciRoundRect(ctx, P, y, W - P * 2, h, 40); ctx.fill();
+    ctx.restore();
+  };
+  const text = (str, x, y, size, weight, color, align = 'left') => {
+    ctx.font = `${weight} ${size}px ${FONT}`; ctx.fillStyle = color; ctx.textAlign = align;
+    ctx.fillText(str, x, y);
+  };
+
+  // ── 1) หัว: โลโก้ + หัวข้อ + วันที่ ──
+  let y = 44;
+  const headH = 700;
+  card(y, headH);
+  const logoS = 400;
+  ctx.drawImage(logo, (W - logoS) / 2, y + 20, logoS, logoS);
+  const pillY = y + 445, pillH = 104, pillW = 800;
+  const pg = ctx.createLinearGradient((W - pillW) / 2, 0, (W + pillW) / 2, 0);
+  pg.addColorStop(0, PINK); pg.addColorStop(1, '#ff9f43');
+  ctx.fillStyle = pg; ciRoundRect(ctx, (W - pillW) / 2, pillY, pillW, pillH, pillH / 2); ctx.fill();
+  text('📢 แจ้งรายละเอียดค่าใช้จ่าย', W / 2, pillY + 70, 50, 800, '#ffffff', 'center');
+  text(`🗓️ วันที่ ${d.dateLabel}`, W / 2, pillY + 178, 46, 600, NAVY, 'center');
+  y += headH + 36;
+
+  // ── 2) รายละเอียด ──
+  const rows = [
+    ['⏰', 'ตีไป', `${fmtHr(d.playHours)} ชั่วโมง`, ''],
+    ['🏸', 'เปิดคอร์ท', `${d.courtCount} คอร์ท`, `รวม ${fmtHr(d.courtHours)} ชม.คอร์ท`],
+    ['🪶', 'ใช้ลูกแบด', `${d.shuttleCount} ลูก`, ''],
+    ['🏟️', 'ค่าคอร์ท', `${fmtBaht(d.courtFee)} บาท`, `${fmtHr(d.courtHours)} ชม. × ${fmtBaht(d.courtRate)} บาท`],
+    ['🎯', 'ค่าลูก', `${fmtBaht(d.shuttleCost)} บาท`, `${d.shuttleCount} ลูก × ${fmtBaht(d.shuttlePrice)} บาท`],
+  ];
+  if(d.players > 0) rows.push(['👥', 'ผู้เล่น', `${d.players} คน`, '']);
+  const rowH = 108, detH = 56 + rows.length * rowH + 96;
+  card(y, detH);
+  let ry = y + 40;
+  rows.forEach(([emo, label, val, sub], i) => {
+    const mid = ry + rowH / 2;
+    text(emo, P + 44, mid + (sub ? 0 : 16), 46, 400, NAVY);
+    text(label, P + 120, mid + (sub ? 0 : 16), 44, 600, NAVY);
+    if(sub) text(sub, P + 120, mid + 40, 30, 400, MUTE);
+    text(val, W - P - 44, mid + 18, 50, 800, NAVY, 'right');
+    if(i < rows.length - 1){
+      ctx.strokeStyle = '#e8e3ef'; ctx.lineWidth = 3; ctx.setLineDash([10, 12]);
+      ctx.beginPath(); ctx.moveTo(P + 40, ry + rowH); ctx.lineTo(W - P - 40, ry + rowH); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ry += rowH;
+  });
+  // รวม
+  ctx.fillStyle = '#f3fbfb'; ciRoundRect(ctx, P + 28, ry + 10, W - P * 2 - 56, 92, 24); ctx.fill();
+  text('รวมค่าใช้จ่ายทั้งหมด', P + 60, ry + 70, 40, 600, TEAL);
+  text(`${fmtBaht(d.totalCost)} บาท`, W - P - 60, ry + 72, 46, 800, TEAL, 'right');
+  y += detH + 40;
+
+  // ── 3) ค่าใช้จ่ายคนละ (เด่นที่สุด) ──
+  const hiH = 380;
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,79,154,0.35)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14;
+  const hg = ctx.createLinearGradient(P, y, W - P, y + hiH);
+  hg.addColorStop(0, '#ff4f9a'); hg.addColorStop(0.55, '#ff6f7d'); hg.addColorStop(1, '#ffa53f');
+  ctx.fillStyle = hg; ciRoundRect(ctx, P, y, W - P * 2, hiH, 48); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ciRoundRect(ctx, P + 14, y + 14, W - P * 2 - 28, hiH - 28, 38); ctx.stroke();
+  ciStar(ctx, P + 90, y + 90, 30, '#ffe066');
+  ciStar(ctx, W - P - 90, y + 100, 24, '#ffe066');
+  ciStar(ctx, W - P - 140, y + hiH - 80, 34, '#ffffff');
+  ciStar(ctx, P + 130, y + hiH - 70, 20, '#ffffff');
+  text('💰 ค่าใช้จ่ายคนละ', W / 2, y + 96, 56, 800, '#ffffff', 'center');
+  ctx.font = `800 200px ${FONT}`;
+  const amt = fmtBaht(d.perPerson);
+  const amtW = ctx.measureText(amt).width;
+  ctx.font = `800 80px ${FONT}`;
+  const unitW = ctx.measureText(' บาท').width;
+  const ax = (W - amtW - unitW) / 2;
+  ctx.save();
+  ctx.shadowColor = 'rgba(120,20,60,0.35)'; ctx.shadowOffsetY = 8; ctx.shadowBlur = 0;
+  text(amt, ax, y + 300, 200, 800, '#ffffff');
+  text(' บาท', ax + amtW, y + 300, 80, 800, '#fff3b0');
+  ctx.restore();
+  y += hiH + 44;
+
+  // ── 4) ข้อความโอน + ส่งสลิป ──
+  ctx.font = `600 42px ${FONT}`;
+  const msg = [
+    ...ciWrap(ctx, '🙏 โปรดโอนเงินที่ QR Code ด้านล่าง 👇', W - P * 2 - 40),
+    ...ciWrap(ctx, 'รบกวนส่งสลิปเพื่อง่ายต่อการตรวจสอบของผู้จัด 😊', W - P * 2 - 40),
+  ];
+  msg.forEach((ln, i) => text(ln, W / 2, y + 44 + i * 62, 42, 600, NAVY, 'center'));
+  y += 44 + msg.length * 62 + 20;
+
+  // ── 5) QR (crop เฉพาะการ์ดธนาคารจาก qr-payment.png) ──
+  const sx = 52, sy = 250, sw = 488, sh = 640;
+  const qrW = 760, qrH = Math.round(qrW * sh / sw);
+  const qrCardH = qrH + 60;
+  ctx.save();
+  ctx.shadowColor = 'rgba(20,33,61,0.15)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+  ctx.fillStyle = '#ffffff'; ciRoundRect(ctx, (W - qrW) / 2 - 30, y, qrW + 60, qrCardH, 36); ctx.fill();
+  ctx.restore();
+  ctx.drawImage(qr, sx, sy, sw, sh, (W - qrW) / 2, y + 30, qrW, qrH);
+  y += qrCardH + 50;
+
+  // ── 6) ท้าย ──
+  text('🏸 ขอบคุณที่มาตีด้วยกันนะ เจอกันรอบหน้า! 💖', W / 2, y + 10, 40, 600, TEAL, 'center');
+  text('ก๊วนอยากตี ต้องได้ตี', W / 2, y + 68, 32, 400, MUTE, 'center');
+  y += 110;
+
+  // crop ตามความสูงจริง
+  const out = document.createElement('canvas');
+  out.width = W; out.height = y;
+  out.getContext('2d').drawImage(canvas, 0, 0);
+  return new Promise(res => out.toBlob(res, 'image/jpeg', 0.92));
+}
+
+async function openCostImage(){
+  const d = getCostImageData();
+  if(d.totalCost <= 0) return toast('ใส่คอร์ทและจำนวนลูกก่อน');
+  if(d.perPerson <= 0) return toast('ยังไม่มีราคาที่จะแจ้ง (ใส่จำนวนผู้เล่นก่อน)');
+  if(d.players > 0 && d.perPerson * d.players < d.totalCost &&
+     !confirm(`ค่าใช้จ่ายคนละ ${fmtBaht(d.perPerson)} × ${d.players} คน = ${fmtBaht(d.perPerson * d.players)} บาท\nน้อยกว่าค่าใช้จ่าย ${fmtBaht(d.totalCost)} บาท\n\nสร้างรูปต่อเลยไหม?`)) return;
+  const img = document.getElementById('ci-img');
+  img.style.display = 'none';
+  document.getElementById('ci-loading').style.display = 'block';
+  document.getElementById('cost-image-modal').style.display = 'flex';
+  try{
+    _costImageBlob = await renderCostImage(d);
+    if(_costImageUrl) URL.revokeObjectURL(_costImageUrl);
+    _costImageUrl = URL.createObjectURL(_costImageBlob);
+    img.src = _costImageUrl;
+    img.style.display = 'block';
+    document.getElementById('ci-loading').style.display = 'none';
+  }catch(e){
+    console.error('[costImage]', e);
+    document.getElementById('ci-loading').textContent = 'สร้างรูปไม่สำเร็จ: ' + e.message;
+  }
+}
+
+function closeCostImage(){
+  document.getElementById('cost-image-modal').style.display = 'none';
+}
+
+function costImageFileName(){
+  return `ค่าก๊วน-${session?.date || todayISO()}.jpg`;
+}
+
+async function shareCostImage(){
+  if(!_costImageBlob) return;
+  const file = new File([_costImageBlob], costImageFileName(), { type: 'image/jpeg' });
+  if(navigator.canShare && navigator.canShare({ files: [file] })){
+    try{
+      await navigator.share({ files: [file] });
+    }catch(e){
+      if(e.name !== 'AbortError') toast('แชร์ไม่สำเร็จ · ลองกดดาวน์โหลด หรือกดค้างที่รูป');
+    }
+  } else {
+    toast('เครื่องนี้แชร์รูปตรงไม่ได้ · กดค้างที่รูปเพื่อบันทึก หรือกดดาวน์โหลด', 3500);
+  }
+}
+
+function downloadCostImage(){
+  if(!_costImageUrl) return;
+  const a = document.createElement('a');
+  a.href = _costImageUrl;
+  a.download = costImageFileName();
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 
 /* ================================================================
    BOOT
