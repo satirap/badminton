@@ -2298,6 +2298,7 @@ function newSession(){
     shuttleCount:  0,
     memberEstimate: 0,   // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
     priceOverride: 0,    // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
+    priceOverrideManual: false, // true = admin พิมพ์ราคาเอง · false = คำนวณอัตโนมัติจากค่าใช้จ่ายเสมอ
     players:       [],
     createdAt:     new Date().toISOString(),
     completedAt:   null,
@@ -2429,6 +2430,7 @@ function loadDraft(){
 
 function saveDraft(){
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+  if(_applyingRemote) return;   // กำลังรับค่าจาก cloud → ไม่เขียนกลับ (กันเด้งไปมาระหว่างเครื่อง)
   updateAutosaveLabel('local');
   scheduleCloudSync();
 }
@@ -2453,7 +2455,7 @@ function updateAutosaveLabel(mode){
 let _syncTimer = null;
 function scheduleCloudSync(){
   if(_syncTimer) clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => { cloudSync().catch(e => console.warn('sync', e)); }, 800);
+  _syncTimer = setTimeout(() => { _syncTimer = null; cloudSync().catch(e => console.warn('sync', e)); }, 800);
 }
 
 /* ✅ Safety net — ถ้า user refresh/ปิดหน้า ขณะมี pending sync → force flush */
@@ -2636,6 +2638,9 @@ let _lastLocalWrite = 0; // legacy timestamp (เก็บไว้ compat)
 // ✅ Unique writer ID — กัน echo ของตัวเอง แต่ยังเห็น write ของคนอื่นได้
 const _myWriterId = 'w_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now().toString(36);
 let _myLastWriteId = 0; // increment ทุกครั้งที่เขียน
+let _applyingRemote = false;   // true ระหว่าง merge ค่าจาก cloud (ห้ามเขียนกลับ / ห้ามนับเป็นการแก้ของ user)
+let _settingInputs = false;    // true ระหว่างโปรแกรมเติมค่าลงช่อง (ไม่ใช่ user พิมพ์)
+let _lastLocalCostEdit = 0;    // เวลาที่ user แก้ค่าใช้จ่ายในเครื่องนี้ล่าสุด
 
 /* ═══════════════════════════════════════════════════════════════
    PRODUCTION-GRADE MULTI-USER SAFETY
@@ -2714,6 +2719,12 @@ function mergePlayersConservative(remote, local){
 /** Merge ข้อมูลจาก cloud → session ปัจจุบัน · ไม่ทับ input ที่ user กำลังพิมพ์ */
 function mergeRemoteIntoSession(d){
   if(!d) return;
+  _applyingRemote = true;
+  try{ mergeRemoteIntoSessionInner(d); }
+  finally{ _applyingRemote = false; }
+}
+
+function mergeRemoteIntoSessionInner(d){
   // ✅ Skip echo ของตัวเอง (เช็คจาก writerId) — ของคนอื่นจะถูก merge
   //    รวม echo เก่าที่มาถึงช้า (lastWriteId < ล่าสุด) ด้วย ไม่งั้นค่าเก่าจะทับช่องที่ไม่ได้ focus
   //    เช่น แก้จำนวนลูกเร็ว ๆ แล้ว "ราคาที่จะแจ้ง" เด้งกลับเป็นค่าเดิม
@@ -2743,7 +2754,13 @@ function mergeRemoteIntoSession(d){
       el.value = (v ?? 0);
     }
   };
-  if(d.courts !== undefined){
+  // ✅ มีค่าที่เพิ่งแก้ในเครื่องนี้แต่ยังไม่ได้ส่งขึ้น cloud → ไม่เอาค่าใช้จ่ายจาก cloud มาทับ
+  //    (ไม่งั้นจำนวนลูก/ราคาที่เพิ่งพิมพ์ จะเด้งกลับเป็นค่าเก่า)
+  const localCostPending = !!_syncTimer || _writeInFlight > 0 || (Date.now() - _lastLocalCostEdit) < 3000;
+  if(localCostPending){
+    console.log('[merge] local cost edit pending — keep local cost fields');
+  }
+  if(!localCostPending && d.courts !== undefined){
     const oldCourts = JSON.stringify(session.courts || []);
     const newCourts = JSON.stringify(d.courts || []);
     if(oldCourts !== newCourts){
@@ -2758,6 +2775,7 @@ function mergeRemoteIntoSession(d){
       }
     }
   }
+  if(!localCostPending){
   if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || DEFAULT_COURT_RATE; setIfNotFocused('court-rate', session.courtRate); }
   if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || DEFAULT_SHUTTLE_PRICE; setIfNotFocused('shuttle-price', session.shuttlePrice); }
   if(d.shuttleCount  !== undefined){
@@ -2769,8 +2787,14 @@ function mergeRemoteIntoSession(d){
     }
   }
   if(d.memberEstimate!== undefined){ session.memberEstimate= d.memberEstimate || 0; setIfNotFocused('member-est', session.memberEstimate); }
-  if(d.priceOverride !== undefined){ session.priceOverride = d.priceOverride || 0; setIfNotFocused('price-override', session.priceOverride); }
+  // ราคาที่จะแจ้ง: รับค่าจาก cloud เฉพาะตอน admin พิมพ์เอง · ไม่งั้นคำนวณใหม่จากค่าใช้จ่ายด้านล่าง
+  session.priceOverrideManual = !!d.priceOverrideManual;
+  if(session.priceOverrideManual && d.priceOverride !== undefined){
+    session.priceOverride = d.priceOverride || 0;
+    setIfNotFocused('price-override', session.priceOverride);
+  }
   if(d.courtFee !== undefined) session.courtFee = d.courtFee || 0;
+  }
   // ✅ Sync date (จาก device อื่นเปลี่ยนวันที่จัดก๊วน)
   if(d.date && d.date !== session.date){
     session.date = d.date;
@@ -2786,6 +2810,7 @@ function mergeRemoteIntoSession(d){
   try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
   // ✅ Surgical re-render — เปรียบเทียบ old vs new เพื่อกัน bounce
   smartRerenderPlayers(prevPlayers);
+  refreshAutoOverride();   // ราคาที่จะแจ้งต้องตรงกับค่าใช้จ่ายที่แสดงอยู่เสมอ
   renderSummary();
   renderPlayerListMini();
 }
@@ -2844,6 +2869,7 @@ async function cloudSync(){
   console.log('[cloudSync] Starting', { editingId, playerCount: session.players.length, inFlight: _writeInFlight });
 
   try{
+    refreshAutoOverride();   // ✅ ราคาที่จะแจ้งต้องคำนวณจากค่าใช้จ่ายปัจจุบันก่อนเขียนทุกครั้ง
     const breakdown = getCostBreakdown();
     const effective = getEffectivePrice();
     const memberEst = getNumInput('member-est');
@@ -2876,6 +2902,7 @@ async function cloudSync(){
       totalCost:      breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride:  getNumInput('price-override'),
+      priceOverrideManual: !!session.priceOverrideManual,
       gongklang,
       perPerson:      effective,
       cashCount:      cashN,
@@ -2971,6 +2998,7 @@ async function loadTodayOpenSession(){
       shuttleCount:  d.shuttleCount || 0,
       memberEstimate: d.memberEstimate || 0,
       priceOverride: d.priceOverride || 0,
+      priceOverrideManual: !!d.priceOverrideManual,
       perPerson:     d.perPerson    || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
@@ -3126,6 +3154,14 @@ function updateAllPlayerShares(){
 }
 
 function renderSummary(){
+  // ✅ จำนวนคน + ราคาที่จะแจ้ง ต้องอัปเดตก่อนคำนวณ/แสดงผลทุกครั้ง
+  //    (กันกรณีราคาเฉลี่ยเปลี่ยน แต่ราคาที่จะแจ้งค้างค่าเก่า → เก็บเงินขาด)
+  const memberEstTop = document.getElementById('member-est');
+  if(memberEstTop && session.players.length > 0){
+    memberEstTop.value = session.players.length;
+    session.memberEstimate = session.players.length;
+  }
+  refreshAutoOverride();
   const total    = session.players.length;
   const cashN    = session.players.filter(p => p.cash).length;
   const transN   = session.players.filter(p => p.transfer).length;
@@ -3187,10 +3223,17 @@ function renderSummary(){
   const override = ovInp ? parseInt(ovInp.value, 10) || 0 : 0;
   const gongklang = (override > 0 && headcount > 0) ? Math.max(0, override * headcount - totalCost) : 0;
   if(ovHint && ovInp){
-    if(override > 0 && override !== pp){
+    if(override > 0 && override < pp){
+      // ⚠️ ราคาที่จะแจ้งต่ำกว่าค่าเฉลี่ยจริง → เก็บเงินขาด
+      ovHint.textContent = `⚠️ ขาดทุน! แจ้ง ${fmtBaht(override)} ฿/คน แต่เฉลี่ยจริง ${fmtBaht(pp)} ฿/คน · ขาดรวม ${fmtBaht((pp - override) * headcount)} ฿`;
+      ovHint.classList.add('active');
+      ovHint.style.color = '#d70015';
+    } else if(override > 0 && override !== pp){
       ovHint.textContent = `จะแจ้ง ${fmtBaht(override)} ฿/คน · เฉลี่ยจริง ${fmtBaht(pp)} ฿/คน · ส่วนต่าง ${override > pp ? '+' : ''}${fmtBaht(override - pp)} ฿`;
       ovHint.classList.add('active');
+      ovHint.style.color = '';
     } else {
+      ovHint.style.color = '';
       ovHint.textContent = 'ระบบปัดเต็ม 10 ให้อัตโนมัติ · พิมพ์ทับเพื่อปรับเอง (cost เปลี่ยน = reset)';
       ovHint.classList.remove('active');
     }
@@ -3319,6 +3362,7 @@ async function completeSession(){
 
   try{
     session.status = 'complete';
+    refreshAutoOverride();   // ✅ ราคาสุดท้ายต้องตรงกับค่าใช้จ่ายจริง
     const breakdown = getCostBreakdown();
     const effective = getEffectivePrice(); // ✅ ราคาที่ใช้จริง (ปัดเต็ม 10)
     // ผลรวมตามจริงของแต่ละคน
@@ -3351,6 +3395,7 @@ async function completeSession(){
       totalCost:     breakdown.totalCost,
       memberEstimate: memberEst,
       priceOverride: getNumInput('price-override'),
+      priceOverrideManual: !!session.priceOverrideManual,
       gongklang:     gongklang, // ✅ ส่วนเกินเข้ากองกลาง
       // ✅ perPerson = effective price (ราคาที่ใช้จริง — ปัดเต็ม 10)
       perPerson:   effective,
@@ -3914,6 +3959,11 @@ function refreshAutoOverride(){
   }
   inp.placeholder = needHeadcount ? '⚠️ ใส่จำนวนคนก่อน' : '0';
 
+  if(session?.priceOverrideManual && getNumInput('price-override') > 0){
+    session.priceOverride = getNumInput('price-override');
+    return;   // admin พิมพ์ราคาเอง → ไม่ทับ
+  }
+  if(session) session.priceOverrideManual = false;
   if(autoRounded > 0){
     inp.value = String(autoRounded);
     inp.dataset.autoLast = String(autoRounded);
@@ -4071,6 +4121,7 @@ async function editSession(docId){
       shuttleCount:  d.shuttleCount || 0,
       memberEstimate: d.memberEstimate || 0,
       priceOverride: d.priceOverride || 0,
+      priceOverrideManual: d.priceOverrideManual ?? (origStatus === 'complete' && (d.priceOverride || 0) > 0),
       perPerson:     d.perPerson    || 0,
       players:     (d.players||[]).map(p => ({...p, id: p.id||('p'+Math.random())})),
       createdAt:   d.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
@@ -4441,6 +4492,17 @@ function updateCourtCalculation(){
 
 // Any setup input change → recompute summary + save
 function onCostInputChange(e){
+  const userEdit = !_applyingRemote && !_settingInputs;
+  if(userEdit){
+    _lastLocalCostEdit = Date.now();
+    if(e?.target?.id === 'price-override'){
+      // admin พิมพ์ราคาเอง → ล็อกไว้ · ลบจนว่าง → กลับเป็นอัตโนมัติ
+      session.priceOverrideManual = getNumInput('price-override') > 0;
+    } else {
+      // ค่าใช้จ่ายเปลี่ยน → กลับมาคำนวณอัตโนมัติ (ตาม hint "cost เปลี่ยน = reset")
+      session.priceOverrideManual = false;
+    }
+  }
   const b = getCostBreakdown();
   session.courtRate     = b.courtRate;
   session.courtFee      = b.courtFee;
@@ -4501,7 +4563,9 @@ function setSetupInputsFromSession(){
       courtList.appendChild(item);
     });
   }
-  updateCourtCalculation();
+  _settingInputs = true;
+  try{ updateCourtCalculation(); }
+  finally{ _settingInputs = false; }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -5559,6 +5623,8 @@ async function renderCostImage(d){
 }
 
 async function openCostImage(){
+  refreshAutoOverride();
+  renderSummary();
   const d = getCostImageData();
   if(d.totalCost <= 0) return toast('ใส่คอร์ทและจำนวนลูกก่อน');
   if(d.perPerson <= 0) return toast('ยังไม่มีราคาที่จะแจ้ง (ใส่จำนวนผู้เล่นก่อน)');
