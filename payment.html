@@ -1708,17 +1708,9 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
             </div>
           </div>
 
-          <button class="big-share-btn" onclick="sharePriceCurrent()">
-            <span>📢 แจ้งราคาก๊วนทาง LINE</span>
-            <small>ราคา + QR โอน · ระบบจะให้ยืนยันก่อนส่ง</small>
-          </button>
-          <button class="big-image-btn" onclick="openCostImage()">
+          <button class="big-image-btn" style="margin-top:16px" onclick="openCostImage()">
             <span>🖼️ บันทึกรูปแจ้งค่าใช้จ่าย</span>
             <small>รูปสรุปยอด + QR โอนเงิน · ส่งเข้ากลุ่ม LINE ได้เลย</small>
-          </button>
-          <button class="big-copy-btn" onclick="copyPriceToClipboard()">
-            <span>📋 คัดลอกข้อความสำหรับ LINE</span>
-            <small>สำรองเมื่อ LINE quota เต็ม · พร้อมใช้ทันที</small>
           </button>
         </div>
       </div>
@@ -3772,112 +3764,6 @@ function ensureLiff(){
 }
 
 /* ================================================================
-   FLEX: PRICE ANNOUNCEMENT — บอกราคาก๊วน + QR โอน
-   ================================================================ */
-const QR_PAYMENT_URL = 'https://satirap.github.io/badminton/qr-payment.png';
-
-function buildPriceFlex(s, opts){
-  const players      = s.players || [];
-  const courtFee     = s.courtFee     || 0;
-  const shuttlePrice = s.shuttlePrice || 0;
-  const shuttleCount = s.shuttleCount || 0;
-  const shuttleTotal = shuttlePrice * shuttleCount;
-  const totalCost    = courtFee + shuttleTotal;
-  // ใช้ headcount จาก opts หรือ s.memberEstimate หรือ players.length
-  const headcount = (opts && opts.headcount) || s.memberEstimate || players.length || 0;
-  const total = headcount;
-  const calculated = headcount > 0 ? Math.ceil(totalCost / headcount) : 0;
-  const pp = (opts && opts.effectivePp) || (s.priceOverride > 0 ? s.priceOverride : calculated);
-  const gongklang = (opts && opts.gongklang !== undefined)
-    ? opts.gongklang
-    : Math.max(0, pp * headcount - totalCost);
-  const dateStr      = s.dateDisplay || s.date || '';
-
-  const costRows = [];
-  if(courtFee > 0){
-    costRows.push({
-      type:'box', layout:'horizontal', margin:'sm',
-      contents:[
-        { type:'text', text:'🏟 ค่าคอร์ท', size:'sm', color:'#555555', flex:5 },
-        { type:'text', text:fmtBaht(courtFee)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
-      ]
-    });
-  }
-  if(shuttleCount > 0){
-    costRows.push({
-      type:'box', layout:'horizontal', margin:'sm',
-      contents:[
-        { type:'text', text:`🏸 ลูกแบด ${shuttleCount}×${fmtBaht(shuttlePrice)}฿`, size:'sm', color:'#555555', flex:5 },
-        { type:'text', text:fmtBaht(shuttleTotal)+' ฿', size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
-      ]
-    });
-  }
-  costRows.push({
-    type:'box', layout:'horizontal', margin:'sm',
-    contents:[
-      { type:'text', text:'👥 สมาชิกวันนี้', size:'sm', color:'#555555', flex:5 },
-      { type:'text', text:`${total} คน`, size:'sm', weight:'bold', color:'#111111', align:'end', flex:4 },
-    ]
-  });
-  costRows.push({ type:'separator', margin:'md' });
-  costRows.push({
-    type:'box', layout:'horizontal', margin:'md',
-    contents:[
-      { type:'text', text:'รวมทั้งสิ้น', size:'md', weight:'bold', color:'#111111', flex:5 },
-      { type:'text', text:fmtBaht(totalCost)+' ฿', size:'md', weight:'bold', color:'#111111', align:'end', flex:4 },
-    ]
-  });
-
-  return {
-    type:'bubble',
-    size:'mega',
-    header:{
-      type:'box', layout:'vertical', paddingAll:'16px', backgroundColor:'#16181d',
-      contents:[
-        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี', color:'#A4D65E', weight:'bold', size:'lg' },
-        { type:'text', text:dateStr, color:'#c9c7c0', size:'xs', margin:'xs' },
-      ]
-    },
-    body:{
-      type:'box', layout:'vertical', paddingAll:'16px', spacing:'none',
-      contents:[
-        { type:'text', text:'💰 ค่าใช้จ่าย', size:'xs', color:'#8e8c85', weight:'bold' },
-        ...costRows,
-        // Per-person highlight
-        {
-          type:'box', layout:'vertical', backgroundColor:'#A4D65E',
-          cornerRadius:'12px', paddingAll:'16px', margin:'lg',
-          contents:[
-            { type:'text', text:'💸 ราคาต่อคน', color:'#1a1a1a', size:'sm', weight:'bold', align:'center' },
-            { type:'text', text:`${fmtBaht(pp)} บาท`, color:'#1a1a1a', size:'xxl', weight:'bold', align:'center', margin:'sm' },
-          ]
-        },
-        // กองกลาง (เฉพาะตอนมีส่วนเกิน)
-        ...(gongklang > 0 ? [{
-          type:'box', layout:'horizontal',
-          backgroundColor:'#16181d', cornerRadius:'10px', paddingAll:'12px',
-          margin:'sm', spacing:'sm',
-          contents:[
-            { type:'text', text:'💰 เก็บเข้ากองกลาง', color:'#c9c7c0', size:'sm', weight:'bold', flex:6 },
-            { type:'text', text:`${fmtBaht(gongklang)} บาท`, color:'#A4D65E', size:'sm', weight:'bold', align:'end', flex:4 },
-          ]
-        }] : []),
-        // QR section
-        { type:'separator', margin:'xl' },
-        { type:'text', text:'📲 โอนได้ที่ QR Code ด้านล่าง', size:'sm', weight:'bold', color:'#A4D65E', align:'center', margin:'lg' },
-        { type:'image', url:QR_PAYMENT_URL, size:'full', aspectRatio:'2:3', aspectMode:'fit', margin:'md' },
-      ]
-    },
-    footer:{
-      type:'box', layout:'vertical', paddingAll:'12px', backgroundColor:'#f5f3ee',
-      contents:[
-        { type:'text', text:'🏸 ก๊วนอยากตี ต้องได้ตี · App ช่วยหารค่าคอร์ท', size:'xxs', color:'#8e8c85', align:'center' },
-      ]
-    }
-  };
-}
-
-/* ================================================================
    FLEX: PAYMENT STATUS — ใครจ่ายแล้ว/ยังไม่จ่าย
    ================================================================ */
 function buildStatusFlex(s){
@@ -4034,80 +3920,6 @@ function refreshAutoOverride(){
     inp.value = '';
     inp.dataset.autoLast = '';
     session.priceOverride = 0;
-  }
-}
-
-async function sharePriceCurrent(){
-  const headcount = getBillingHeadcount();
-  if(headcount <= 0){
-    toast('กรอก "คนที่จะมา" ในแท็บคำนวณราคา หรือเพิ่มผู้เล่น');
-    return;
-  }
-  const totalCost = (session.courtFee||0) + (session.shuttlePrice||0)*(session.shuttleCount||0);
-  if(totalCost <= 0){
-    toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
-    return;
-  }
-  const calculated = Math.ceil(totalCost / headcount);
-  const override = getNumInput('price-override');
-  const effective = override > 0 ? override : calculated;
-  const gongklang = Math.max(0, effective * headcount - totalCost);
-
-  // ✅ ยืนยันก่อนส่ง — แสดงราคา + กองกลางให้ดูก่อน กันส่งพลาด
-  let confirmMsg = `📢 ส่งราคาก๊วนเข้า LINE?\n\n`;
-  confirmMsg += `จำนวน: ${headcount} คน\n`;
-  if(override > 0 && override !== calculated){
-    confirmMsg += `คำนวณได้: ${fmtBaht(calculated)} บาท/คน\n`;
-    confirmMsg += `จะแจ้ง:    ${fmtBaht(effective)} บาท/คน\n`;
-  } else {
-    confirmMsg += `ราคา:  ${fmtBaht(effective)} บาท/คน\n`;
-  }
-  confirmMsg += `เก็บได้: ${fmtBaht(effective * headcount)} ฿\n`;
-  if(gongklang > 0){
-    confirmMsg += `กองกลาง: ${fmtBaht(gongklang)} ฿\n`;
-  }
-  confirmMsg += `\nยืนยันส่ง?`;
-  if(!confirm(confirmMsg)) return;
-
-  const altText = `🏸 ก๊วนอยากตี ต้องได้ตี · ${headcount} คน · เฉลี่ย ${fmtBaht(effective)} บาท/คน`;
-  const btn = document.querySelector('.big-share-btn') || document.querySelector('.btn-share-line.price');
-  await shareLineFlex(buildPriceFlex(session, { effectivePp: effective, headcount, gongklang }), altText, btn);
-}
-
-async function copyPriceToClipboard(){
-  const headcount = getBillingHeadcount();
-  if(headcount <= 0){
-    toast('กรอก "คนที่จะมา" ในแท็บคำนวณราคา หรือเพิ่มผู้เล่น');
-    return;
-  }
-  const bd = getCostBreakdown();
-  if(bd.totalCost <= 0){
-    toast('กรอกค่าคอร์ท/ลูกแบดก่อน');
-    return;
-  }
-  const effective = getEffectivePrice();
-  const gongklang = getGongklangAmount();
-
-  let msg = `📢 ตั้งค่ารอบแบด\n\n`;
-  msg += `💰 ค่าใช้จ่ายทั้งหมด:\n`;
-  msg += `• คอร์ท: ${bd.courtHours} ชั่วโมง × ${bd.courtRate}฿ = ${bd.courtFee}฿\n`;
-  if(bd.shuttleCount > 0){
-    msg += `• ลูกแบด: ${bd.shuttleCount} ลูก × ${bd.shuttlePrice}฿ = ${bd.shuttleCost}฿\n`;
-  }
-  msg += `รวม: ${bd.totalCost}฿\n\n`;
-  msg += `👥 จำนวน: ${headcount} คน\n`;
-  msg += `💵 เฉลี่ย/คน: ${effective}฿\n`;
-  msg += `📊 เก็บได้ทั้งหมด: ${effective * headcount}฿`;
-  if(gongklang > 0){
-    msg += `\n💚 กองกลาง: ${gongklang}฿`;
-  }
-
-  try{
-    await navigator.clipboard.writeText(msg);
-    toast('✅ คัดลอกไปยังคลิปบอร์ด · พร้อมส่งทาง LINE');
-  }catch(e){
-    toast('❌ คัดลอกไม่สำเร็จ');
-    console.warn(e);
   }
 }
 
