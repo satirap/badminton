@@ -1060,6 +1060,9 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 .big-image-btn small{font-size:12px;font-weight:400;opacity:.92}
 .ci-preview{display:block;width:100%;border-radius:12px;border:1px solid var(--border-soft);background:#fff}
 .ci-actions{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.ci-hint{font-size:13px;color:var(--soft);text-align:center;margin-bottom:10px;padding:8px 10px;border-radius:10px;background:var(--input);transition:background .3s}
+.ci-hint.flash{background:#ffe066}
+.ci-preview{-webkit-touch-callout:default;user-select:auto}
 .big-copy-btn:hover{background:var(--card2)}
 .big-copy-btn:active{background:var(--input)}
 .big-copy-btn small{font-size:12px;font-weight:400;color:var(--mute)}
@@ -2122,18 +2125,19 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <button class="vm-close" onclick="closeCostImage()" aria-label="ปิด">✕</button>
     </div>
     <div style="padding:16px">
-      <div id="ci-loading" style="text-align:center;padding:40px;color:var(--mute);font-size:14px">กำลังสร้างรูป...</div>
-      <img id="ci-img" class="ci-preview" alt="รูปแจ้งค่าใช้จ่าย" style="display:none"/>
-      <div class="ci-actions">
-        <button class="big-share-btn" id="ci-share-btn" style="margin-top:0" onclick="shareCostImage()">
-          <span>📤 แชร์ / บันทึกรูป</span>
-          <small>เลือก LINE หรือ "บันทึกรูปภาพ" ได้เลย</small>
-        </button>
-        <button class="big-copy-btn" style="margin-top:0" onclick="downloadCostImage()">
-          <span>⬇️ ดาวน์โหลดรูป</span>
-          <small>ถ้าปุ่มด้านบนใช้ไม่ได้ · หรือกดค้างที่รูปเพื่อบันทึก</small>
+      <div class="ci-actions" style="margin:0 0 14px">
+        <button class="big-share-btn" id="ci-save-btn" style="margin-top:0" onclick="saveCostImageToPhotos()">
+          <span>📥 บันทึกลงอัลบั้มรูป</span>
+          <small id="ci-save-sub">แล้วกด "บันทึกรูปภาพ" · รูปจะอยู่ในแอปรูปภาพทันที</small>
         </button>
       </div>
+      <div class="ci-hint" id="ci-hint">👆 หรือ <b>กดค้างที่รูป</b> แล้วเลือก <b>"บันทึกไปยังรูปภาพ"</b></div>
+      <div id="ci-loading" style="text-align:center;padding:40px;color:var(--mute);font-size:14px">กำลังสร้างรูป...</div>
+      <img id="ci-img" class="ci-preview" alt="รูปแจ้งค่าใช้จ่าย" style="display:none"/>
+      <button class="big-copy-btn" id="ci-download-btn" style="display:none" onclick="downloadCostImage()">
+        <span>⬇️ ดาวน์โหลดรูป</span>
+        <small>สำหรับคอมพิวเตอร์</small>
+      </button>
     </div>
   </div>
 </div>
@@ -2288,6 +2292,9 @@ function thaiDateShort(isoStr){
 /* ================================================================
    SESSION MANAGEMENT
    ================================================================ */
+const DEFAULT_COURT_RATE = 220;     // ค่าคอร์ท/ชม. ตั้งต้น
+const DEFAULT_SHUTTLE_PRICE = 75;   // ค่าลูก/ลูก ตั้งต้น
+
 function newSession(){
   const iso = todayISO();
   return {
@@ -2296,10 +2303,10 @@ function newSession(){
     dateDisplay: thaiDate(iso),
     status:      'open',
     // ── Court Breakdown (ใหม่) — แต่ละคอร์ทมีชั่วโมงแยก
-    courtRate:     220,  // default ค่าคอร์ท/ชม.
+    courtRate:     DEFAULT_COURT_RATE,
     courts:        [{name: '3', hours: 2}, {name: '4', hours: 2}, {name: '5', hours: 2}],  // court breakdown array (default: 3, 4, 5 with 2 hours each)
     courtFee:      0,    // = total court-hours × courtRate
-    shuttlePrice:  75,   // default ค่าลูก/ลูก
+    shuttlePrice:  DEFAULT_SHUTTLE_PRICE,
     shuttleCount:  0,
     memberEstimate: 0,   // ประมาณคนที่จะมา (ใช้เป็นหลักในการคำนวณ)
     priceOverride: 0,    // ราคาที่จะแจ้งจริง (ปัดให้สวย) — 0 = ใช้ค่าเฉลี่ยคำนวณ
@@ -2761,8 +2768,8 @@ function mergeRemoteIntoSession(d){
       }
     }
   }
-  if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || 0; setIfNotFocused('court-rate', session.courtRate); }
-  if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || 0; setIfNotFocused('shuttle-price', session.shuttlePrice); }
+  if(d.courtRate     !== undefined){ session.courtRate     = d.courtRate || DEFAULT_COURT_RATE; setIfNotFocused('court-rate', session.courtRate); }
+  if(d.shuttlePrice  !== undefined){ session.shuttlePrice  = d.shuttlePrice || DEFAULT_SHUTTLE_PRICE; setIfNotFocused('shuttle-price', session.shuttlePrice); }
   if(d.shuttleCount  !== undefined){
     session.shuttleCount  = d.shuttleCount || 0;
     // ✅ ถ้า 0 ปล่อยว่าง (กดง่ายขึ้น)
@@ -2968,9 +2975,9 @@ async function loadTodayOpenSession(){
       dateDisplay: d.dateDisplay || thaiDate(iso),
       status:      'open',
       courts:        Array.isArray(d.courts) ? d.courts : [{name: 'A', hours: 2}],
-      courtRate:     d.courtRate || 0,
+      courtRate:     d.courtRate || DEFAULT_COURT_RATE,
       courtFee:      d.courtFee     || 0,
-      shuttlePrice:  d.shuttlePrice || 0,
+      shuttlePrice:  d.shuttlePrice || DEFAULT_SHUTTLE_PRICE,
       shuttleCount:  d.shuttleCount || 0,
       memberEstimate: d.memberEstimate || 0,
       priceOverride: d.priceOverride || 0,
@@ -4248,9 +4255,9 @@ async function editSession(docId){
       dateDisplay: d.dateDisplay || thaiDate(d.date),
       status:      origStatus,
       courts:        Array.isArray(d.courts) ? d.courts : [{name: 'A', hours: 2}],
-      courtRate:     d.courtRate || 0,
+      courtRate:     d.courtRate || DEFAULT_COURT_RATE,
       courtFee:      d.courtFee     || 0,
-      shuttlePrice:  d.shuttlePrice || 0,
+      shuttlePrice:  d.shuttlePrice || DEFAULT_SHUTTLE_PRICE,
       shuttleCount:  d.shuttleCount || 0,
       memberEstimate: d.memberEstimate || 0,
       priceOverride: d.priceOverride || 0,
@@ -4646,6 +4653,9 @@ function onCostInputChange(e){
 /** Sync ค่าใน input fields จาก session.* — ใช้ตอน boot, edit, load */
 function setSetupInputsFromSession(){
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.value = (v ?? 0); };
+  // ✅ ราคา 0/ไม่มีค่า (เช่น draft เก่า) → ใช้ค่าตั้งต้น 220 / 75
+  if(!(session.courtRate > 0))    session.courtRate    = DEFAULT_COURT_RATE;
+  if(!(session.shuttlePrice > 0)) session.shuttlePrice = DEFAULT_SHUTTLE_PRICE;
   set('member-est',     session.memberEstimate || 0);
   set('court-rate',     session.courtRate || 0);
   set('shuttle-price',  session.shuttlePrice || 0);
@@ -5752,8 +5762,12 @@ async function openCostImage(){
     _costImageBlob = await renderCostImage(d);
     if(_costImageUrl) URL.revokeObjectURL(_costImageUrl);
     _costImageUrl = URL.createObjectURL(_costImageBlob);
-    img.src = _costImageUrl;
+    // ใช้ data URL ให้ "กดค้าง → บันทึกไปยังรูปภาพ" ทำงานได้ทั้ง Safari และ browser ใน LINE
+    img.src = await new Promise(res => {
+      const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(_costImageBlob);
+    });
     img.style.display = 'block';
+    document.getElementById('ci-download-btn').style.display = isIOSDevice() ? 'none' : 'flex';
     document.getElementById('ci-loading').style.display = 'none';
   }catch(e){
     console.error('[costImage]', e);
@@ -5769,18 +5783,33 @@ function costImageFileName(){
   return `ค่าก๊วน-${session?.date || todayISO()}.jpg`;
 }
 
-async function shareCostImage(){
+function isIOSDevice(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/** บันทึกลงอัลบั้ม: iPhone → share sheet (มี "บันทึกรูปภาพ") · เครื่องที่แชร์ไม่ได้ → ชี้ให้กดค้างที่รูป */
+async function saveCostImageToPhotos(){
   if(!_costImageBlob) return;
   const file = new File([_costImageBlob], costImageFileName(), { type: 'image/jpeg' });
   if(navigator.canShare && navigator.canShare({ files: [file] })){
     try{
       await navigator.share({ files: [file] });
+      return;
     }catch(e){
-      if(e.name !== 'AbortError') toast('แชร์ไม่สำเร็จ · ลองกดดาวน์โหลด หรือกดค้างที่รูป');
+      if(e.name === 'AbortError') return;
     }
-  } else {
-    toast('เครื่องนี้แชร์รูปตรงไม่ได้ · กดค้างที่รูปเพื่อบันทึก หรือกดดาวน์โหลด', 3500);
   }
+  if(!isIOSDevice() && !/Android/i.test(navigator.userAgent)){
+    downloadCostImage();
+    return;
+  }
+  // แชร์ตรงไม่ได้ (เช่น browser ใน LINE) → ชี้ให้กดค้างที่รูป
+  const hint = document.getElementById('ci-hint');
+  hint.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  hint.classList.add('flash');
+  setTimeout(() => hint.classList.remove('flash'), 1500);
+  toast('กดค้างที่รูป → "บันทึกไปยังรูปภาพ"', 3500);
 }
 
 function downloadCostImage(){
