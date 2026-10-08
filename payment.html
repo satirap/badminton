@@ -2586,6 +2586,9 @@ function subscribeToTodayOpenQuery(){
 
       const best = candidates[0];
 
+      // ✅ กำลังแก้รอบที่จบแล้ว → ไม่สลับ/ไม่ adopt รอบอื่น (เคยทำให้ข้อมูลไปปนกัน)
+      if(session?.status === 'complete') return;
+
       // ✅ Case 1: ยังไม่มี session → adopt ตัวที่ดีสุด
       if(!session?.id){
         console.log('[subscribeToTodayOpenQuery] ✅ Adopt (no current session):', best.doc.id);
@@ -2923,7 +2926,39 @@ async function cloudSync(){
       console.log('[cloudSync] Updating doc:', editingId);
       await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
       console.log('[cloudSync] ✅ Update successful');
+      if(session.status === 'complete'){
+        // แก้รอบที่จบแล้ว → ปรับยอดกองกลางของรอบนี้ให้ตรง (ไม่เพิ่มรายการใหม่)
+        try{ await addPoolIncomeFromSession({ ...payload, dateDisplay: session.dateDisplay }, editingId); }
+        catch(e){ console.error('[cloudSync] pool sync failed:', e); }
+      }
     } else {
+      // ✅ กันสร้าง doc ซ้ำ: รอบที่จบแล้ว/มี completedAt ห้ามสร้างใหม่
+      if(session.status === 'complete' || session.completedAt){
+        console.warn('[cloudSync] ⛔ skip create: session is complete but has no doc id');
+        updateAutosaveLabel('error');
+        return;
+      }
+      // ✅ ถ้ามี doc ที่สร้างจาก session เดียวกัน (createdAt ตรงกัน) อยู่แล้ว → ใช้ doc นั้น ไม่สร้างใหม่
+      const created = session.createdAt ? new Date(session.createdAt) : null;
+      if(created){
+        const dup = await db.collection('payment_sessions').where('createdAt', '==', created).limit(1).get();
+        if(!dup.empty){
+          const existing = dup.docs[0];
+          if(existing.data().status === 'complete'){
+            console.warn('[cloudSync] ⛔ skip create: same session already completed as', existing.id);
+            updateAutosaveLabel('error');
+            return;
+          }
+          editingId = existing.id;
+          session.id = existing.id;
+          console.log('[cloudSync] ♻️ reuse existing doc', existing.id);
+          await db.collection('payment_sessions').doc(editingId).set(payload, {merge:true});
+          try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
+          subscribeToSession(editingId);
+          updateAutosaveLabel('cloud');
+          return;
+        }
+      }
       // ✅ Create new doc
       payload.status = 'open';
       console.log('[cloudSync] Creating new doc');
@@ -4881,18 +4916,30 @@ async function submitDeleteTx(){
 async function addPoolIncomeFromSession(sessionData, sessionId){
   if(!sessionData || !sessionId) return;
   const gongklang = Number(sessionData.gongklang) || 0;
-  if(gongklang <= 0) return;
   // ต้องโหลดข้อมูล pool ปัจจุบันก่อนเพื่อกัน race
   await loadPool();
+  if(gongklang <= 0){
+    // แก้แล้วไม่มีส่วนเกิน → เอารายการของรอบนี้ออก (ถ้ามี)
+    const before = poolData.transactions.length;
+    poolData.transactions = poolData.transactions.filter(tx => tx.sessionId !== sessionId);
+    if(poolData.transactions.length !== before) await savePool();
+    return;
+  }
   // เช็ค starting date
   if(poolData.startingFromDate && sessionData.date && sessionData.date < poolData.startingFromDate){
     console.log('[addPoolIncome] session date before starting, skip');
     return;
   }
-  // เช็ค double-count
+  // ✅ 1 รอบ = 1 รายการ: มีอยู่แล้ว → ปรับยอดให้ตรงกับรอบล่าสุด (ไม่เพิ่มซ้ำ)
   const exists = poolData.transactions.find(tx => tx.sessionId === sessionId);
   if(exists){
-    console.log('[addPoolIncome] already added for this session');
+    if(Number(exists.amount) !== gongklang || exists.date !== sessionData.date){
+      exists.amount = gongklang;
+      exists.date = sessionData.date;
+      exists.description = `เก็บจากรอบ ${sessionData.dateDisplay || sessionData.date}`;
+      await savePool();
+      console.log('[addPoolIncome] ✅ updated', sessionId, '→', gongklang);
+    }
     return;
   }
   const tx = {
@@ -5701,22 +5748,15 @@ function downloadCostImage(){
    BOOT
    ================================================================ */
 /** ✅ Verify ว่า session.id ยังอยู่ใน cloud และ status='open' (กัน subscribe doc เก่าที่ completed แล้ว) */
-async function verifyOpenSession(docId){
+/** สถานะจริงของ doc ใน cloud: 'open' | 'complete' | 'missing' | 'error' */
+async function checkCloudSessionStatus(docId){
   try{
     const doc = await db.collection('payment_sessions').doc(docId).get();
-    if(!doc.exists) {
-      console.log('[verifyOpenSession] doc ไม่มี:', docId);
-      return false;
-    }
-    const status = doc.data().status;
-    if(status !== 'open'){
-      console.log('[verifyOpenSession] doc ไม่ open:', docId, 'status:', status);
-      return false;
-    }
-    return true;
+    if(!doc.exists) return 'missing';
+    return doc.data().status === 'complete' ? 'complete' : 'open';
   }catch(e){
-    console.error('[verifyOpenSession] error:', e);
-    return false;
+    console.error('[checkCloudSessionStatus] error:', e);
+    return 'error';
   }
 }
 
@@ -5737,16 +5777,22 @@ async function verifyOpenSession(docId){
         if(session.date > today){
           console.log(`[boot] keeping prepped session for future date: ${session.date}`);
         }
-        // ✅ Verify session.id จาก draft ยังถูกต้องไหม (อาจ stale)
+        // ✅ เช็ค draft กับ cloud — ห้าม "ลบ id แต่เก็บข้อมูลไว้" เด็ดขาด
+        //    (เคยทำให้ autosave สร้าง doc ใหม่ซ้ำ → ประวัติซ้ำ + กองกลางบวกซ้ำ)
         if(session.id){
-          const valid = await verifyOpenSession(session.id);
-          if(!valid){
-            console.log('[boot] ⚠️ draft session.id stale → drop เพื่อรอ adopt ใหม่');
-            session.id = null;
-            editingId = null;
-          } else {
-            console.log('[boot] ✅ draft session.id verified, subscribing:', session.id);
+          const st = await checkCloudSessionStatus(session.id);
+          const editingComplete = session.status === 'complete';
+          if(st === 'open' || st === 'error' || (st === 'complete' && editingComplete)){
+            // open ปกติ / offline / กำลังแก้รอบที่จบแล้ว → ใช้ doc เดิมต่อ
+            editingId = session.id;
+            console.log('[boot] ✅ continue doc', session.id, '(cloud:', st, ', local:', session.status, ')');
             subscribeToSession(session.id);
+          } else {
+            // doc ถูกลบ หรือมีคนจบรอบไปแล้ว → เริ่มรอบใหม่ (ข้อมูลรอบเดิมอยู่ใน cloud แล้ว)
+            console.log('[boot] ⚠️ draft doc', session.id, 'is', st, '→ reset to new session');
+            session = newSession();
+            editingId = null;
+            try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(session)); }catch(e){}
           }
         }
       }
