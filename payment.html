@@ -5203,14 +5203,15 @@ function renderStock(){
   document.getElementById('stock-setup-card').style.display = hasStart ? 'none' : 'block';
   const t = buildStockTimeline();
 
-  document.getElementById('stock-balance').textContent = fmtBalls(t.balance);
-  document.getElementById('stock-balance-tubes').textContent = '≈ ' + fmtTubes(t.balance);
+  // แสดงเป็น "หลอด + ลูก" อ่านง่ายกว่า · จำนวนลูกรวมไว้บรรทัดรอง
+  document.getElementById('stock-balance').textContent = fmtTubes(t.balance);
+  document.getElementById('stock-balance-tubes').textContent = `รวม ${fmtBalls(t.balance)}`;
   document.getElementById('stock-balance-detail').textContent = hasStart
-    ? `เริ่มนับ ${thaiDateShort(stockData.startDate)} · ตั้งต้น ${fmtBalls(stockData.initialCount)}`
+    ? `เริ่มนับ ${thaiDateShort(stockData.startDate)} · ตั้งต้น ${fmtTubes(stockData.initialCount)}`
     : 'ยังไม่ได้ตั้งยอดตั้งต้น';
-  document.getElementById('stock-in').textContent = fmtBalls(t.bought);
-  document.getElementById('stock-used').textContent = fmtBalls(t.used);
-  document.getElementById('stock-lost').textContent = fmtBalls(t.lost);
+  document.getElementById('stock-in').textContent = fmtTubes(t.bought);
+  document.getElementById('stock-used').textContent = fmtTubes(t.used);
+  document.getElementById('stock-lost').textContent = fmtTubes(t.lost);
 
   // เตือนสต็อกใกล้หมด
   const warn = document.getElementById('stock-warn');
@@ -5246,7 +5247,7 @@ function renderStock(){
     const editable = _adminMode && ev.type !== 'usage';
     const clickAttr = editable ? `onclick="openStockEntry('${ev.id}')"` : 'style="cursor:default"';
     const dateStr = thaiDateShort(ev.date);
-    let icon, title, amount, sub = `คงเหลือ ${fmtBalls(ev.balance)}`, badge = '';
+    let icon, title, amount, sub = `คงเหลือ ${fmtTubes(ev.balance)}`, badge = '';
     if(ev.type === 'purchase'){
       icon = '🛒';
       title = 'ซื้อ ' + fmtTubes(ev.qty) + (ev.pricePerTube ? ` · ${fmtBaht(ev.pricePerTube)} บาท/หลอด` : '');
@@ -5259,7 +5260,7 @@ function renderStock(){
       icon = '🔍';
       title = `นับจริง${ev.when === 'before' ? ' (ก่อนเล่น)' : ''} ได้ ${fmtTubes(ev.qty)}`;
       amount = String(ev.qty);
-      sub = `ระบบคาด ${fmtBalls(ev.expected)}`;
+      sub = `ระบบคาด ${fmtTubes(ev.expected)}`;
       if(ev.diff === 0) badge = '<span class="stock-diff ok">✓ ตรง</span>';
       else if(ev.diff < 0) badge = `<span class="stock-diff lost">หาย ${-ev.diff} ลูก</span>`;
       else badge = `<span class="stock-diff extra">เกิน ${ev.diff} ลูก</span>`;
@@ -5356,7 +5357,7 @@ function updateStockCountExpected(){
   const el = document.getElementById('sc-expected');
   if(!date){ el.textContent = 'เลือกวันที่นับ'; return; }
   const exp = stockExpectedAt(date, when, _editingStockId);
-  el.textContent = `ระบบคาดว่าควรมี ${fmtBalls(exp)} (${fmtTubes(exp)})`;
+  el.textContent = `ระบบคาดว่าควรมี ${fmtTubes(exp)} (รวม ${fmtBalls(exp)})`;
 }
 function closeStockCountModal(){
   document.getElementById('stock-count-modal').style.display = 'none';
