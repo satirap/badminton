@@ -1529,6 +1529,10 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 .stock-diff.lost{background:#ff3b3018;color:#d70015}
 .stock-diff.extra{background:#ff950018;color:#b25f00}
 .stock-qty-row{display:flex;gap:10px}
+.stock-stats-row{grid-template-columns:1fr 1fr}
+.stock-sold-baht{font-size:11px;color:#b25f00;font-weight:600;margin-top:2px}
+.pool-tx-icon.sale{background:#ff9f0a20;color:#b25f00}
+.pool-tx-amount.sale{color:#b25f00}
 .stock-qty-row > div{flex:1;min-width:0}
 .stock-hint{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.4}
 
@@ -1759,7 +1763,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.2.5 stable · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.3.0 · build 2026-10-14 17:13 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -1963,7 +1967,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     <div class="stock-warn" id="stock-warn" style="display:none"></div>
 
     <!-- Quick stats -->
-    <div class="pool-stats-row">
+    <div class="pool-stats-row stock-stats-row">
       <div class="pool-stat">
         <div class="pool-stat-label">ซื้อเข้า</div>
         <div class="pool-stat-value pool-stat-income" id="stock-in">0</div>
@@ -1971,6 +1975,11 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <div class="pool-stat">
         <div class="pool-stat-label">ใช้ไป</div>
         <div class="pool-stat-value" id="stock-used">0</div>
+      </div>
+      <div class="pool-stat">
+        <div class="pool-stat-label">ขายสมาชิก</div>
+        <div class="pool-stat-value" id="stock-sold">0</div>
+        <div class="stock-sold-baht" id="stock-sold-baht">฿0</div>
       </div>
       <div class="pool-stat">
         <div class="pool-stat-label">หาย / ขาด</div>
@@ -1981,8 +1990,11 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     <!-- Action buttons (เฉพาะ admin mode) -->
     <div class="pool-actions admin-only">
       <button class="pool-btn-add-income" onclick="openStockPurchaseModal()">🛒 ซื้อลูกเข้า</button>
-      <button class="pool-btn-add-expense" style="background:linear-gradient(135deg,#5856d6,#4b49c0);box-shadow:0 4px 12px rgba(88,86,214,0.25)" onclick="openStockCountModal()">🔍 นับลูกจริง</button>
+      <button class="pool-btn-add-expense" style="background:linear-gradient(135deg,#ff9f0a,#f08400);box-shadow:0 4px 12px rgba(255,159,10,0.25)" onclick="openStockSaleModal()">💰 ขายลูก</button>
       <button class="pool-btn-settings" onclick="openStockSettingsModal()">⚙️</button>
+    </div>
+    <div class="pool-actions admin-only">
+      <button class="pool-btn-add-expense" style="background:linear-gradient(135deg,#5856d6,#4b49c0);box-shadow:0 4px 12px rgba(88,86,214,0.25)" onclick="openStockCountModal()">🔍 นับลูกจริง</button>
     </div>
 
     <!-- Filter tabs -->
@@ -1990,6 +2002,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <button class="pool-filter stock-filter active" data-filter="all" onclick="setStockFilter('all')">ทั้งหมด</button>
       <button class="pool-filter stock-filter" data-filter="purchase" onclick="setStockFilter('purchase')">🛒 ซื้อ</button>
       <button class="pool-filter stock-filter" data-filter="usage" onclick="setStockFilter('usage')">🏸 ใช้</button>
+      <button class="pool-filter stock-filter" data-filter="sale" onclick="setStockFilter('sale')">💰 ขาย</button>
       <button class="pool-filter stock-filter" data-filter="count" onclick="setStockFilter('count')">🔍 นับ</button>
     </div>
 
@@ -2035,6 +2048,43 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
   </div>
 
   <!-- ===== Stock Count Modal (นับจริง เพิ่ม/แก้) ===== -->
+  <!-- ===== Stock Sale Modal (ขายลูกให้สมาชิก · เพิ่ม/แก้) ===== -->
+  <div class="vm-overlay" id="stock-sale-modal" style="display:none" onclick="if(event.target===this)closeStockSaleModal()">
+    <div class="vm-panel" style="max-width:420px">
+      <div class="vm-head">
+        <div>
+          <div class="vm-title" id="stock-sale-title">💰 ขายลูกให้สมาชิก</div>
+          <div class="vm-sub">หักออกจากสต็อก · เงินบันทึกแยก ไม่เข้ากองกลาง</div>
+        </div>
+        <button class="vm-close" onclick="closeStockSaleModal()" aria-label="ปิด">✕</button>
+      </div>
+      <div style="padding:18px">
+        <label class="pool-input-label">วันที่</label>
+        <input type="date" id="ss-sale-date" class="pool-input"/>
+        <label class="pool-input-label" style="margin-top:14px">ผู้ซื้อ</label>
+        <input type="text" id="ss-sale-buyer" class="pool-input" placeholder="ชื่อสมาชิก" list="ss-sale-buyers"/>
+        <datalist id="ss-sale-buyers"></datalist>
+        <div class="stock-qty-row" style="margin-top:14px">
+          <div>
+            <label class="pool-input-label">จำนวน (ลูก)</label>
+            <input type="number" id="ss-sale-qty" class="pool-input" placeholder="0" inputmode="numeric" min="1" oninput="updateStockSaleTotal()"/>
+          </div>
+          <div>
+            <label class="pool-input-label">ราคา/ลูก (บาท)</label>
+            <input type="number" id="ss-sale-price" class="pool-input" placeholder="0" inputmode="numeric" min="0" oninput="updateStockSaleTotal()"/>
+          </div>
+        </div>
+        <div class="stock-hint" id="ss-sale-total" style="font-size:14px;font-weight:700;color:var(--ink);margin-top:10px">รวม ฿0</div>
+        <label class="pool-input-label" style="margin-top:14px">หมายเหตุ <span style="font-weight:400;color:var(--mute)">ไม่บังคับ</span></label>
+        <input type="text" id="ss-sale-note" class="pool-input" placeholder="เช่น โอน / เงินสด"/>
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button class="pool-btn-delete" id="ss-sale-delete-btn" style="display:none" onclick="deleteStockEntry()">🗑 ลบ</button>
+          <button class="pool-btn-submit" style="flex:1;margin-top:0" onclick="submitStockSale()">บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="vm-overlay" id="stock-count-modal" style="display:none" onclick="if(event.target===this)closeStockCountModal()">
     <div class="vm-panel" style="max-width:420px">
       <div class="vm-head">
@@ -2280,6 +2330,10 @@ function thaiDateShort(isoStr){
 /* ================================================================
    SESSION MANAGEMENT
    ================================================================ */
+// ✅ เวอร์ชัน + เวลา build — อัปเดตด้วย tools/stamp_version.py ทุกครั้งก่อน deploy
+const APP_VERSION = '5.3.0';
+const APP_BUILD = '2026-10-14 17:13';
+
 const DEFAULT_COURT_RATE = 220;     // ค่าคอร์ท/ชม. ตั้งต้น
 const DEFAULT_SHUTTLE_PRICE = 75;   // ค่าลูก/ลูก ตั้งต้น
 
@@ -5148,7 +5202,7 @@ async function saveStock(){
 /** สร้าง timeline เรียงตามเวลา + คำนวณยอดคาด/ส่วนต่าง
  *  ลำดับในวันเดียวกัน: ซื้อ → นับก่อนเล่น → ใช้ → นับหลังเล่น */
 function buildStockTimeline(){
-  const ORDER = { purchase: 0, countbefore: 1, usage: 2, countafter: 3 };
+  const ORDER = { purchase: 0, countbefore: 1, usage: 2, sale: 2, countafter: 3 };
   const events = [];
   stockData.entries.forEach(e => {
     if(stockData.startDate && e.date < stockData.startDate) return;
@@ -5161,9 +5215,13 @@ function buildStockTimeline(){
     || (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
 
   let running = stockData.initialCount;
-  let bought = 0, used = 0, lost = 0, extra = 0;
+  let bought = 0, used = 0, lost = 0, extra = 0, sold = 0, soldBaht = 0;
   events.forEach(ev => {
     if(ev.type === 'purchase'){ running += ev.qty; bought += ev.qty; }
+    else if(ev.type === 'sale'){
+      running -= ev.qty; sold += ev.qty;
+      soldBaht += (Number(ev.pricePerBall) || 0) * ev.qty;
+    }
     else if(ev.type === 'usage'){ running -= ev.qty; used += ev.qty; }
     else if(ev.type === 'count'){
       ev.expected = running;
@@ -5173,7 +5231,7 @@ function buildStockTimeline(){
     }
     ev.balance = running;
   });
-  return { events, balance: running, bought, used, lost, extra };
+  return { events, balance: running, bought, used, lost, extra, sold, soldBaht };
 }
 
 /** ยอดที่ระบบคาด ณ วัน/ช่วงเวลาที่เลือก (ไม่รวม count ที่กำลังแก้) */
@@ -5212,6 +5270,8 @@ function renderStock(){
   document.getElementById('stock-in').textContent = fmtTubes(t.bought);
   document.getElementById('stock-used').textContent = fmtTubes(t.used);
   document.getElementById('stock-lost').textContent = fmtTubes(t.lost);
+  document.getElementById('stock-sold').textContent = fmtTubes(t.sold);
+  document.getElementById('stock-sold-baht').textContent = `ยอดขาย ฿${fmtBaht(t.soldBaht)}`;
 
   // เตือนสต็อกใกล้หมด
   const warn = document.getElementById('stock-warn');
@@ -5256,6 +5316,12 @@ function renderStock(){
       icon = '🏸';
       title = `ใช้ไป ${ev.qty} ลูก`;
       amount = '−' + ev.qty;
+    } else if(ev.type === 'sale'){
+      icon = '💰';
+      const total = (Number(ev.pricePerBall) || 0) * ev.qty;
+      title = `ขาย ${ev.qty} ลูก${ev.buyer ? ' · ' + escHtml(ev.buyer) : ''}`;
+      amount = '−' + ev.qty;
+      badge = `<span class="stock-diff extra">฿${fmtBaht(total)} (${fmtBaht(ev.pricePerBall || 0)}/ลูก)</span>`;
     } else {
       icon = '🔍';
       title = `นับจริง${ev.when === 'before' ? ' (ก่อนเล่น)' : ''} ได้ ${fmtTubes(ev.qty)}`;
@@ -5390,11 +5456,70 @@ async function submitStockCount(){
   toast(diff === 0 ? '✓ นับตรงกับระบบ' : diff < 0 ? `⚠️ ลูกหาย ${-diff} ลูก` : `นับได้เกิน ${diff} ลูก`, 3500);
 }
 
+/* ─── Sale Modal (ขายลูกให้สมาชิก) ─── */
+function lastSalePrice(){
+  const sales = stockData.entries.filter(e => e.type === 'sale' && e.pricePerBall > 0);
+  return sales.length ? sales[sales.length - 1].pricePerBall : DEFAULT_SHUTTLE_PRICE;
+}
+function openStockSaleModal(entry){
+  if(!requireAdminPin('บันทึกขายลูก')) return;
+  if(!requireStockStart()) return;
+  _editingStockId = entry ? entry.id : null;
+  document.getElementById('stock-sale-title').textContent = entry ? '✏️ แก้ไขการขาย' : '💰 ขายลูกให้สมาชิก';
+  document.getElementById('ss-sale-date').value = entry ? entry.date : todayISO();
+  document.getElementById('ss-sale-buyer').value = entry?.buyer || '';
+  document.getElementById('ss-sale-qty').value = entry ? entry.qty : '';
+  document.getElementById('ss-sale-price').value = entry ? (entry.pricePerBall || '') : lastSalePrice();
+  document.getElementById('ss-sale-note').value = entry?.note || '';
+  document.getElementById('ss-sale-delete-btn').style.display = entry ? 'block' : 'none';
+  // ชื่อที่เคยซื้อ + รายชื่อรอบนี้ ไว้เลือกเร็ว ๆ
+  const names = new Set(stockData.entries.filter(e => e.type === 'sale' && e.buyer).map(e => e.buyer));
+  (session?.players || []).forEach(p => p.name && names.add(p.name));
+  document.getElementById('ss-sale-buyers').innerHTML =
+    [...names].map(n => `<option value="${escHtml(n)}"></option>`).join('');
+  updateStockSaleTotal();
+  document.getElementById('stock-sale-modal').style.display = 'flex';
+}
+function closeStockSaleModal(){
+  document.getElementById('stock-sale-modal').style.display = 'none';
+  _editingStockId = null;
+}
+function updateStockSaleTotal(){
+  const q = parseInt(document.getElementById('ss-sale-qty').value, 10) || 0;
+  const pr = parseFloat(document.getElementById('ss-sale-price').value) || 0;
+  document.getElementById('ss-sale-total').textContent = `รวม ฿${fmtBaht(q * pr)}`;
+}
+async function submitStockSale(){
+  const date = document.getElementById('ss-sale-date').value;
+  const buyer = document.getElementById('ss-sale-buyer').value.trim();
+  const qty = parseInt(document.getElementById('ss-sale-qty').value, 10) || 0;
+  const pricePerBall = parseFloat(document.getElementById('ss-sale-price').value);
+  const note = document.getElementById('ss-sale-note').value.trim();
+  if(!date) return toast('ใส่วันที่');
+  if(date < stockData.startDate) return toast('วันที่ต้องไม่ก่อนวันเริ่มนับ');
+  if(!buyer) return toast('ใส่ชื่อผู้ซื้อ');
+  if(qty <= 0) return toast('ใส่จำนวนลูกที่ขาย');
+  if(!(pricePerBall >= 0)) return toast('ใส่ราคาต่อลูก');
+  const fields = { date, buyer, qty, pricePerBall, note };
+  if(_editingStockId){
+    const e = stockData.entries.find(x => x.id === _editingStockId);
+    if(e) Object.assign(e, fields);
+  } else {
+    stockData.entries.push({ id: 'sl' + Date.now() + Math.random().toString(36).slice(2,5),
+      type: 'sale', ...fields, createdAt: { seconds: Math.floor(Date.now()/1000) } });
+  }
+  if(!await saveStock()) return;
+  renderStock();
+  closeStockSaleModal();
+  toast(`💰 ขาย ${qty} ลูก ให้ ${buyer} · ฿${fmtBaht(qty * pricePerBall)}`);
+}
+
 /* ─── Edit / Delete ─── */
 function openStockEntry(id){
   const e = stockData.entries.find(x => x.id === id);
   if(!e) return;
   if(e.type === 'purchase') openStockPurchaseModal(e);
+  else if(e.type === 'sale') openStockSaleModal(e);
   else openStockCountModal(e);
 }
 async function deleteStockEntry(){
@@ -5405,6 +5530,7 @@ async function deleteStockEntry(){
   renderStock();
   closeStockPurchaseModal();
   closeStockCountModal();
+  closeStockSaleModal();
   toast('🗑 ลบแล้ว');
 }
 
@@ -5661,7 +5787,8 @@ async function renderCostImage(d){
 
   // ── 5) ท้าย ──
   text('🏸 ขอบคุณที่มาตีด้วยกันนะ เจอกันรอบหน้า! 💖', W / 2, y + 30, 34, 600, TEAL, 'center');
-  y += 64;
+  text(`v${APP_VERSION} · ${APP_BUILD}`, W - P, y + 58, 18, 400, '#b0b3ba', 'right');
+  y += 70;
 
   // crop ตามความสูงจริง
   const out = document.createElement('canvas');
