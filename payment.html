@@ -1536,6 +1536,35 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
 .stock-qty-row > div{flex:1;min-width:0}
 .stock-hint{font-size:11px;color:var(--mute);margin-top:4px;line-height:1.4}
 
+
+/* ── Slip inbox (สลิปจาก LINE bot) ── */
+.slip-banner{
+  display:none;width:100%;margin:0 0 12px;padding:12px 14px;border-radius:14px;
+  border:1.5px solid #f59e0b;background:#fff7e6;color:#92400e;
+  font:inherit;font-size:14px;font-weight:700;text-align:left;cursor:pointer;
+  align-items:center;justify-content:space-between;gap:8px;
+}
+.slip-banner b{font-size:16px}
+.slip-card{border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px;background:var(--card)}
+.slip-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.slip-amt{font-size:22px;font-weight:800;color:var(--ink);font-family:'IBM Plex Mono',monospace}
+.slip-who{font-size:14px;font-weight:700;color:var(--ink)}
+.slip-meta{font-size:12px;color:var(--mute);margin-top:2px}
+.slip-note{font-size:13px;margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--accent-light);color:var(--ink);word-break:break-word}
+.slip-flag{font-size:12px;font-weight:600;color:#b45309;margin-top:6px}
+.slip-flag.bad{color:#b91c1c}
+.slip-hint{font-size:12px;color:var(--mute);margin-top:10px}
+.slip-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.slip-chip{
+  font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;cursor:pointer;
+  border:1.5px solid var(--border);background:transparent;color:var(--ink);
+}
+.slip-chip.on{border-color:var(--blue);background:var(--accent-light);color:var(--blue)}
+.slip-actions{display:flex;gap:8px;margin-top:12px}
+.slip-actions button{font:inherit;font-size:14px;font-weight:700;padding:10px 12px;border-radius:12px;cursor:pointer;border:1.5px solid var(--border);background:transparent;color:var(--mute)}
+.slip-actions button.primary{flex:1;border-color:var(--blue);background:var(--blue);color:#fff}
+.slip-actions button:disabled{opacity:.45;cursor:default}
+.slip-empty{text-align:center;color:var(--mute);font-size:14px;padding:30px 0}
 </style>
 </head>
 <body>
@@ -1725,6 +1754,11 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
       <!-- Mismatch banner: เตือนถ้าจำนวนผู้เล่น ≠ คนที่ใช้คำนวณ -->
       <div id="mismatch-banner" class="mismatch-banner" style="display:none"></div>
 
+      <!-- สลิปจาก LINE bot ที่รอแอดมินตรวจ (แสดงเฉพาะ admin mode) -->
+      <button id="slip-banner" class="slip-banner" onclick="openSlipModal()">
+        <span>🧾 สลิปรอแอดมินตรวจ <b id="slip-banner-n">0</b> ใบ</span><span>›</span>
+      </button>
+
       <!-- Summary (in baht) -->
       <div class="summary-bar">
         <div class="s-item total">
@@ -1763,7 +1797,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.3.3 · build 2026-11-11 15:22 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.4.0 · build 2026-11-11 15:45 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2198,6 +2232,19 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
   </div>
 </div>
 
+<div class="vm-overlay" id="slip-modal" style="display:none" onclick="if(event.target===this)closeSlipModal()">
+  <div class="vm-panel">
+    <div class="vm-head">
+      <div>
+        <div class="vm-title">🧾 สลิปรอตรวจ</div>
+        <div class="vm-sub" id="slip-modal-sub">—</div>
+      </div>
+      <button class="vm-close" onclick="closeSlipModal()" aria-label="ปิด">✕</button>
+    </div>
+    <div class="vm-body" id="slip-modal-body" onclick="onSlipModalClick(event)"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -2331,8 +2378,8 @@ function thaiDateShort(isoStr){
    SESSION MANAGEMENT
    ================================================================ */
 // ✅ เวอร์ชัน + เวลา build — อัปเดตด้วย tools/stamp_version.py ทุกครั้งก่อน deploy
-const APP_VERSION = '5.3.3';
-const APP_BUILD = '2026-11-11 15:22';
+const APP_VERSION = '5.4.0';
+const APP_BUILD = '2026-11-11 15:45';
 
 const DEFAULT_COURT_RATE = 220;     // ค่าคอร์ท/ชม. ตั้งต้น
 const DEFAULT_SHUTTLE_PRICE = 75;   // ค่าลูก/ลูก ตั้งต้น
@@ -3411,6 +3458,7 @@ function renderSummary(){
   // อัปเดต badge ของ tab + sync player list mini
   if(typeof updateSelectionCount === 'function') updateSelectionCount();
   if(typeof renderPlayerListMini === 'function') renderPlayerListMini();
+  slipScheduleAuto();    // รายชื่อ/ราคาเปลี่ยน → ลองจับคู่สลิปที่รออยู่อีกรอบ
 }
 
 function renderDate(){
@@ -4119,6 +4167,326 @@ async function shareCurrentSession(){
   btn.disabled = false; btn.textContent = orig;
 }
 
+/* ════════════════════════════════════════════════════════════════
+   SLIP INBOX — สลิปที่สมาชิกส่งในกลุ่ม LINE (bot เขียนลง slip_payments)
+   ────────────────────────────────────────────────────────────────
+   - bot เพิ่มเอกสารใหม่ใน slip_payments เท่านั้น ไม่แตะ payment_sessions
+   - หน้านี้ (admin mode) เป็นคนติ๊ก "โอน" ผ่านทางบันทึกเดิม (cloudSync)
+   - ติ๊กเองอัตโนมัติเฉพาะ: ยอด = 1 คนพอดี + ระบบเคยจำผู้โอนคนนี้ + ตรวจกับธนาคารผ่าน
+     ที่เหลือ (โอนรวมหลายคน / ยอดไม่ลงตัว / ยังไม่รู้จักผู้โอน) → รอแอดมินยืนยัน
+   - จองสลิปด้วย transaction (status new → applied) กันสองเครื่องติ๊กซ้ำ
+   - ไม่ลบเอกสาร: "ข้าม" = เปลี่ยน status เป็น ignored
+   ════════════════════════════════════════════════════════════════ */
+const SLIP_COL = 'slip_payments';
+const SLIP_ALIAS_COL = 'slip_aliases';
+const SLIP_AUTO_WINDOW_MS = 48 * 60 * 60 * 1000;
+const SLIP_BANKS = {'002':'BBL','004':'KBANK','006':'KTB','011':'TTB','014':'SCB','022':'CIMB','024':'UOB',
+  '025':'BAY','030':'GSB','033':'GHB','034':'BAAC','067':'TISCO','069':'KKP','073':'LHB'};
+
+let _slipUnsub = null, _slipAliasUnsub = null;
+let _slips = [];                    // สลิป status 'new' (ยืนยันจาก server แล้ว)
+let _slipAliases = new Map();       // key ผู้โอน → Set(ชื่อที่เคยจับคู่ · normalize แล้ว)
+let _slipAliasesLoaded = false;
+const _slipBusy = new Set();        // slipId ที่กำลังบันทึก
+const _slipPick = new Map();        // slipId → Set(playerId) ที่แอดมินเลือกใน modal
+let _slipAutoTimer = null;
+
+/** ทำชื่อให้เทียบกันได้: ตัดช่องว่าง/อีโมจิ/เครื่องหมาย + ตัวพิมพ์เล็ก */
+function slipNorm(s){
+  return String(s || '').normalize('NFKC').toLowerCase()
+    .replace(/[\p{Extended_Pictographic}️‍]/gu, '')
+    .replace(/[\s.\-_~*!@#()\[\]{}'"`,:;|\/\\+]+/g, '');
+}
+
+/** key ที่ใช้จำผู้โอน: n_ = ชื่อ+ธนาคารในสลิป (แม่นกว่า) · u_ = LINE userId ของคนโพสต์ */
+function slipKeys(s){
+  const keys = { n: '', u: '' };
+  const n = slipNorm(s.senderName);
+  if(n) keys.n = 'n_' + (s.sendingBank || 'x') + '_' + n;
+  if(s.lineUserId) keys.u = 'u_' + s.lineUserId;
+  return keys;
+}
+
+function slipKnownNames(s){
+  const k = slipKeys(s);
+  const byName = _slipAliases.get(k.n);
+  if(byName && byName.size) return byName;
+  return _slipAliases.get(k.u) || new Set();
+}
+
+function slipTime(s){
+  const t = s.transAt || s.receivedAt;
+  try{ return t && t.toDate ? t.toDate() : null; }catch(e){ return null; }
+}
+
+/** วิเคราะห์สลิปกับรอบปัจจุบัน → ใครน่าจะเป็นคนจ่าย + ติ๊กเองได้ไหม */
+function slipAnalyze(s){
+  const per = getEffectivePrice();
+  const amt = (typeof s.amount === 'number' && isFinite(s.amount)) ? s.amount : null;
+  const ratio = (amt !== null && per > 0) ? amt / per : null;
+  const n = (ratio !== null && ratio >= 1 && Math.abs(ratio - Math.round(ratio)) < 1e-9) ? Math.round(ratio) : null;
+  const unpaid = (session.players || []).filter(p => !p.cash && !p.transfer);
+
+  const known = slipKnownNames(s);
+  let suggest = unpaid.filter(p => known.has(slipNorm(p.name)));
+  let how = suggest.length ? 'alias' : '';
+  if(!suggest.length && s.lineName){
+    const ln = slipNorm(s.lineName);
+    const m = ln ? unpaid.filter(p => slipNorm(p.name) === ln) : [];
+    if(m.length === 1){ suggest = m; how = 'line'; }
+  }
+
+  const rec = s.receivedAt && s.receivedAt.toDate ? s.receivedAt.toDate().getTime() : 0;
+  const fresh = rec > 0 && (Date.now() - rec) < SLIP_AUTO_WINDOW_MS;
+  const auto = n === 1 && how === 'alias' && suggest.length === 1
+    && s.verified === true && s.receiverOk !== false && fresh
+    && session.status === 'open' && !!session.id;
+  return { per, amt, n, unpaid, suggest, how, fresh, auto };
+}
+
+/* ── ฟังข้อมูล (เฉพาะ admin mode) ── */
+function slipOnAdminChange(){
+  if(_adminMode) slipSubscribe(); else slipUnsubscribe();
+  slipRenderAll();
+}
+
+function slipSubscribe(){
+  if(_slipUnsub) return;
+  _slipAliasUnsub = db.collection(SLIP_ALIAS_COL).onSnapshot(snap => {
+    if(snap.empty && snap.metadata.fromCache) return;   // offline ≠ ว่างจริง
+    const map = new Map();
+    snap.forEach(doc => {
+      const names = Array.isArray(doc.data().names) ? doc.data().names : [];
+      map.set(doc.id, new Set(names.map(slipNorm).filter(Boolean)));
+    });
+    _slipAliases = map;
+    _slipAliasesLoaded = true;
+    slipScheduleAuto();
+    slipRenderAll();
+  }, err => console.error('[slip] alias listener', err));
+
+  _slipUnsub = db.collection(SLIP_COL).where('status', '==', 'new').onSnapshot(snap => {
+    _slips = snap.docs
+      .filter(doc => !doc.metadata.hasPendingWrites)
+      .map(doc => ({ ...doc.data(), id: doc.id }))
+      .sort((a, b) => ((a.receivedAt?.toMillis?.() || 0) - (b.receivedAt?.toMillis?.() || 0)));
+    slipScheduleAuto();
+    slipRenderAll();
+  }, err => console.error('[slip] listener', err));
+}
+
+function slipUnsubscribe(){
+  try{ _slipUnsub && _slipUnsub(); }catch(e){}
+  try{ _slipAliasUnsub && _slipAliasUnsub(); }catch(e){}
+  _slipUnsub = _slipAliasUnsub = null;
+  _slips = [];
+  _slipAliasesLoaded = false;
+  _slipPick.clear();
+  closeSlipModal();
+}
+
+/* ── ติ๊กอัตโนมัติ ── */
+function slipScheduleAuto(){
+  if(!_adminMode || !_slips.length) return;
+  clearTimeout(_slipAutoTimer);
+  _slipAutoTimer = setTimeout(() => { slipRunAuto().catch(e => console.error('[slip] auto', e)); }, 600);
+}
+
+async function slipRunAuto(){
+  if(!_adminMode || !_slipAliasesLoaded) return;
+  for(const s of _slips.slice()){
+    if(_slipBusy.has(s.id)) continue;
+    const a = slipAnalyze(s);           // คำนวณใหม่ทุกใบ เพราะรายชื่อค้างจ่ายเปลี่ยนหลังติ๊ก
+    if(a.auto) await slipApply(s, [a.suggest[0].id], true);
+  }
+}
+
+/** จองสลิป (transaction) → ติ๊ก "โอน" ให้ผู้เล่น → จำชื่อไว้ใช้รอบหน้า */
+async function slipApply(s, playerIds, isAuto){
+  if(_slipBusy.has(s.id)) return false;
+  const players = playerIds.map(id => session.players.find(p => p.id === id))
+    .filter(p => p && !p.cash && !p.transfer);
+  if(!players.length || players.length !== playerIds.length){
+    toast('รายชื่อเปลี่ยนไปแล้ว กรุณาเลือกใหม่');
+    slipRenderAll();
+    return false;
+  }
+  _slipBusy.add(s.id);
+  slipRenderAll();
+  try{
+    const ref = db.collection(SLIP_COL).doc(s.id);
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if(!snap.exists || snap.data().status !== 'new') throw new Error('slip-taken');
+      tx.update(ref, {
+        status: 'applied',
+        sessionId: session.id || editingId || '',
+        playerNames: players.map(p => p.name),
+        appliedAuto: !!isAuto,
+        appliedAt: new Date(),
+      });
+    });
+    // server ยืนยันการจองแล้ว → ค่อยติ๊กในรอบ (ทางบันทึกเดิมของแอป)
+    players.forEach(p => {
+      p.transfer = true; p.cash = false; p.slipRef = s.id;
+      trackPaymentToggle(p.id, false, true);
+      updatePlayerCardUI(p.id);
+    });
+    _slips = _slips.filter(x => x.id !== s.id);
+    _slipPick.delete(s.id);
+    renderSummary();
+    saveDraft();
+    flushSyncNow();
+    slipLearn(s, players.map(p => p.name));
+    toast(`✅ สลิป ${fmtBaht(s.amount || 0)}฿ → ${players.map(p => p.name).join(', ')}${isAuto ? ' (อัตโนมัติ)' : ''}`, 3500);
+    return true;
+  }catch(e){
+    if(e && e.message === 'slip-taken') toast('สลิปนี้ถูกจัดการจากอีกเครื่องแล้ว');
+    else { console.error('[slip] apply failed', e); toast('❌ บันทึกสลิปไม่สำเร็จ ยังไม่ได้ติ๊ก ลองใหม่อีกครั้ง', 4000); }
+    return false;
+  }finally{
+    _slipBusy.delete(s.id);
+    slipRenderAll();
+  }
+}
+
+/** จำว่าผู้โอนคนนี้จ่ายให้ชื่อไหน (arrayUnion — เพิ่มอย่างเดียว ไม่ทับของเดิม) */
+function slipLearn(s, names){
+  const clean = names.map(x => String(x || '').trim()).filter(Boolean);
+  if(!clean.length) return;
+  const k = slipKeys(s);
+  [k.n, k.u].filter(Boolean).forEach(key => {
+    db.collection(SLIP_ALIAS_COL).doc(key).set({
+      names: firebase.firestore.FieldValue.arrayUnion(...clean),
+      label: s.senderName || s.lineName || '',
+      updatedAt: new Date(),
+    }, { merge: true }).catch(e => console.error('[slip] learn failed', e));
+  });
+}
+
+async function slipIgnore(s){
+  if(_slipBusy.has(s.id)) return;
+  if(!confirm(`ข้ามสลิป ${fmtBaht(s.amount || 0)}฿ ของ ${s.senderName || s.lineName || 'ไม่ทราบชื่อ'} ?\n(ไม่ติ๊กให้ใคร · ข้อมูลสลิปยังเก็บไว้)`)) return;
+  _slipBusy.add(s.id);
+  try{
+    await db.collection(SLIP_COL).doc(s.id).update({ status: 'ignored', ignoredAt: new Date() });
+    _slips = _slips.filter(x => x.id !== s.id);
+    _slipPick.delete(s.id);
+  }catch(e){
+    console.error('[slip] ignore failed', e);
+    toast('❌ บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง');
+  }finally{
+    _slipBusy.delete(s.id);
+    slipRenderAll();
+  }
+}
+
+/* ── แสดงผล ── */
+function slipRenderAll(){
+  const banner = document.getElementById('slip-banner');
+  if(banner){
+    const show = _adminMode && _slips.length > 0;
+    banner.style.display = show ? 'flex' : 'none';
+    const n = document.getElementById('slip-banner-n');
+    if(n) n.textContent = _slips.length;
+  }
+  const modal = document.getElementById('slip-modal');
+  if(modal && modal.style.display !== 'none') renderSlipModal();
+}
+
+function openSlipModal(){
+  if(!_adminMode) return;
+  document.getElementById('slip-modal').style.display = 'flex';
+  renderSlipModal();
+}
+
+function closeSlipModal(){
+  const m = document.getElementById('slip-modal');
+  if(m) m.style.display = 'none';
+}
+
+function slipPicks(s, a){
+  if(!_slipPick.has(s.id)){
+    // ค่าเริ่มต้น = ชื่อที่ระบบเดาได้ (ถ้าไม่เกินจำนวนคนตามยอด)
+    const pre = (a.n === null || a.suggest.length <= a.n) ? a.suggest.map(p => p.id) : [];
+    _slipPick.set(s.id, new Set(pre));
+  }
+  const set = _slipPick.get(s.id);
+  const valid = new Set(a.unpaid.map(p => p.id));
+  [...set].forEach(id => { if(!valid.has(id)) set.delete(id); });   // คนที่จ่ายไปแล้ว/ถูกลบ
+  return set;
+}
+
+function renderSlipModal(){
+  const body = document.getElementById('slip-modal-body');
+  const sub = document.getElementById('slip-modal-sub');
+  if(!body) return;
+  if(sub) sub.textContent = `${_slips.length} ใบ · รอบ ${session.dateDisplay || ''}`;
+  if(!_slips.length){
+    body.innerHTML = '<div class="slip-empty">ไม่มีสลิปรอตรวจ 🎉</div>';
+    return;
+  }
+  body.innerHTML = _slips.map(s => {
+    const a = slipAnalyze(s);
+    const picks = slipPicks(s, a);
+    const busy = _slipBusy.has(s.id);
+    const t = slipTime(s);
+    const when = t ? t.toLocaleString('th-TH', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : '';
+    const bank = SLIP_BANKS[s.sendingBank] || '';
+    const flags = [];
+    if(s.verified !== true) flags.push(['bad', 'ยังไม่ได้ตรวจกับธนาคาร — เช็กยอดในแอปธนาคารก่อนยืนยัน']);
+    if(s.receiverOk === false) flags.push(['bad', 'สลิปนี้ไม่ได้โอนเข้าบัญชีก๊วน']);
+    if(a.n !== null && a.n > 1) flags.push(['', `ยอดนี้ = ${a.n} คน (คนละ ${fmtBaht(a.per)}฿)`]);
+    if(a.n === null && a.amt !== null) flags.push(['', `ยอดไม่ลงตัวกับคนละ ${fmtBaht(a.per)}฿`]);
+    if(a.how === 'line') flags.push(['', 'เดาจากชื่อ LINE — ยืนยันครั้งนี้ รอบหน้าระบบจำได้']);
+    if(!a.suggest.length && a.unpaid.length) flags.push(['', 'ยังไม่รู้จักผู้โอนคนนี้ — เลือกชื่อ รอบหน้าระบบจำได้']);
+    if(!a.fresh) flags.push(['', 'สลิปเก่ากว่า 48 ชม.']);
+    if(!a.unpaid.length) flags.push(['', 'ไม่มีคนค้างจ่ายในรอบนี้']);
+    const chips = a.unpaid.map(p =>
+      `<button class="slip-chip ${picks.has(p.id) ? 'on' : ''}" data-act="pick" data-pid="${escHtml(p.id)}" ${busy ? 'disabled' : ''}>${escHtml(p.name)}</button>`
+    ).join('');
+    return `<div class="slip-card" data-slip="${escHtml(s.id)}">
+      <div class="slip-top">
+        <span class="slip-amt">${a.amt !== null ? fmtBaht(a.amt) + '฿' : '?฿'}</span>
+        <span class="slip-who">${escHtml(s.senderName || 'ไม่ทราบชื่อผู้โอน')}${bank ? ' · ' + bank : ''}</span>
+      </div>
+      <div class="slip-meta">${s.lineName ? 'LINE: ' + escHtml(s.lineName) + ' · ' : ''}${escHtml(when)}</div>
+      ${s.note ? `<div class="slip-note">💬 ${escHtml(s.note)}</div>` : ''}
+      ${flags.map(f => `<div class="slip-flag ${f[0]}">⚠️ ${escHtml(f[1])}</div>`).join('')}
+      ${a.unpaid.length ? `<div class="slip-hint">แตะเลือกคนที่สลิปนี้จ่ายให้</div><div class="slip-chips">${chips}</div>` : ''}
+      <div class="slip-actions">
+        <button class="primary" data-act="apply" ${busy || !picks.size ? 'disabled' : ''}>${busy ? 'กำลังบันทึก…' : `✅ ยืนยัน (${picks.size} คน)`}</button>
+        <button data-act="ignore" ${busy ? 'disabled' : ''}>ข้าม</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function onSlipModalClick(ev){
+  const btn = ev.target.closest('button[data-act]');
+  const card = ev.target.closest('.slip-card');
+  if(!btn || !card) return;
+  const s = _slips.find(x => x.id === card.dataset.slip);
+  if(!s) return;
+  const act = btn.dataset.act;
+  if(act === 'pick'){
+    const set = _slipPick.get(s.id) || new Set();
+    if(set.has(btn.dataset.pid)) set.delete(btn.dataset.pid); else set.add(btn.dataset.pid);
+    _slipPick.set(s.id, set);
+    renderSlipModal();
+  } else if(act === 'apply'){
+    const a = slipAnalyze(s);
+    const ids = [...slipPicks(s, a)];
+    if(!ids.length) return;
+    if(a.n !== null && ids.length !== a.n &&
+       !confirm(`ยอด ${fmtBaht(a.amt)}฿ = ${a.n} คน แต่เลือกไว้ ${ids.length} คน\nยืนยันตามที่เลือก?`)) return;
+    slipApply(s, ids, false);
+  } else if(act === 'ignore'){
+    slipIgnore(s);
+  }
+}
+
+
 /** รหัสผ่าน admin สำหรับแก้/ลบประวัติ — cache ในเซสชันเพื่อไม่ต้องถามซ้ำ */
 const ADMIN_PIN = '9998';
 function requireAdminPin(action){
@@ -4151,6 +4519,7 @@ function initAdminMode(){
 /** Apply visual changes — toggle CSS class + re-render */
 function applyAdminMode(){
   document.body.classList.toggle('admin-mode', _adminMode);
+  slipOnAdminChange();   // เปิด/ปิดการฟังสลิปจาก LINE bot ตาม admin mode
   const btn = document.getElementById('admin-toggle-btn');
   if(btn){
     btn.textContent = _adminMode ? '🔓' : '🔒';

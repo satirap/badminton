@@ -1,0 +1,10 @@
+{
+  "name": "badminton-slip-bot",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "jpeg-js": "^0.4.4",
+    "jsqr": "^1.4.0"
+  }
+}
