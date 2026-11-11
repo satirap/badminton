@@ -1763,7 +1763,7 @@ body:not(.admin-mode) #collect-lock-hint{display:block}
     </div><!-- /section-payment -->
 
     <!-- Version badge — แตะเพื่อ force reload (กัน browser cache) -->
-    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.3.1 · build 2026-10-14 17:19 · แตะเพื่อ refresh</div>
+    <div id="version-badge" onclick="devReload()" style="text-align:center;font-size:11px;color:#999;padding:14px 0 20px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent" title="แตะเพื่อโหลด version ใหม่">v5.3.2 · build 2026-11-11 14:54 · แตะเพื่อ refresh</div>
   </div>
 
   <!-- ============ TAB: HISTORY ============ -->
@@ -2331,8 +2331,8 @@ function thaiDateShort(isoStr){
    SESSION MANAGEMENT
    ================================================================ */
 // ✅ เวอร์ชัน + เวลา build — อัปเดตด้วย tools/stamp_version.py ทุกครั้งก่อน deploy
-const APP_VERSION = '5.3.1';
-const APP_BUILD = '2026-10-14 17:19';
+const APP_VERSION = '5.3.2';
+const APP_BUILD = '2026-11-11 14:54';
 
 const DEFAULT_COURT_RATE = 220;     // ค่าคอร์ท/ชม. ตั้งต้น
 const DEFAULT_SHUTTLE_PRICE = 85;   // ค่าลูก/ลูก ตั้งต้น
@@ -5677,8 +5677,10 @@ async function renderCostImage(d){
     ctx.restore();
   };
   const text = (str, x, y, size, weight, color, align = 'left') => {
-    ctx.font = `${weight} ${size}px ${FONT}`; ctx.fillStyle = color; ctx.textAlign = align;
-    ctx.fillText(str, x, y);
+    // จัดกึ่งกลาง/ชิดขวาเอง: Safari บน iPhone รุ่นเก่าไม่สนใจ textAlign กับข้อความภาษาไทย
+    ctx.font = `${weight} ${size}px ${FONT}`; ctx.fillStyle = color; ctx.textAlign = 'left';
+    const w = align === 'left' ? 0 : ctx.measureText(str).width;
+    ctx.fillText(str, align === 'center' ? x - w / 2 : align === 'right' ? x - w : x, y);
   };
   /** ย่อฟอนต์ให้พอดีความกว้าง */
   const fitSize = (str, size, weight, maxW) => {
